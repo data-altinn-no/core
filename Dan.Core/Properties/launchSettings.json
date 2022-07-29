@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Dan.Core": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7071",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

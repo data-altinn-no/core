@@ -1,0 +1,310 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@title</title>
+    <!-- Theme stylesheet -->
+    <style>
+        @charset "UTF-8";
+        /*-- VARIABLES --*/
+        /*-- BOOTSTRAP --*/
+        /*!
+ * Bootstrap v4.0.0 (https://getbootstrap.com/)
+ * Copyright 2011-2018 The Bootstrap Authors
+ * Copyright 2011-2018 Twitter, Inc.
+ * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
+ */
+        *,
+        *::before,
+        *::after{-webkit-box-sizing:border-box;box-sizing:border-box;}
+        html {
+            font-family: sans-serif;
+            line-height: 1.15;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            -ms-overflow-style: scrollbar;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        }
+        [tabindex="-1"]:focus{outline:0!important;}
+        a{color:#1EAEF7;text-decoration:none;background-color:transparent;}
+        a:hover{color:#0783c2;text-decoration:underline;}
+        img{vertical-align:middle;border-style:none;}
+
+        html,body,div,h1,h2,p{padding:0;margin:0;}
+
+        .row{display:-webkit-box;display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;margin-right:-12px;margin-left:-12px;}
+        .col-xl-10,.col-xl-12{position:relative;width:100%;min-height:1px;padding-right:12px;padding-left:12px;}
+
+        .container{width:100%;padding:0;margin-right:auto;margin-left:auto;}
+
+        .modal{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1050;display:none;overflow:hidden;outline:0;}
+        .modal-dialog{position:relative;width:auto;margin:0.5rem;pointer-events:none;}
+        .modal.fade .modal-dialog{-webkit-transition:-webkit-transform 0.3s ease-out;transition:-webkit-transform 0.3s ease-out;transition:transform 0.3s ease-out;transition:transform 0.3s ease-out, -webkit-transform 0.3s ease-out;-webkit-transform:translate(0, -25%);transform:translate(0, -25%);}
+        .modal.show .modal-dialog{-webkit-transform:translate(0, 0);transform:translate(0, 0);}
+        .modal-content{position:relative;display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-orient:vertical;-webkit-box-direction:normal;-ms-flex-direction:column;flex-direction:column;width:100%;pointer-events:auto;background-color:#FFFFFF;background-clip:padding-box;border:1px solid rgba(0, 0, 0, 0.2);border-radius:0.3rem;outline:0;}
+        .modal-header{display:-webkit-box;display:-ms-flexbox;display:flex;-webkit-box-align:start;-ms-flex-align:start;align-items:flex-start;-webkit-box-pack:justify;-ms-flex-pack:justify;justify-content:space-between;padding:1rem;border-bottom:1px solid #E5E5E5;border-top-left-radius:0.3rem;border-top-right-radius:0.3rem;}
+        .modal-body{position:relative;-webkit-box-flex:1;-ms-flex:1 1 auto;flex:1 1 auto;padding:1rem;}
+        .a-modal {position: fixed;padding-right: 0 !important;padding-bottom: 60px;}
+        .a-modal .a-iconText {min-height: 72px;}
+        .a-modal .a-iconText.a-iconText-background {padding: 0 12px 0 6px;}
+        .a-modal .a-iconText .a-iconText-text {max-width: calc(100% - 100px);padding-top: 12px;padding-bottom: 12px;}
+        .a-modal .a-modal-top-logo {opacity: 0.7;}
+        .a-modal .modal-lg {width: auto;max-width: none;margin: 0 12px;}
+        body.a-modal-background-success {background: #D4F9E4;}
+        .a-modal .modal-content{margin-bottom:60px;border:none;border-radius:0;-webkit-box-shadow:1px 1px 4px 0 rgba(137, 137, 137, 0.5);box-shadow:1px 1px 4px 0 rgba(137, 137, 137, 0.5);}
+        .a-modal .a-personSwitcher-name{display:inline-block;max-width:220px;letter-spacing:normal;}
+        .a-modal .a-page{position:absolute;width:100%;pointer-events:none;-webkit-transition:-webkit-transform 0.5s cubic-bezier(0.3, 1, 0.5, 1);transition:-webkit-transform 0.5s cubic-bezier(0.3, 1, 0.5, 1);transition:transform 0.5s cubic-bezier(0.3, 1, 0.5, 1);transition:transform 0.5s cubic-bezier(0.3, 1, 0.5, 1), -webkit-transform 0.5s cubic-bezier(0.3, 1, 0.5, 1);}
+        .a-modal .a-page.a-current-page{position:absolute;top:0;pointer-events:inherit;visibility:visible;-webkit-transform:translate3d(0, 0, 0);transform:translate3d(0, 0, 0);}
+        .a-modal.fade{overflow-x:hidden;overflow-y:auto;opacity:1;-webkit-transition:none;transition:none;}
+        .a-modal.fade .modal-dialog{-webkit-transition:all 0.7s cubic-bezier(0.3, 1, 0.5, 1);transition:all 0.7s cubic-bezier(0.3, 1, 0.5, 1);-webkit-transform:translate3d(180%, 0, 0);transform:translate3d(180%, 0, 0);}
+        .a-modal.fade.show .modal-dialog{-webkit-transition:all 0.7s cubic-bezier(0.3, 1, 0.5, 1);transition:all 0.7s cubic-bezier(0.3, 1, 0.5, 1);-webkit-transform:translate3d(0, 0, 0);transform:translate3d(0, 0, 0);}
+        .a-modal-content-target{position:relative;}
+        .a-modal-top{min-height:48px;padding-top:36px;}
+        .a-modal-top .a-logo{float:left;max-width:110px;margin-right:12px;}
+        .a-modal-top .a-modal-top-user{position:relative;float:right;margin-top:1px;margin-right:3px;}
+        .a-modal-top .a-modal-top-user .a-personSwitcher{width:280px;padding:0;margin-top:-2px;margin-right:-3px;color:rgba(0, 0, 0, 0.7);cursor:not-allowed;}
+        .a-modal-navbar{height:48px;margin-top:36px;}
+        .a-modal-header{min-height:60px;padding:0;border:none;}
+        .a-modal-header h1{line-height:1;}
+        .a-modal-body{padding:24px 12px;border-bottom:1px solid #BCC7CC;}
+        .a-modal-body:last-of-type{border-bottom:none;}
+        .a-modal-background-success .a-iconText.a-iconText-background{color:#000000;}
+        .a-modal-background-success .a-modal-top .a-personSwitcher{color:#000000;}
+        .a-modal-background-success .a-iconText-background{background:#17C96B;}
+        .a-modal-background-success .a-iconText-background .a-iconText-text{color:#000000;}
+
+        .a-personSwitcher{font-family:"DIN-medium";font-weight:normal;position:absolute;right:0;margin-top:-7px;color:#0062BA;text-align:right;cursor:pointer;background:transparent;border:none;}
+        .a-personSwitcher::after{display:none;}
+        .a-personSwitcher:focus{background:rgba(0, 0, 0, 0.1);border-color:#022F51;border-radius:50px;}
+        .a-personSwitcher:focus,.a-personSwitcher:active{outline:none;}
+        .a-personSwitcher:hover,.a-personSwitcher:focus,.a-personSwitcher:active{color:#0062BA;border:none;}
+        .a-personSwitcher .a-personSwitcher-name{max-width:90px;overflow:hidden!important;text-align:right;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;}
+
+        .a-iconText{display:-webkit-box;display:-ms-flexbox;display:flex;width:100%;min-height:84px;-webkit-box-align:center;-ms-flex-align:center;align-items:center;}
+        .a-iconText .a-iconText-text{-webkit-box-flex:1;-ms-flex:1;flex:1;font-size:inherit;}
+        .a-iconText .a-iconText-text span.a-iconText-text-large{font-family:"DIN-medium";font-weight:normal;font-size:18px;font-size:1.8rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;margin-bottom:0;}
+
+        @media print{
+            *,*::before,*::after{text-shadow:none!important;-webkit-box-shadow:none!important;box-shadow:none!important;}
+            html, body{width: 210mm;}
+            a:not(.btn){text-decoration:underline;}
+            img{page-break-inside:avoid;}
+            p,h2{orphans:3;widows:3;}
+            h2{page-break-after:avoid;}
+            body{min-width:992px!important;}
+            .container{min-width:900px!important;}
+            .modal{position: static;}
+            .a-page.a-current-page{position: static!important;}
+            .a-modal-body{padding-left: 10px!important;}
+            .offset-xl-1{margin-left: 40px!important;}
+            .a-logo{width: 132px!important}
+
+            ::-webkit-scrollbar {display: none;}
+            .element::-webkit-scrollbar { width: 0 !important }
+        }
+
+        @media (min-width: 768px) and (max-width: 992px){
+            .a-iconText-text-large{font-size:2.8rem!important;-webkit-font-smoothing:subpixel-antialiased;}
+        }
+
+        h1{font-size:24px;font-size:2.4rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+        h2{font-size:18px;font-size:1.8rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+
+        h2{font-family:"DIN-medium";font-weight:normal;margin-bottom:12px;}
+        @media (min-width: 768px){
+            h2{font-family:"DIN-reg";font-weight:normal;}
+        }
+
+        .a-btn{font-size:16px;font-size:1.6rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+
+        @media (min-width: 576px){
+            .container{max-width:540px;}
+            .modal-dialog{max-width:500px;margin:1.75rem auto;}
+            .a-personSwitcher{position:relative;right:0;}
+            .a-personSwitcher .a-personSwitcher-name{display:inline-block;}
+        }
+        @media (min-width: 768px){
+            .container{max-width:720px;}
+            .a-modal-header{min-height:84px;}
+            .a-modal-header h1{line-height:1.5;}
+            .a-modal-body{padding:36px 84px;}
+            .a-modal .a-iconText {height: auto;}
+            .a-modal .a-iconText.a-iconText-background {padding: 12px;}
+            .a-modal .a-iconText .a-iconText-text {padding-top: 0;padding-bottom: 0;}
+            h1{font-size:28px;font-size:2.8rem;line-height:1.4;-webkit-font-smoothing:subpixel-antialiased;}
+            h2{font-size:22px;font-size:2.2rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+            .a-btn{font-size:18px;font-size:1.8rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+        }
+        @media screen and (min-width: 920px) {
+            .a-modal .modal-lg {margin: auto;}
+        }
+        @media (min-width: 992px){
+            .container{max-width:960px;}
+            .a-modal-top .a-logo{max-width:142px;}
+            .a-modal-body{padding:36px 96px;}
+            .modal-lg{max-width:800px;}
+            h1{font-size:36px;font-size:3.6rem;line-height:1.2;-webkit-font-smoothing:subpixel-antialiased;}
+            h2{font-size:24px;font-size:2.4rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+            .a-iconText-text-large{font-size:2.8rem!important;-webkit-font-smoothing:subpixel-antialiased;}
+            .a-personSwitcher .a-personSwitcher-name{max-width:80px;}
+        }
+        @media (min-width: 1200px){
+            .container{max-width:1056px;}
+            .col-xl-10{-webkit-box-flex:0;-ms-flex:0 0 83.33333%;flex:0 0 83.33333%;max-width:83.33333%;}
+            .col-xl-12{-webkit-box-flex:0;-ms-flex:0 0 100%;flex:0 0 100%;max-width:100%;}
+            .offset-xl-1{margin-left:8.33333%;}
+            h2{font-size:28px;font-size:2.8rem;line-height:1.4;-webkit-font-smoothing:subpixel-antialiased;}
+            .a-personSwitcher .a-personSwitcher-name{max-width:220px;}
+        }
+        .fade{opacity:0;-webkit-transition:opacity 0.15s linear;transition:opacity 0.15s linear;}
+        .fade.show{opacity:1;}
+        .d-block{display:block!important;}
+        .mb-0{margin-bottom:0!important;}
+        .mb-3{margin-bottom:36px!important;}
+        
+        p{font-size:16px;font-size:1.6rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+        .a-personSwitcher{font-size:14px;font-size:1.4rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;}
+
+        html{width:1px;min-width:100%;font-size:62.5%!important;}
+        body{font-family:"DIN-reg";font-weight:normal;font-size:16px;font-size:1.6rem;line-height:1.5;-webkit-font-smoothing:subpixel-antialiased;color:#000000;letter-spacing:normal;background-color:#EFEFEF;}
+        ::-moz-selection{color:#000000;background:#E0DAF7;}
+        ::selection{color:#000000;background:#E0DAF7;}
+        img{max-width:100%;height:auto;border:none;}
+        .a-p-static{position:static!important;}
+        .container:focus,.row:focus{-webkit-box-shadow:none!important;box-shadow:none!important;}
+        a{position:relative;padding-bottom:2px;color:#000000;text-decoration:none;cursor:pointer;border-bottom:2px solid #1EAEF7;}
+        a:active,a:focus,a:hover{color:#000000;text-decoration:none;cursor:pointer;border-bottom:2px solid #0062BA;}
+        p{font-family:"DIN-reg";font-weight:normal;margin-bottom:18px;}
+
+        .a-btn{font-family:"DIN-reg";font-weight:normal;position:relative;display:inline-block;padding:6px 24px 4px 24px;margin-bottom:12px;color:#000000;cursor:pointer;background:#1EAEF7;border:none;border-radius:0;}
+        .a-btn:hover{color:#000000;text-decoration:none;background:#37b7f8;border:none;}
+        .a-btn:focus{color:#000000;text-decoration:none;background:#37b7f8;border-bottom:none;outline:0;}
+        .a-btn:active{color:#000000;background:#1EAEF7;background-image:none;outline:0;}
+        .a-btn:disabled{color:#000000;cursor:not-allowed;background-color:#EFEFEF;-webkit-box-shadow:0 0 0 1px #FFFFFF;box-shadow:0 0 0 1px #FFFFFF;}
+        .a-btn::after{position:absolute;top:-6px;left:0;width:100%;height:48px;content:'';}
+        .a-btn::before{position:absolute;top:0;left:0;width:auto;min-height:auto;content:'';}
+        .a-btn-success{color:#000000;background-color:#17C96B;}
+        .a-btn-success:hover{background:rgba(23, 201, 107, 0.8);border:none;}
+        .a-btn-success:active{background:#17C96B;}
+        .a-btn-success:focus{background:rgba(23, 201, 107, 0.8);}
+        .a-btn-success:disabled{color:#000000;cursor:not-allowed;background-color:#EFEFEF;-webkit-box-shadow:0 0 0 1px #FFFFFF;box-shadow:0 0 0 1px #FFFFFF;}
+
+        h1,h2{-webkit-hyphens:manual;-ms-hyphens:manual;hyphens:manual;word-break:break-word;word-wrap:break-word;overflow-wrap:break-word;}
+        a[href^=http]:not([href*='altinn.github.io/docs/'])::after{display:inline-block;width:1.3em;background-image:url(https://dev-api.data.altinn.no/v1/consent/images/arrowrightup.svg);background-repeat:no-repeat;background-size:119% auto;vertical-align:middle;margin-top:-4px;margin-left:-3px;content:'(external link)';white-space:nowrap;overflow:hidden;text-indent:1.3em;}
+        .a-personSwitcher .a-personSwitcher-name span{overflow:hidden!important;line-height:1.6;text-overflow:ellipsis;}
+        .a-logo{width:132px;height:24px;margin-bottom:0;}
+        .a-modal-top .a-logo{width:284px;max-width:none;opacity:1;}
+        a[href^="http"]:not([href*="altinn.github.io/docs/"])::after{background-image:none;}
+
+        @font-face{font-family:'DIN-reg';src:url(https://tt02.altinn.no/ui/fonts/DINWeb.woff);}
+        @font-face{font-family:'DIN-medium';src:url(https://tt02.altinn.no/ui/fonts/DINWeb-Medium.woff);}
+    </style>
+
+    <!-- FortAwesome icons-->
+    <script src="https://use.fortawesome.com/ed31cded.js"></script>
+    <script src="https://use.fortawesome.com/df832575.js"></script>
+
+    <style>
+        a[href^="http"]:not([href*="altinn.github.io/docs/"])::after {
+            background-image: none;
+        }
+
+    </style>
+</head>
+
+<body class="a-modal-background-success" id="top">
+<div class="a-sg-content-preloader">
+    <div class="a-sg-content-preloader-status">&nbsp;</div>
+</div>
+<!-- START: 04-sider-portal-91-klientdelegering-00-klientdelegering-kvittering-gyldig -->
+<!-- START: 03-maler-portal-91-modal-01-modal -->
+<div class="a-modal fade modal show a-modal-background-success" tabindex="-1" role="dialog" style="display: block">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="container a-p-static">
+            <div class="row">
+                <div class="col-xl-12">
+                    <!-- START: 01-molekyler-20-modalelementer-05-modal-header -->
+                    <div class="a-modal-top">
+                        <!-- START: 00-atomer-09-bilder-og-media-01-logo -->
+
+                        <img src="https://raw.githubusercontent.com/Altinn/DesignSystem/f37bd7c5ac0d5c25b2080b70dc0e4ddf0a7e7d2e/public/images/a-logo-black.svg" alt="Altinn logo" class="a-logo a-modal-top-logo ">
+
+                        <!-- END: 00-atomer-09-bilder-og-media-01-logo -->
+
+                        <div class="a-modal-top-user">
+                            <!-- START: 00-atomer-07-tekst-40-innlogget -->
+                            <div class="a-personSwitcher" title="@servicecontext">
+                                    <span class="a-personSwitcher-name">
+                                        <span class="d-block">@servicecontext</span>
+                                        <span class="d-block"></span>
+                                    </span>
+                            </div>
+
+                            <!-- END: 00-atomer-07-tekst-40-innlogget -->
+
+                        </div>
+                    </div>
+
+                    <!-- END: 01-molekyler-20-modalelementer-05-modal-header -->
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xl-10 offset-xl-1 a-p-static">
+                    <!-- START: 01-molekyler-20-modalelementer-10-modal-navbar -->
+                    <div class="a-modal-navbar">
+                    </div>
+
+                    <!-- END: 01-molekyler-20-modalelementer-10-modal-navbar -->
+
+                    <div class="a-modal-content-target">
+                        <div class="a-page a-current-page">
+                            <div class="modalPage">
+                                <div class="modal-content">
+                                    <!-- START: 01-molekyler-20-modalelementer-15-modal-body-header -->
+                                    <div class="modal-header a-modal-header">
+                                        <!-- START: 01-molekyler-00-tekst-30-ikon-tekst -->
+                                        <div class="a-iconText a-iconText-background a-iconText-large ">
+                                            <h1 class="a-iconText-text mb-0">
+                                                <span class="a-iconText-text-large">@title</span>
+                                            </h1>
+                                        </div>
+
+                                        <!-- END: 01-molekyler-00-tekst-30-ikon-tekst -->
+                                    </div>
+
+
+                                    <!-- END: 01-molekyler-20-modalelementer-15-modal-body-header -->
+                                    <!-- START: 02-organismer-_71-modal-gruppering-01-modal-klientdelegering -->
+                                    <!-- END: 02-organismer-_71-modal-gruppering-01-modal-klientdelegering -->
+                                    <!-- START: 02-organismer-_71-modal-gruppering-03-modal-kvittering -->
+                                    <div class="modal-body a-modal-body" style="background:white">
+                                        <h2 class="mb-3">@title</h2>
+
+                                        <div class="a-modal-receiptContent mb-3">
+                                            <p>
+                                                @message
+                                            </p>
+                                        </div>
+
+                                        <!-- START: 00-atomer-02-lenker-00-link -->
+                                        <a href="@altinnurl" class="a-btn a-btn-success">
+                                            @altinnmessage
+                                        </a>
+                                        <!-- END: 00-atomer-02-lenker-00-link -->
+                                    </div>
+                                    <!-- END: 02-organismer-_71-modal-gruppering-03-modal-kvittering -->
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
