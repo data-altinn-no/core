@@ -12,7 +12,6 @@
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
 
     "IsUnitTest": false,
-
     "EvidenceSources": "",
 
     "EvidenceSourceURLPattern": "http://localhost:7075/api/evidencecodes",
@@ -26,17 +25,17 @@
     // Secrets should usually be stored in KeyVault, see the corresponding key below with "KeyVault"-prefix, which refers a key vault entry. 
     // Fields can be overridden here, but _do not_ commit secrets. Instead use the User Secrets Manager tool, see https://docs.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-6.0&tabs=windows
     // 
-    //    dotnet user-secrets set "Values:AltinnApiKey" "mysecretapikeyhere"
+    //    dotnet user-secrets set "AltinnApiKey" "mysecretapikeyhere"
     //
     // Or manually edit %APPDATA%\Microsoft\UserSecrets\c13fc43f-6678-4c87-96fa-99abd5c008a5\secrets.json (Linux/Mac: ~/.microsoft/usersecrets/c13fc43f-6678-4c87-96fa-99abd5c008a5/secrets.json)
-    "AltinnApiKey": "",
-    "AltinnServiceOwnerApiKey": "",
+    "AltinnApiKey": null,
+    "AltinnServiceOwnerApiKey": null,
     "RedisConnection": "127.0.0.1:6379,allowAdmin=true,defaultDatabase=0",
     "CosmosDbConnection": "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==",
-    "AgencySystemUserName": "",
-    "AgencySystemPassword": "",
-    "FunctionKeyValue": "",
-    "MaskinportenClientId": "",
+    "AgencySystemUserName": null,
+    "AgencySystemPassword": null,
+    "FunctionKeyValue": null,
+    "MaskinportenClientId": null,
     "ConsentValidationSecrets": "PRIMARY_SECRET,SECONDARY_SECRET",
     // Secrets end here. All the above secrets should have a corresponding entry below with KeyVault-prefix, which Settings.cs should then use/cache instead.
 
@@ -64,7 +63,7 @@
     "OrganizationValidationUrl": "http://data.brreg.no/enhetsregisteret/api/enheter/{0}",
     "OrganizationSubUnitValidationUrl": "http://data.brreg.no/enhetsregisteret/api/underenheter/{0}",
 
-    // For local.settings.json we use the proxy. Terraform use the actual data.ppe.brreg.no endpoints
+    // For local.settings.json we use the proxy. Cloud environments use the actual data.ppe.brreg.no endpoints via Terraform
     "SyntheticOrganizationValidationUrl": "https://apim-nadobe-dev.azure-api.net/v1/ppeproxy/enhetsregisteret/api/enheter/{0}",
     "SyntheticOrganizationSubUnitValidationUrl": "https://apim-nadobe-dev.azure-api.net/v1/ppeproxy/enhetsregisteret/api/underenheter/{0}",
     "TestEnvironmentValidOrgs": "910402021,910514415,910514318,910183206,111111111",
@@ -85,6 +84,5 @@
     "MaskinportenUrl": "https://ver2.maskinporten.no/",
     "MaskinportenWellknownUrl": "https://ver2.maskinporten.no/.well-known/oauth-authorization-server",
     "AltinnWellknownUrl": "https://platform.tt02.altinn.no/authentication/api/v1/openid/.well-known/openid-configuration"
-
   }
 }
