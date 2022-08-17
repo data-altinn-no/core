@@ -17,6 +17,9 @@ class RequestContextService : IRequestContextService
     public HttpRequestData Request { get; set; }
 
     public const string ServicecontextHeader = "X-NADOBE-SERVICECONTEXT";
+    public const string QueryParamTokenOnBehalfOf = "tokenonbehalfof";
+    public const string QueryParamReuseToken = "reusetoken";
+    public const string RequestHeaderForwardAccessToken = "X-Forward-Access-Token";
 
     public RequestContextService(IServiceContextService serviceContextService)
     {
@@ -47,5 +50,15 @@ class RequestContextService : IRequestContextService
             throw new ServiceNotAvailableException("Missing Service Context definition in request.");
 
         return header.First().ToLowerInvariant();
+    }
+
+    public EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest()
+    {
+        return new EvidenceHarvesterOptions
+        {
+            OverriddenAccessToken = Request.Headers.Get(RequestHeaderForwardAccessToken),
+            ReuseClientAccessToken = Request.GetBoolQueryParam(QueryParamReuseToken),
+            FetchSupplierAccessTokenOnBehalfOfOwner = Request.GetBoolQueryParam(QueryParamTokenOnBehalfOf)
+        };
     }
 }

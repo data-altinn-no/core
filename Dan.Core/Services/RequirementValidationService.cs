@@ -104,6 +104,7 @@ public class RequirementValidationService : IRequirementValidationService
             PartyTypeRequirement r => await ValidatePartyTypes(r, _authRequest.Subject, _authRequest.Requestor, _owner, evidenceCodeName),
             AccreditationPartyRequirement r => ValidateAccreditationPartyRequirement(r, _authRequest.Subject, _authRequest.Requestor, _owner, evidenceCodeName),
             ReferenceRequirement r => ValidateReferenceRequirement(r, _authRequest, evidenceCodeName),
+            ProvideOwnTokenRequirement r => ValidateProvideOwnTokenRequirement(r, _authRequest, evidenceCodeName),
             _ => false
         };
 
@@ -536,6 +537,21 @@ public class RequirementValidationService : IRequirementValidationService
         else
         {
             AddError(req, $"The provided {referenceType} is invalid; does not match the regular expression '{req.AcceptedFormat}'", evidenceCodeName);
+            return false;
+        }
+    }
+
+    private bool ValidateProvideOwnTokenRequirement(Requirement req, AuthorizationRequest authRequest, string evidenceCodeName)
+    {
+        EvidenceHarvesterOptions evidenceHarvesterOptions = _requestContextService.GetEvidenceHarvesterOptionsFromRequest();
+
+        if (evidenceHarvesterOptions.OverriddenAccessToken != null || evidenceHarvesterOptions.ReuseClientAccessToken == true || evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner == true)
+        {
+            return true;
+        }
+        else
+        {
+            AddError(req, $"The dataset {evidenceCodeName} requires that the client provides a bearer token or delegates access to Digitaliseringsdirektoratet", evidenceCodeName);
             return false;
         }
     }

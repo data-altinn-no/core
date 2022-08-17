@@ -65,7 +65,7 @@ namespace Dan.Core
                 throw new NonExistentAccreditationException("The supplied accreditation id was not found or authorization for it failed");
             }
             
-            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _evidenceHarvesterService.GetEvidenceHarvesterOptionsFromRequest());
+            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))

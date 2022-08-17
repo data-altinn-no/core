@@ -11,4 +11,5 @@ public interface IRequestContextService
     ServiceContext ServiceContext { get; set; }
     HttpRequestData Request { get; set; }
     Task BuildRequestContext(HttpRequestData request);
+    EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest();
 }

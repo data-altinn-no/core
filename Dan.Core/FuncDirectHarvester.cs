@@ -86,7 +86,7 @@ namespace Dan.Core
                 ServiceContext = _requestContextService.ServiceContext.Name
             };
 
-            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _evidenceHarvesterService.GetEvidenceHarvesterOptionsFromRequest());
+            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
             _logger.DanLog(accreditation, LogAction.AuthorizationGranted);
 
             var response = req.CreateResponse(HttpStatusCode.OK);
