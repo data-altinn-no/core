@@ -23,9 +23,6 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private readonly IRequestContextService _requestContextService;
 
     public const string QueryParamTokenOnBehalfOf = "tokenonbehalfof";
-    public const string QueryParamTokenOnBehalfOfOwner = "owner";
-    public const string QueryParamTokenOnBehalfOfRequestor = "requestor";
-    public const string QueryParamTokenOnBehalfOfSubject = "subject";
     public const string QueryParamReuseToken = "reusetoken";
     public const string RequestHeaderForwardAccessToken = "X-Forward-Access-Token";
 
@@ -110,32 +107,12 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
     public EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest()
     {
-        var options = new EvidenceHarvesterOptions
+        return new EvidenceHarvesterOptions
         {
             OverriddenAccessToken = _requestContextService.Request.Headers.Get(RequestHeaderForwardAccessToken),
-            ReuseClientAccessToken = _requestContextService.Request.GetBoolQueryParam(QueryParamReuseToken)
+            ReuseClientAccessToken = _requestContextService.Request.GetBoolQueryParam(QueryParamReuseToken),
+            FetchSupplierAccessTokenOnBehalfOfOwner = _requestContextService.Request.GetBoolQueryParam(QueryParamTokenOnBehalfOf)
         };
-
-        var onbehalfof = _requestContextService.Request.GetQueryParam(QueryParamTokenOnBehalfOf);
-        if (onbehalfof == null)
-        {
-            return options;
-        }
-
-        switch (onbehalfof.ToLowerInvariant())
-        {
-            case QueryParamTokenOnBehalfOfOwner:
-                options.FetchSupplierAccessTokenOnBehalfOf = AccreditationPartyTypes.Owner;
-                break;
-            case QueryParamTokenOnBehalfOfRequestor:
-                options.FetchSupplierAccessTokenOnBehalfOf = AccreditationPartyTypes.Requestor;
-                break;
-            case QueryParamTokenOnBehalfOfSubject:
-                options.FetchSupplierAccessTokenOnBehalfOf = AccreditationPartyTypes.Subject;
-                break;
-        }
-
-        return options;
     }
 
     private async Task<List<EvidenceValue>> HarvestEvidenceValues(EvidenceCode evidenceCode, Accreditation accreditation, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
@@ -187,7 +164,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     {
         if (evidenceHarvesterOptions.ReuseClientAccessToken && _requestContextService.Request.GetAuthorizationToken() != null)
         {
-            return _requestContextService.Request.GetAuthorizationToken();
+            return _requestContextService.Request.GetAuthorizationToken()!;
         }
 
         if (evidenceHarvesterOptions.OverriddenAccessToken != null)
@@ -195,7 +172,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
             return evidenceHarvesterOptions.OverriddenAccessToken;
         }
 
-        var metricName = evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOf.HasValue
+        var metricName = evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner
             ? "mp-token-fetch-supplier"
             : "mp-token-fetch";
 
@@ -206,9 +183,9 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
                 accreditation.AccreditationId,
                 evidenceCode.EvidenceCodeName,
                 evidenceCode.RequiredScopes,
-                evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOf.HasValue
+                evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner
                     ? Enum.GetName(typeof(AccreditationPartyTypes),
-                        evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOf)
+                        evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner)
                     : "self");
 
             var token = await _tokenRequesterService.GetMaskinportenToken(evidenceCode.RequiredScopes, GetConsumerOrg(accreditation, evidenceHarvesterOptions));
@@ -251,14 +228,9 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private static string? GetConsumerOrg(Accreditation accreditation,
         EvidenceHarvesterOptions evidenceHarvesterOptions)
     {
-        return evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOf switch
-        {
-            AccreditationPartyTypes.Owner => accreditation.Owner,
-            AccreditationPartyTypes.Requestor => accreditation.RequestorParty.NorwegianOrganizationNumber,
-            AccreditationPartyTypes.Subject => accreditation.SubjectParty.NorwegianOrganizationNumber,
-            null => null,
-            _ => throw new ArgumentOutOfRangeException()
-        };
+        return evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner
+            ? accreditation.Owner
+            : null;
     }
 
     private static void ThrowIfNotAvailableForHarvest(EvidenceStatus evidenceStatus)

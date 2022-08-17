@@ -148,7 +148,7 @@ public static class Settings
     /// </summary>
     public static List<string> ConsentValidationSecrets =>
         _consentValidationSecrets ??= (string.IsNullOrEmpty(GetSetting("ConsentValidationSecrets"))
-            ? KeyVault.Get(KeyVaultMaskinportenClientId).Result
+            ? KeyVault.Get(KeyVaultConsentValidationSecrets).Result
             : GetSetting("ConsentValidationSecrets")).Split(',').ToList();
 
     /// <summary>

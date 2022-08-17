@@ -150,11 +150,11 @@ public static class HttpExtensions
         return (List<string>)scopes;
     }
 
-    public static string GetAuthorizationToken(this HttpRequestData request)
+    public static string? GetAuthorizationToken(this HttpRequestData request)
     {
         if (!request.FunctionContext.Items.TryGetValue(Constants.ACCESS_TOKEN, out var accessToken))
         {
-            return null!;
+            return null;
         }
 
         return (string)accessToken;
