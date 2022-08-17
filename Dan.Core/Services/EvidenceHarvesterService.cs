@@ -105,16 +105,6 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         return evidence;
     }
 
-    public EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest()
-    {
-        return new EvidenceHarvesterOptions
-        {
-            OverriddenAccessToken = _requestContextService.Request.Headers.Get(RequestHeaderForwardAccessToken),
-            ReuseClientAccessToken = _requestContextService.Request.GetBoolQueryParam(QueryParamReuseToken),
-            FetchSupplierAccessTokenOnBehalfOfOwner = _requestContextService.Request.GetBoolQueryParam(QueryParamTokenOnBehalfOf)
-        };
-    }
-
     private async Task<List<EvidenceValue>> HarvestEvidenceValues(EvidenceCode evidenceCode, Accreditation accreditation, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
     {
         var url = evidenceCode.GetEvidenceSourceUrl();
