@@ -92,7 +92,7 @@ public static class Settings
     /// </summary>
     public static X509Certificate2 AltinnCertificate =>
         IsUnitTest
-            ? _altinnCertificate ??= X509Certificate2Helper.GenerateSelfSignedCertificate()
+            ? _altinnCertificate ??= new X509Certificate2(Convert.FromBase64String(GetSetting("SelfSignedCert")))
             : _altinnCertificate ??= KeyVault.GetCertificate(KeyVaultSslCertificate).Result;
 
     /// <summary>
@@ -384,6 +384,7 @@ public static class Settings
         {
             return _config ??= new ConfigurationBuilder()
                 .AddEnvironmentVariables()
+                .AddJsonFile("appsettings.unittest.json", true)
                 .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
                 .Build();
         }
