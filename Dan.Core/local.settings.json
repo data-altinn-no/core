@@ -68,7 +68,6 @@
     "SyntheticOrganizationSubUnitValidationUrl": "https://apim-nadobe-dev.azure-api.net/v1/ppeproxy/enhetsregisteret/api/underenheter/{0}",
     "TestEnvironmentValidOrgs": "910402021,910514415,910514318,910183206,111111111",
 
-    // TODO! These should be moved into ServiceContextTexts
     "ConsentLoggingURLPattern": "https://tt02.altinn.no/api/authorization/token/{0}/loguse",
     "ConsentStatusURLPattern": "https://tt02.altinn.no/api/authorization/token/{0}",
     "ConsentRedirectURLPattern": "http://localhost:7071/api/consent/{0}/?hmac={1}",

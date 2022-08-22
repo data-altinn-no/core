@@ -5,6 +5,7 @@ using Dan.Core.Helpers.Correspondence;
 using Dan.Core.Helpers.Notification;
 using Dan.Core.Services.Interfaces;
 using System.ServiceModel;
+using Dan.Core.Helpers;
 using Dan.Core.Models;
 using AltinnFault = Dan.Core.Helpers.Notification.AltinnFault;
 
@@ -50,10 +51,12 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
     private static int Rand => _rand.Next(100000, 999999);
 
     private readonly IChannelManagerService _channelManagerService;
+    private readonly IEntityRegistryService _entityRegistryService;
 
-    public AltinnCorrespondenceService(IChannelManagerService channelManagerService)
+    public AltinnCorrespondenceService(IChannelManagerService channelManagerService, IEntityRegistryService entityRegistryService)
     {
         _channelManagerService = channelManagerService;
+        _entityRegistryService = entityRegistryService;
 
         var correspondenceSettings = Settings.CorrespondenceSettings.Split(',');
         var correspondenceServiceCode = correspondenceSettings[0].Trim();
@@ -175,9 +178,9 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
         };
     }
 
-    public async Task<List<NotificationReminder>> SendNotification(Accreditation accreditation)
+    public async Task<List<NotificationReminder>> SendNotification(Accreditation accreditation, ServiceContext serviceContext)
     {
-        StandaloneNotificationBEList notifications = CreateNotifications(accreditation);
+        StandaloneNotificationBEList notifications = await CreateNotifications(accreditation, serviceContext);
         var resultList = new List<NotificationReminder>();
 
         foreach (var notification in notifications)
@@ -216,8 +219,23 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
         };
     }
 
-    private StandaloneNotificationBEList CreateNotifications(Accreditation accreditation)
+    private async Task<string> GetPartyDisplayName(Party party)
     {
+        // TODO! Look up name of person? Party.ToString() will handle redacting.
+        if (party.NorwegianOrganizationNumber == null) return party.ToString();
+
+        var result = await _entityRegistryService.GetOrganizationEntry(party.NorwegianOrganizationNumber);
+        return result.Navn;
+    }
+
+    private async Task<StandaloneNotificationBEList> CreateNotifications(Accreditation accreditation, ServiceContext serviceContext)
+    {
+        var requestorName = await GetPartyDisplayName(accreditation.RequestorParty);
+        var subjectName = await GetPartyDisplayName(accreditation.SubjectParty);
+
+        var renderedTexts =
+            TextTemplateProcessor.GetRenderedTexts(serviceContext, accreditation, requestorName, subjectName, null);
+
         var list = new StandaloneNotificationBEList();
         var notificationSMS = new StandaloneNotification()
         {
@@ -234,7 +252,7 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
             },
             Roles = null,
             ShipmentDateTime = DateTime.Now,
-            TextTokens = GetTextTokens(string.Format(Settings.GetConsentNotificationEmailSubject(accreditation.ServiceContext, accreditation.LanguageCode), accreditation.SubjectParty.ToString(), accreditation.RequestorParty.ToString()), string.Empty),
+            TextTokens = GetTextTokens(renderedTexts.SMSNotificationContent, string.Empty),
             ReceiverEndPoints = GetReceiverEndpoints(Helpers.Notification.TransportType.SMS)
         };
 
@@ -253,7 +271,7 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
             },
             Roles = null,
             ShipmentDateTime = DateTime.Now,
-            TextTokens = GetTextTokens(string.Format(Settings.GetConsentNotificationEmailSubject(accreditation.ServiceContext, accreditation.LanguageCode), accreditation.SubjectParty.ToString(), accreditation.RequestorParty.ToString()), string.Format(Settings.GetConsentNotificationEmailBodyWithReference(accreditation.ServiceContext, accreditation.LanguageCode), accreditation.ConsentReference)),
+            TextTokens = GetTextTokens(renderedTexts.EmailNotificationSubject, renderedTexts.EmailNotificationContent),
             ReceiverEndPoints = GetReceiverEndpoints(Helpers.Notification.TransportType.Email)
         };
 

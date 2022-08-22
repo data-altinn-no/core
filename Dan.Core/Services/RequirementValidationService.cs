@@ -558,7 +558,7 @@ public class RequirementValidationService : IRequirementValidationService
 
     private async Task<PartyTypeConstraint> GetPartyType(string identifier)
     {
-        if (identifier == null) return PartyTypeConstraint.Foreign;
+        if (identifier == null) return PartyTypeConstraint.Foreign; 
 
         var result = PartyTypeConstraint.Invalid;
         if (identifier.Length == 9)

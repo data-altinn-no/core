@@ -328,22 +328,6 @@ public static class Settings
         => string.Format(GetSetting("ConsentRedirectURLPattern"), accreditationId, System.Net.WebUtility.UrlEncode(hmac));
 
     /// <summary>
-    /// Gets the text template for the subject in an email notification.
-    /// </summary>
-    /// <returns>The body</returns>
-    /// TODO! Refactor into servicecontexttexts
-    public static string GetConsentNotificationEmailSubject(string evidenceCodeServiceContext = "", string languageCode = Constants.LANGUAGE_CODE_NORWEGIAN_NB)
-        => GetSetting($"{evidenceCodeServiceContext}_{languageCode}_ConsentNotificationEmailSubject");
-
-    /// <summary>
-    /// Gets the text template for the body in an email notification if a Ted or Doffin reference exists
-    /// </summary>
-    /// <returns>The body</returns>
-    /// TODO! Refactor into servicecontexttexts
-    public static string GetConsentNotificationEmailBodyWithReference(string evidenceCodeServiceContext = "", string languageCode = Constants.LANGUAGE_CODE_NORWEGIAN_NB)
-        => GetSetting($"{evidenceCodeServiceContext}_{languageCode}_ConsentNotificationEmailBodyWithReference");
-
-    /// <summary>
     /// Gets the url template for deep link in Doffin.
     /// </summary>
     /// <returns>The url template.</returns>
@@ -359,8 +343,6 @@ public static class Settings
     /// Gets the Base URL to the Maskinporten environment
     /// </summary>
     public static string MaskinportenUrl => GetSetting("MaskinportenUrl");
-
-
 
     /// <summary>
     /// Gets setting for whether or not to use altinn servers in test mode (for profiling and problem solving)

@@ -19,6 +19,8 @@ public interface IAltinnCorrespondenceService
     /// <summary>
     /// Create a new notification element.
     /// </summary>
+    /// <param name="accreditation">The related accreditation.</param>
+    /// <param name="serviceContext">The current service context.</param>
     /// <returns>A response indicating whether the notification was successfully sent.</returns>
-    Task<List<NotificationReminder>> SendNotification(Accreditation accreditation);
+    Task<List<NotificationReminder>> SendNotification(Accreditation accreditation, ServiceContext serviceContext);
 }

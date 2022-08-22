@@ -65,7 +65,7 @@ namespace Dan.Core
 
             await ValidateAccreditationForReminder(accreditationId, accreditation);
 
-            var response = await _altinnCorrespondenceService.SendNotification(accreditation);
+            var response = await _altinnCorrespondenceService.SendNotification(accreditation, _requestContextService.ServiceContext);
             accreditation.Reminders ??= new List<NotificationReminder>();
             accreditation.Reminders.AddRange(response);
 
