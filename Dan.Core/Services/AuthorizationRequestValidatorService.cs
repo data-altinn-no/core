@@ -72,7 +72,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
             await ValidateSubjectHasValidEntryInEntityRegister();
         }
 
-        ValidateReferenceFields();
+        ValidateLanguageCodes();
 
         var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
 
@@ -214,36 +214,29 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         }
     }
 
-    private void ValidateReferenceFields()
+    private void ValidateLanguageCodes()
     {
-        // Lax validation to allow for changes but still remove potenially dangerous characters
-        var validChars = new Regex(@"^[\w\-\/ ]{1,20}$");
-        var errorMsgTail = "contains invalid characters or is too long. must match ^[\\w\\-\\/ ]{1,20}$";
-
-        if (_authRequest.ConsentReference != null && !validChars.IsMatch(_authRequest.ConsentReference))
+        if (string.IsNullOrEmpty(_authRequest.LanguageCode)) return;
+        var validLanguages = _requestContextService.ServiceContext.ValidLanguages;
+        if (validLanguages != null)
         {
-            throw new InvalidAuthorizationRequestException($"Consent reference {errorMsgTail}");
+            if (validLanguages.Contains(_authRequest.LanguageCode)) return;
+            var languageCodeList = string.Join(", ", validLanguages);
+            if (validLanguages.Count > 1)
+            {
+                languageCodeList = "one of " + languageCodeList;
+            }
+            throw new InvalidAuthorizationRequestException($"Invalid language code for {_requestContextService.ServiceContext.Id}: {_authRequest.LanguageCode} - must be {languageCodeList}");
         }
-
-        if (_authRequest.ExternalReference != null && !validChars.IsMatch(_authRequest.ExternalReference))
+        var acceptedLanguages = new List<string>
         {
-            throw new InvalidAuthorizationRequestException($"External reference {errorMsgTail}");
-        }
-
-        if ((_requestContextService.ServiceContext.Id.Equals("ebevis-product") && !string.IsNullOrEmpty(_authRequest.LanguageCode) && _authRequest.LanguageCode != Constants.LANGUAGE_CODE_NORWEGIAN_NB))
+            Constants.LANGUAGE_CODE_NORWEGIAN_NB,
+            Constants.LANGUAGE_CODE_NORWEGIAN_NN,
+            Constants.LANGUAGE_CODE_ENGLISH
+        };
+        if (!acceptedLanguages.Contains(_authRequest.LanguageCode))
         {
-            throw new InvalidAuthorizationRequestException($"Invalid language code for {_requestContextService.ServiceContext.Id}: {_authRequest.LanguageCode} - must be {Constants.LANGUAGE_CODE_NORWEGIAN_NB}");
-        }
-
-        //Service domain specific language requirements
-        if ((_requestContextService.ServiceContext.Id.Equals("drosjeloyve-product") && !string.IsNullOrEmpty(_authRequest.LanguageCode) && _authRequest.LanguageCode == Constants.LANGUAGE_CODE_ENGLISH))
-        {
-            throw new InvalidAuthorizationRequestException($"Invalid language code for {_requestContextService.ServiceContext.Id}: {_authRequest.LanguageCode} - must be {Constants.LANGUAGE_CODE_NORWEGIAN_NB} or {Constants.LANGUAGE_CODE_NORWEGIAN_NN}");
-        }
-
-        if (!string.IsNullOrEmpty(_authRequest.LanguageCode) && (_authRequest.LanguageCode != Constants.LANGUAGE_CODE_ENGLISH && _authRequest.LanguageCode != Constants.LANGUAGE_CODE_NORWEGIAN_NB && _authRequest.LanguageCode != Constants.LANGUAGE_CODE_NORWEGIAN_NN))
-        {
-            throw new InvalidAuthorizationRequestException($"Invalid language code {_authRequest.LanguageCode} - must be {Constants.LANGUAGE_CODE_ENGLISH}, {Constants.LANGUAGE_CODE_NORWEGIAN_NB} or {Constants.LANGUAGE_CODE_NORWEGIAN_NN}");
+            throw new InvalidAuthorizationRequestException($"Invalid language code for {_requestContextService.ServiceContext.Id}: {_authRequest.LanguageCode} - must be one of {string.Join(",", acceptedLanguages)}");
         }
     }
 
