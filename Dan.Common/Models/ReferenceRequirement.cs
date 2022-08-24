@@ -12,8 +12,8 @@ public class ReferenceRequirement : Requirement
 
     /// <summary>
     /// A regular expression describing the accepted format of a reference. This field is ignored if the
-    /// reference type is <see cref="ReferenceType.ConsentReference"/>
+    /// reference type is "ReferenceType.ConsentReference
     /// </summary>
     [DataMember(Name = "AcceptedFormat")]
-    public string AcceptedFormat { get; set; }
+    public string AcceptedFormat { get; set; } = ".*";
 }

@@ -27,6 +27,7 @@ public enum PartyTypeConstraint
     /// Enterprises in a specific industry
     /// </summary>
     [EnumMember(Value = "NACECode")]
+    // ReSharper disable once InconsistentNaming
     NACECode = 3,
 
     /// <summary>

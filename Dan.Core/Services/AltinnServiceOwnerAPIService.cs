@@ -19,7 +19,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     private readonly ILogger<AltinnServiceOwnerApiService> _log;
     private const string RoleUrl = "{0}authorization/roles?ForceEIAuthentication&subject={1}&reportee={2}&language=1033";
     private const string RightsUrl = "{0}reportees?ForceEIAuthentication=true&subject={1}&ServiceCode={2}&ServiceEdition={3}";
-    private const string RoleMetaUrl = "{0}roledefinitions?ForceEIAuthentication&language=1033";
+    private const string RoleMetaUrl = "{0}roledefinitions?ForceEIAuthentication&language={1}";
     private const string GetSrrUrl = "{0}Srr?ForceEIAuthentication=true&reportee={1}&serviceCode={2}&serviceEditionCode={3}";
     private const string PostSrrUrl = "{0}Srr?ForceEIAuthentication=true";
     private const string DeleteSrrUrl = "{0}Srr/{1}?ForceEIAuthentication=true";
@@ -57,18 +57,13 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     /// </returns>
     public async Task<bool> VerifyAltinnRole(string offeredby, string coveredby, string roleCode)
     {
-        int? id = await GetAltinnRoleDefinitionId(roleCode);
+        var id = await GetAltinnRoleDefinitionId(roleCode);
 
-        if (id != null && id > 0)
-        {
-            var response = await MakeRequest(string.Format(RoleUrl, _baseUrl, coveredby, offeredby));
-            var list = JsonConvert.DeserializeObject<List<AltinnRoleDefinition>>(response);
-            return list.FindIndex(x => x.RoleDefinitionId == id) >= 0;
-        }
-        else
-        {
-            return false;
-        }
+        if (id is not > 0) return false;
+
+        var response = await MakeRequest(string.Format(RoleUrl, _baseUrl, coveredby, offeredby));
+        var list = JsonConvert.DeserializeObject<List<AltinnRoleDefinition>>(response) ?? new List<AltinnRoleDefinition>();
+        return list.FindIndex(x => x.RoleDefinitionId == id) >= 0;
     }
 
     /// <summary>
@@ -108,18 +103,18 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
         // Filter out evidenceCodes with ConsentRequirement having RequiresSrr=false. 
         var evidenceCodesRequiringConsentForSrr = evidenceCodesRequiringConsent.Where(ec =>
         {
-            if (ec.AuthorizationRequirements == null || !ec.AuthorizationRequirements.OfType<ConsentRequirement>().Any())
+            if (!ec.AuthorizationRequirements.OfType<ConsentRequirement>().Any())
             {
                 // Assume always SRR on consent-service evidence codes without requirements
                 return true;
             }
 
-            return ec.AuthorizationRequirements.OfType<ConsentRequirement>().First()!.RequiresSrr;
-        });
+            return ec.AuthorizationRequirements.OfType<ConsentRequirement>().First().RequiresSrr;
+        }).ToList();
 
 
-        await DeleteExistingSrrRights(requestor, evidenceCodesRequiringConsent);
-        await AddSrrRights(requestor, validTo, evidenceCodesRequiringConsent);
+        await DeleteExistingSrrRights(requestor, evidenceCodesRequiringConsentForSrr);
+        await AddSrrRights(requestor, validTo, evidenceCodesRequiringConsentForSrr);
     }
 
     /// <summary>
@@ -127,7 +122,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     /// </summary>
     /// <param name="orgNumber">Organization number</param>
     /// <returns>The organization</returns>
-    public async Task<Organization> GetOrganization(string orgNumber)
+    public async Task<Organization?> GetOrganization(string orgNumber)
     {
         var result = await MakeRequest(string.Format(OrganizationsUrl, _baseUrl, orgNumber));
         return JsonConvert.DeserializeObject<Organization>(result);
@@ -139,7 +134,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
         {
             (string serviceCode, int serviceEditionCode) = GetServiceCodeAndEditionFromEvidenceCode(ec);
             var result = await MakeRequest(string.Format(GetSrrUrl, _baseUrl, requestor, serviceCode, serviceEditionCode));
-            var rights = JsonConvert.DeserializeObject<List<SrrRight>>(result);
+            var rights = JsonConvert.DeserializeObject<List<SrrRight>>(result) ?? new List<SrrRight>();
             foreach (var right in rights)
             {
                 // Delete the existing to avoid conflicts
@@ -192,6 +187,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
 
     private (string, int) GetServiceCodeAndEditionFromEvidenceCode(EvidenceCode ec)
     {
+        // Legacy handling
         if (!string.IsNullOrEmpty(ec.ServiceCode) && ec.ServiceEditionCode > 0)
         {
             return (ec.ServiceCode, ec.ServiceEditionCode);
@@ -205,7 +201,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
 
         // We assume that we only have a single ConsentRequirement for each service context. At this point, the evidence code should only 
         // contain the requirements that apply to the active request context
-        var req = ec.AuthorizationRequirements.OfType<ConsentRequirement>().First()!;
+        var req = ec.AuthorizationRequirements.OfType<ConsentRequirement>().First();
 
         return (req.ServiceCode, req.ServiceEdition);
     }
@@ -215,7 +211,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
         var target = string.Format(RoleMetaUrl, _baseUrl, LanguageEn);
         var response = await MakeRequest(target);
 
-        List<AltinnRoleDefinition> list = JsonConvert.DeserializeObject<List<AltinnRoleDefinition>>(response);
+        List<AltinnRoleDefinition> list = JsonConvert.DeserializeObject<List<AltinnRoleDefinition>>(response) ?? new List<AltinnRoleDefinition>();
         int? resultId = list.Find(x => x.RoleDefinitionCode == roleCode)?.RoleDefinitionId;
 
         return resultId;

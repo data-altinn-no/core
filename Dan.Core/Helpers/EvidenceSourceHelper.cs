@@ -4,13 +4,8 @@ using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
-using Dan.Core.Filters;
 using Newtonsoft.Json;
-using System.Collections;
 using System.Net;
-using System.Text;
-using Dan.Common.Helpers.Extensions;
-using Dan.Core.Middleware;
 using Dan.Core.Models;
 
 namespace Dan.Core.Helpers;
@@ -20,15 +15,10 @@ namespace Dan.Core.Helpers;
 /// </summary>
 public static class EvidenceSourceHelper
 {
-    private const int ERROR_EMPTY_NONSUCESSFUL_RESPONSE = 5001;
-    private const int ERROR_UNHANDLED_INTERNAL_ERROR = 5002;
-    private const int ERROR_UNABLE_TO_DESERIALIZE = 5003;
-    private const int ERROR_INVALID_ERROR_MODEL = 5004;
-
-    /// <summary>
-    /// Cache time span for checking status on asynchronous evidence codes
-    /// </summary>
-    private static TimeSpan AsyncEvidenceStatusCacheTimeSpan { get; set; } = TimeSpan.FromSeconds(10);
+    private const int ErrorEmptyNonsucessfulResponse = 5001;
+    private const int ErrorUnhandledInternalError = 5002;
+    private const int ErrorUnableToDeserialize = 5003;
+    private const int ErrorInvalidErrorModel = 5004;
 
     /// <summary>
     /// Method for wrapping calls to the HTTP client which handles errors from the evidence source. 
@@ -59,7 +49,7 @@ public static class EvidenceSourceHelper
                 return default;
             }
 
-            throw new EvidenceSourcePermanentServerException(ERROR_EMPTY_NONSUCESSFUL_RESPONSE, "Empty non-sucessful response from evidence source", new HttpRequestException($"{response.StatusCode}: {response.ReasonPhrase}"));
+            throw new EvidenceSourcePermanentServerException(ErrorEmptyNonsucessfulResponse, "Empty non-sucessful response from evidence source", new HttpRequestException($"{response.StatusCode}: {response.ReasonPhrase}"));
         }
 
         var json = await response.Content.ReadAsStringAsync();
@@ -78,15 +68,15 @@ public static class EvidenceSourceHelper
                 if (internalError != null)
                 {
                     ex = new EvidenceSourcePermanentServerException(
-                        ERROR_UNHANDLED_INTERNAL_ERROR,
+                        ErrorUnhandledInternalError,
                         "An unhandled internal error occurred in the evidence source",
-                        new ProxiedException(internalError.Message))
+                        new ProxiedException(internalError.Message ?? string.Empty))
                     { InnerStackTrace = internalError.ErrorDetails };
                 }
                 else
                 {
                     ex = new EvidenceSourcePermanentServerException(
-                        ERROR_UNHANDLED_INTERNAL_ERROR,
+                        ErrorUnhandledInternalError,
                         "An unhandled internal error occurred in the evidence source");
                 }
 
@@ -104,7 +94,7 @@ public static class EvidenceSourceHelper
             }
             catch (JsonException exjson)
             {
-                throw new EvidenceSourcePermanentServerException(ERROR_UNABLE_TO_DESERIALIZE, "Unable to deserialize response from evidence source", exjson);
+                throw new EvidenceSourcePermanentServerException(ErrorUnableToDeserialize, "Unable to deserialize response from evidence source", exjson);
             }
         }
     }
@@ -145,12 +135,12 @@ public static class EvidenceSourceHelper
         await DoRequest<string>(request, () => client.SendAsync(request, cts.Token));
     }
 
-    private static EvidenceSourceException GetExceptionInstanceFromErrorModel(HttpRequestMessage req, ErrorModel error)
+    private static EvidenceSourceException GetExceptionInstanceFromErrorModel(HttpRequestMessage req, ErrorModel? error)
     {
         EvidenceSourceException ex;
-        if (!error.Code.HasValue)
+        if (error == null || !error.Code.HasValue)
         {
-            ex = new EvidenceSourcePermanentServerException(ERROR_INVALID_ERROR_MODEL, $"Invalid error model returned from evidence source, message was: {error.Description ?? "(not set)"}");
+            ex = new EvidenceSourcePermanentServerException(ErrorInvalidErrorModel, $"Invalid error model returned from evidence source, message was: {error?.Description ?? "(not set)"}");
         }
         else
         {
@@ -176,7 +166,7 @@ public static class EvidenceSourceHelper
                     break;
                 default:
                     ex = new EvidenceSourcePermanentServerException(
-                        ERROR_INVALID_ERROR_MODEL,
+                        ErrorInvalidErrorModel,
                         $"Invalid error model returned from evidence source. Code and message was: ({error.Code}) {error.Description ?? "(not set)"}");
                     break;
             }
@@ -184,16 +174,16 @@ public static class EvidenceSourceHelper
 
         ex.DetailErrorSource = GetEvidenceSourceIdentifier(req);
         ex.DetailErrorDescription = GetEvidenceSourceErrorMessage(error);
-        ex.InnerStackTrace = error.Stacktrace;
+        ex.InnerStackTrace = error?.Stacktrace;
         return ex;
     }
 
-    private static string GetEvidenceSourceErrorMessage(ErrorModel error)
+    private static string GetEvidenceSourceErrorMessage(ErrorModel? error)
     {
         // Avoid duplicating default text. If a custom text is supplied it will be after the first ": "
-        if (error.Description.Contains(": "))
+        if (error != null && error.Description != null && error.Description.Contains(": "))
         {
-            return error.Description.Substring(error.Description.IndexOf(": ", StringComparison.Ordinal) + 2);
+            return error.Description[(error.Description.IndexOf(": ", StringComparison.Ordinal) + 2)..];
         }
 
         return string.Empty;
@@ -207,17 +197,17 @@ public static class EvidenceSourceHelper
     private static string GetEvidenceSourceIdentifier(HttpRequestMessage req)
     {
         var needle = "-t-e-m-p-";
-        var srchost = req.RequestUri.Host;
+        var srchost = req.RequestUri?.Host;
         var pattern = new Uri(Settings.GetEvidenceSourceUrl(needle)).Host;
         var startpos = pattern.IndexOf(needle, StringComparison.Ordinal);
-        if (startpos == -1)
+        if (startpos == -1 || srchost == null)
         {
             return "ES";
         }
 
         var endpos = startpos + needle.Length;
-        var before = pattern.Substring(0, startpos);
-        var after = pattern.Substring(endpos);
+        var before = pattern[..startpos];
+        var after = pattern[endpos..];
         var id = srchost;
         if (!string.IsNullOrEmpty(before))
         {
@@ -232,7 +222,7 @@ public static class EvidenceSourceHelper
         return id.ToUpper();
     }
 
-    private static Exception GetEvidenceSourceInnerException(ErrorModel error)
+    private static Exception? GetEvidenceSourceInnerException(ErrorModel error)
     {
         return string.IsNullOrEmpty(error.InnerExceptionMessage) ? null : new Exception(error.InnerExceptionMessage);
     }

@@ -38,7 +38,7 @@ public class CacheSafeHttpResponseMessage
     /// <summary>
     /// Reason Phrase
     /// </summary>
-    public string ReasonPhrase { get; set; }
+    public string? ReasonPhrase { get; set; }
 
     /// <summary>
     /// HTTP Status Code
@@ -52,20 +52,14 @@ public class CacheSafeHttpResponseMessage
     /// <returns>A Task for getting CacheSafeHttpResponseMessage</returns>
     public static async Task<CacheSafeHttpResponseMessage> CreateInstance(HttpResponseMessage response)
     {
-        var msg = new CacheSafeHttpResponseMessage
+        return new CacheSafeHttpResponseMessage
         {
             Headers = new CacheSafeHttpHeaders(response.Headers),
             IsSuccessStatusCode = response.IsSuccessStatusCode,
             ReasonPhrase = response.ReasonPhrase,
-            StatusCode = response.StatusCode
+            StatusCode = response.StatusCode,
+            Content = await CacheSafeHttpContent.CreateInstance(response.Content)
         };
-
-        if (response.Content != null)
-        {
-            msg.Content = await CacheSafeHttpContent.CreateInstance(response.Content);
-        }
-
-        return msg;
     }
 
     /// <summary>
@@ -82,6 +76,8 @@ public class CacheSafeHttpResponseMessage
     /// </summary>
     public CacheSafeHttpResponseMessage()
     {
+        Content = new CacheSafeHttpContent();
+        Headers = new CacheSafeHttpHeaders();
     }
 
     /// <summary>
@@ -131,6 +127,8 @@ public class CacheSafeHttpContent
     /// </summary>
     public CacheSafeHttpContent()
     {
+        Headers = new CacheSafeHttpHeaders();
+        Content = string.Empty;
     }
 
     /// <summary>
@@ -147,7 +145,7 @@ public class CacheSafeHttpContent
     /// </summary>
     /// <returns>The object as Task</returns>
     /// <typeparam name="T">Type to return as</typeparam>
-    public Task<T> ReadAsAsync<T>()
+    public Task<T?> ReadAsAsync<T>()
     {
         var obj = JsonConvert.DeserializeObject<T>(Content, new JsonSerializerSettings()
         {

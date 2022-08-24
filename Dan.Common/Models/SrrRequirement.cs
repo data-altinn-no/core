@@ -11,12 +11,12 @@ public class SrrRequirement : Requirement
     /// </summary>
     [DataMember(Name = "serviceCode")]
     [Required]
-    public string ServiceCode { get; set; }
+    public string? ServiceCode { get; set; }
 
     /// <summary>
     /// The service edition for the Altinn service
     /// </summary>
     [DataMember(Name = "serviceEdition")]
     [Required]
-    public string ServiceEdition { get; set; }
+    public string? ServiceEdition { get; set; }
 }

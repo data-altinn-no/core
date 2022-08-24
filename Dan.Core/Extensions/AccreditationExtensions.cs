@@ -60,7 +60,25 @@ public static class AccreditationExtensions
     /// <param name="accreditation"></param>
     public static void PopulateParties(this Accreditation accreditation)
     {
-        accreditation.SubjectParty ??= PartyParser.GetPartyFromIdentifier(accreditation.Subject, out _);
-        accreditation.RequestorParty ??= PartyParser.GetPartyFromIdentifier(accreditation.Requestor, out _);
+        if (accreditation.SubjectParty.Id != null && accreditation.RequestorParty.Id != null)
+        {
+            return;
+        }
+
+        var subjectParty = PartyParser.GetPartyFromIdentifier(accreditation.Subject, out var error);
+        if (subjectParty == null)
+        {
+            throw new InvalidSubjectException($"Invalid subject supplied: {error}");
+        }
+
+        var requestorParty = PartyParser.GetPartyFromIdentifier(accreditation.Requestor, out error);
+        if (requestorParty == null)
+        {
+            throw new InvalidRequestorException($"Invalid requestor supplied: {error}");
+        }
+
+
+        accreditation.SubjectParty = subjectParty;
+        accreditation.RequestorParty = requestorParty;
     }
 }

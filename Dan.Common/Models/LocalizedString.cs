@@ -5,8 +5,8 @@
 /// </summary>
 public class LocalizedString
 {
-    public string En { get; set; }
-    public string NoNb { get; set; }
-    public string NoNn { get; set; }
+    public string? En { get; set; }
+    public string? NoNb { get; set; }
+    public string? NoNn { get; set; }
 
 }

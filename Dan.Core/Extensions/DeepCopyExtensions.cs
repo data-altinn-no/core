@@ -13,6 +13,6 @@ public static class DeepCopyExtensions
         };
 
         var serializedValue = JsonConvert.SerializeObject(objectToClone, serializerSettings);
-        return JsonConvert.DeserializeObject<T>(serializedValue, serializerSettings);
+        return JsonConvert.DeserializeObject<T>(serializedValue, serializerSettings)!;
     }
 }

@@ -23,7 +23,7 @@ public class ExpiredConsentException : DanException
     /// Expired Consent Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public ExpiredConsentException(string message) : base(ErrorCode.ExpiredConsentException, message)
+    public ExpiredConsentException(string? message) : base(ErrorCode.ExpiredConsentException, message)
     {
     }
 
@@ -32,7 +32,7 @@ public class ExpiredConsentException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public ExpiredConsentException(string message, Exception innerException) : base(ErrorCode.ExpiredConsentException, message, innerException)
+    public ExpiredConsentException(string? message, Exception? innerException) : base(ErrorCode.ExpiredConsentException, message, innerException)
     {
     }
 }

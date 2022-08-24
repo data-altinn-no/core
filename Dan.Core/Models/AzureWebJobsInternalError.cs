@@ -35,11 +35,11 @@ public class AzureWebJobsInternalError
     /// Gets or sets the message.
     /// </summary>
     [JsonProperty("message")]
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     /// <summary>
     /// Gets or sets the error details.
     /// </summary>
     [JsonProperty("errorDetails")]
-    public string ErrorDetails { get; set; }
+    public string? ErrorDetails { get; set; }
 }

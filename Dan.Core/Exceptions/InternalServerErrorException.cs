@@ -22,7 +22,7 @@ public class InternalServerErrorException : DanException
     /// Internal Server Error Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InternalServerErrorException(string message) : base(ErrorCode.InternalServerErrorException, message)
+    public InternalServerErrorException(string? message) : base(ErrorCode.InternalServerErrorException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InternalServerErrorException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InternalServerErrorException(string message, Exception innerException) : base(ErrorCode.InternalServerErrorException, message, innerException)
+    public InternalServerErrorException(string? message, Exception? innerException) : base(ErrorCode.InternalServerErrorException, message, innerException)
     {
     }
 }

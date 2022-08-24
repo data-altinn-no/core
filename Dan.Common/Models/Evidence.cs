@@ -10,11 +10,11 @@ public class Evidence
     /// Gets or Sets EvidenceStatus
     /// </summary>
     [DataMember(Name = "evidenceStatus")]
-    public EvidenceStatus EvidenceStatus { get; set; }
+    public EvidenceStatus EvidenceStatus { get; set; } = new();
 
     /// <summary>
     /// The evidence payloads
     /// </summary>
     [DataMember(Name = "evidenceValues")]
-    public List<EvidenceValue> EvidenceValues { get; set; }
+    public List<EvidenceValue> EvidenceValues { get; set; } = new();
 }

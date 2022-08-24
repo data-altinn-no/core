@@ -10,10 +10,10 @@ namespace Dan.Core.Extensions;
 /// </summary>
 public static class ClaimsPrincipalExtensions
 {
-    private const string CLAIM_SCOPE = "scope";
-    private const string CLAIM_CONSUMER = "consumer";
-    private const string CLAIM_CONSUMER_AUTHORITY = "iso6523-actorid-upis";
-    private const string CLAIM_CONSUMER_ID_ISO6523 = "0192";
+    private const string ClaimScope = "scope";
+    private const string ClaimConsumer = "consumer";
+    private const string ClaimConsumerAuthority = "iso6523-actorid-upis";
+    private const string ClaimConsumerIdIso6523 = "0192";
 
     /// <summary>
     /// Convenience method for getting a claim value by name
@@ -21,9 +21,9 @@ public static class ClaimsPrincipalExtensions
     /// <param name="claimsPrincipal">The claims principal</param>
     /// <param name="claimType">The claim requested</param>
     /// <returns>The claim or null</returns>
-    public static string GetClaimValue(this ClaimsPrincipal claimsPrincipal, string claimType)
+    public static string? GetClaimValue(this ClaimsPrincipal claimsPrincipal, string claimType)
     {
-        Claim claim = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == claimType);
+        var claim = claimsPrincipal.Claims.FirstOrDefault(x => x.Type == claimType);
         return claim?.Value;
     }
 
@@ -35,7 +35,7 @@ public static class ClaimsPrincipalExtensions
     /// <returns>a bool</returns>
     public static bool HasScope(this ClaimsPrincipal claimsPrincipal, string scope)
     {
-        string[] scopes = claimsPrincipal?.GetClaimValue(CLAIM_SCOPE)?.Split(' ');
+        var scopes = claimsPrincipal.GetClaimValue(ClaimScope)?.Split(' ');
         return !string.IsNullOrEmpty(scopes?.FirstOrDefault(s => s.Equals(scope)));
     }
 
@@ -44,15 +44,20 @@ public static class ClaimsPrincipalExtensions
     /// </summary>
     /// <param name="claimsPrincipal"></param>
     /// <returns></returns>
-    public static string[] GetScopes(this ClaimsPrincipal claimsPrincipal)
+    public static string[]? GetScopes(this ClaimsPrincipal claimsPrincipal)
     {
-        return claimsPrincipal?.GetClaimValue(CLAIM_SCOPE)?.Split(' ');
+        return claimsPrincipal.GetClaimValue(ClaimScope)?.Split(' ');
     }
 
     public static string GetOrganizationNumberClaim(this ClaimsPrincipal claimsPrincipal)
     {
-        string rawClaimValue = claimsPrincipal.GetClaimValue(CLAIM_CONSUMER);
-        ConsumerClaim consumerClaim;
+        var rawClaimValue = claimsPrincipal.GetClaimValue(ClaimConsumer);
+        if (rawClaimValue == null)
+        {
+            throw new ArgumentException("Invalid consumer claim: invalid JSON");
+        }
+
+        ConsumerClaim? consumerClaim;
         try
         {
             consumerClaim = JsonConvert.DeserializeObject<ConsumerClaim>(rawClaimValue);
@@ -62,13 +67,18 @@ public static class ClaimsPrincipalExtensions
             throw new ArgumentException("Invalid consumer claim: invalid JSON");
         }
 
-        if (consumerClaim.Authority != CLAIM_CONSUMER_AUTHORITY)
+        if (consumerClaim == null)
+        {
+            throw new ArgumentException("Invalid consumer claim: invalid JSON");
+        }
+
+        if (consumerClaim.Authority != ClaimConsumerAuthority)
         {
             throw new ArgumentException("Invalid consumer claim: unexpected authority");
         }
 
-        string[] identityParts = consumerClaim.ID.Split(':');
-        if (identityParts[0] != CLAIM_CONSUMER_ID_ISO6523)
+        var identityParts = consumerClaim.ID.Split(':');
+        if (identityParts[0] != ClaimConsumerIdIso6523)
         {
             throw new ArgumentException("Invalid consumer claim: unexpected ISO6523 identifier");
         }

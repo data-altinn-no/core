@@ -10,8 +10,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Dan.Core.Services;
 
-using System.Text.RegularExpressions;
-
 /// <summary>
 /// Helper for performing authorization request validation
 /// </summary>
@@ -22,9 +20,9 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly IRequirementValidationService _requirementValidationService;
     private readonly IRequestContextService _requestContextService;
-    private AuthorizationRequest? _authRequest;
-    private List<EvidenceCode> _registeredEvidenceCodes;
-    private List<EvidenceCode> _evidenceCodesFromRequest;
+    private AuthorizationRequest _authRequest = new();
+    private List<EvidenceCode> _registeredEvidenceCodes = new();
+    private List<EvidenceCode> _evidenceCodesFromRequest = new();
 
     /// <summary>
     /// Takes a authorization request that should be validated as well as a HTTP client for performing external lookups
@@ -98,7 +96,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     /// Get the validated authorization request
     /// </summary>
     /// <returns>An authorization request</returns>
-    public AuthorizationRequest? GetAuthorizationRequest()
+    public AuthorizationRequest GetAuthorizationRequest()
     {
         return _authRequest;
     }
@@ -113,7 +111,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         var evidenceCodesFromRequest = evidenceCodes.DeepCopy();
         foreach (var evidenceCode in evidenceCodesFromRequest)
         {
-            evidenceCode.Parameters = _authRequest.EvidenceRequests.Find(x => x.EvidenceCodeName == evidenceCode.EvidenceCodeName)?.Parameters;
+            evidenceCode.Parameters = _authRequest.EvidenceRequests.Find(x => x.EvidenceCodeName == evidenceCode.EvidenceCodeName)?.Parameters ?? new List<EvidenceParameter>();
         }
 
         return evidenceCodesFromRequest;
@@ -155,7 +153,12 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     /// <exception cref="InvalidRequestorException"></exception>
     private void ValidateAndPopulateRequestor()
     {
-        Party party = PartyParser.GetPartyFromIdentifier(_authRequest.Requestor, out string error);
+        if (_authRequest.Requestor == null)
+        {
+            throw new InvalidRequestorException($"Invalid requestor supplied (was null)");
+        }
+
+        Party? party = PartyParser.GetPartyFromIdentifier(_authRequest.Requestor, out string? error);
         if (party == null)
         {
             throw new InvalidRequestorException($"Invalid requestor supplied: {error}");
@@ -166,13 +169,18 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     }
 
     /// <summary>
-    /// <summary>
     /// Uses PartyParser on the supplied subject, and populates SubjectParty with it. Overwrites Requestor with norwegian identifier if applicable, else set to null
     /// </summary>
     /// <exception cref="InvalidSubjectException"></exception>
     private void ValidateAndPopulateSubject()
     {
-        Party party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out string error);
+
+        if (_authRequest.Subject == null)
+        {
+            return;
+        }
+
+        Party? party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out string? error);
         if (party == null)
         {
             throw new InvalidSubjectException($"Invalid subject supplied: {error}");
@@ -184,12 +192,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
 
     private void ValidateLegalBasisWellFormed()
     {
-        if (_authRequest.LegalBasisList == null)
-        {
-            _authRequest.LegalBasisList = new List<LegalBasis>();
-            return;
-        }
-
         foreach (var legalBasis in _authRequest.LegalBasisList)
         {
             if (string.IsNullOrEmpty(legalBasis.Id))
@@ -271,6 +273,11 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
 
     private async Task ValidateSubjectHasValidEntryInEntityRegister()
     {
+        if (_authRequest.Subject == null)
+        {
+            throw new InvalidSubjectException("Subject was not set");
+        }
+
         var entity = await _entityRegistryService.GetOrganizationEntry(_authRequest.Subject);
 
         if (entity == null)
@@ -330,17 +337,12 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
                 continue;
             }
 
-            // Normalize for simpler logic
-            evidenceRequest.Parameters ??= new List<EvidenceParameter>();
+            // Normalize for simpler handling
             registeredEvidenceCode.Parameters ??= new List<EvidenceParameter>();
+            evidenceRequest.Parameters ??= new List<EvidenceParameter>();
 
-            if (registeredEvidenceCode.Parameters.Count == 0)
+            if (registeredEvidenceCode.Parameters.Count == 0 && evidenceRequest.Parameters.Count > 0)
             {
-                if (registeredEvidenceCode.Parameters.Count == 0)
-                {
-                    continue;
-                }
-
                 throw new InvalidEvidenceRequestParameterException($"The evidence code '{evidenceRequest.EvidenceCodeName}' was requested with parameters, but none were expected");
             }
 
@@ -372,21 +374,21 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
                         // We allow anything as attachment or string
                         break;
                     case EvidenceParamType.Boolean:
-                        if (!bool.TryParse(evidenceRequestParameter.Value.ToString(), out _))
+                        if (!bool.TryParse(evidenceRequestParameter.Value?.ToString(), out _))
                         {
                             throw new InvalidEvidenceRequestParameterException($"Invalid evidence code parameter value given for parameter '{evidenceRequestParameter.EvidenceParamName}', expected 'true' or 'false'");
                         }
 
                         break;
                     case EvidenceParamType.DateTime:
-                        if (!DateTime.TryParse(evidenceRequestParameter.Value.ToString(), out _))
+                        if (!DateTime.TryParse(evidenceRequestParameter.Value?.ToString(), out _))
                         {
                             throw new InvalidEvidenceRequestParameterException($"Invalid evidence code parameter value given for parameter '{evidenceRequestParameter.EvidenceParamName}', expected ISO 8601 datetime");
                         }
 
                         break;
                     case EvidenceParamType.Number:
-                        if (!decimal.TryParse(evidenceRequestParameter.Value.ToString(), out _))
+                        if (!decimal.TryParse(evidenceRequestParameter.Value?.ToString(), out _))
                         {
                             throw new InvalidEvidenceRequestParameterException($"Invalid evidence code parameter value given for parameter '{evidenceRequestParameter.EvidenceParamName}', expected numeric value");
                         }

@@ -22,7 +22,7 @@ public class InvalidEvidenceRequestException : DanException
     /// Invalid Certificate Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidEvidenceRequestException(string message) : base(ErrorCode.InvalidEvidenceRequestException, message)
+    public InvalidEvidenceRequestException(string? message) : base(ErrorCode.InvalidEvidenceRequestException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidEvidenceRequestException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidEvidenceRequestException(string message, Exception innerException) : base(ErrorCode.InvalidEvidenceRequestException, message, innerException)
+    public InvalidEvidenceRequestException(string? message, Exception? innerException) : base(ErrorCode.InvalidEvidenceRequestException, message, innerException)
     {
     }
 }

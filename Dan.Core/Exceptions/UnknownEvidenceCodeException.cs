@@ -22,7 +22,7 @@ public class UnknownEvidenceCodeException : DanException
     /// Unknown Evidence Code Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public UnknownEvidenceCodeException(string message) : base(ErrorCode.UnknownEvidenceCodeException, message)
+    public UnknownEvidenceCodeException(string? message) : base(ErrorCode.UnknownEvidenceCodeException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class UnknownEvidenceCodeException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public UnknownEvidenceCodeException(string message, Exception innerException) : base(ErrorCode.UnknownEvidenceCodeException, message, innerException)
+    public UnknownEvidenceCodeException(string? message, Exception? innerException) : base(ErrorCode.UnknownEvidenceCodeException, message, innerException)
     {
     }
 }

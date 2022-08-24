@@ -14,7 +14,7 @@ public static class OrganizationNumberValidator
     {
         int[] weight = { 3, 2, 7, 6, 5, 4, 3, 2 };
 
-        if (orgNo == null || orgNo.Length != 9)
+        if (orgNo.Length != 9)
         {
             return false;
         }

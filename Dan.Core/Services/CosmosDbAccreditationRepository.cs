@@ -120,7 +120,7 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
 
         accreditations.ForEach(x =>
         {
-            x.EvidenceCodes = null;
+            x.EvidenceCodes = new List<EvidenceCode>();
             x.PopulateParties();
         });
 

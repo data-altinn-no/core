@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using Dan.Core.Exceptions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 
@@ -18,8 +19,18 @@ public static class FunctionContextExtensions
         var assembly = Assembly.LoadFrom(assemblyPath);
         var typeName = entryPoint.Substring(0, entryPoint.LastIndexOf('.'));
         var type = assembly.GetType(typeName);
+        if (type == null)
+        {
+            throw new InternalServerErrorException($"{nameof(GetTargetFunctionMethod)} failed loading type {typeName}");
+        }
+
         var methodName = entryPoint.Substring(entryPoint.LastIndexOf('.') + 1);
         var method = type.GetMethod(methodName);
+        if (method == null)
+        {
+            throw new InternalServerErrorException($"{nameof(GetTargetFunctionMethod)} failed loading method {typeName}");
+        }
+
         return method;
     }
 

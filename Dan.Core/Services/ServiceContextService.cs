@@ -4,6 +4,8 @@ using Dan.Common.Models;
 using Dan.Core.ServiceContextTexts;
 using Dan.Core.Services.Interfaces;
 
+namespace Dan.Core.Services;
+
 public class ServiceContextService : IServiceContextService
 {
     public async Task<List<ServiceContext>> GetRegisteredServiceContexts()

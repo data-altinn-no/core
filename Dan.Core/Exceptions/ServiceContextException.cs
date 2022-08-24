@@ -17,14 +17,14 @@ public class ServiceContextException : DanException
     /// ServiceContextException
     /// </summary>
     /// <param name="message">Error Message</param>
-    public ServiceContextException(string message) : base(ErrorCode.ServiceContextException, message) { }
+    public ServiceContextException(string? message) : base(ErrorCode.ServiceContextException, message) { }
     /// <summary>
     /// ServiceContextException
     /// </summary>
     /// <param name="errorCode">Error code</param>
     /// <param name="message">Error Message</param>
     /// <param name="innerException">Inner exception</param>
-    public ServiceContextException(string message, Exception innerException) : base(ErrorCode.ServiceContextException, message, innerException) { }
+    public ServiceContextException(string? message, Exception? innerException) : base(ErrorCode.ServiceContextException, message, innerException) { }
 
 
 }

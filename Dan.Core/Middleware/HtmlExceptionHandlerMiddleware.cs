@@ -1,12 +1,12 @@
-﻿using Dan.Common.Exceptions;
+﻿using System.Net;
+using Dan.Common.Exceptions;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
-using Microsoft.Extensions.Logging;
-using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
+using Microsoft.Extensions.Logging;
 
-namespace Dan.Core.Filters;
+namespace Dan.Core.Middleware;
 
 /// <summary>
 /// Error Handler Filter
@@ -31,8 +31,8 @@ public class HtmlExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
         catch (Exception rootException)
         {
             // We only deal with a single exception (the first one) if it's an aggregate exception
-            var exception = rootException is AggregateException
-                ? (rootException as AggregateException).Flatten().InnerExceptions.First()
+            var exception = rootException is AggregateException aggregateException
+                ? aggregateException.Flatten().InnerExceptions.First()
                 : rootException;
 
             _logger.LogError($"HtmlExceptionHandlerMiddleware triggered. Function '{context.FunctionDefinition.Name}:{context.InvocationId} failed:\n{exception}");
@@ -40,16 +40,15 @@ public class HtmlExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
             var statusCode = HttpStatusCode.InternalServerError;
             var reason = exception.Message;
 
-            if (exception is DanException)
+            if (exception is DanException danException)
             {
-                var nex = exception as DanException;
-                statusCode = nex.GetErrorCode();
-                reason = $"{(int)nex.ExceptionErrorCode} {nex.ExceptionErrorCode}";
+                statusCode = danException.GetErrorCode();
+                reason += $" ({(int)danException.ExceptionErrorCode})";
             }
 
             var trace = WebUtility.HtmlEncode(exception.StackTrace);
             var title = $"{(int)statusCode} {statusCode}";
-            var message = Settings.IsDevEnvironment ? $"{exception.Message}<br /><br/><pre>{trace}</pre>" : $"{exception.Message}";
+            var message = Settings.IsDevEnvironment ? $"{reason}<br /><br/><pre>{trace}</pre>" : $"{reason}";
 
             var request = await context.GetHttpRequestDataAsync();
             var response = request!.CreateHtmlResponse(statusCode, "Error.html", new { title, message });

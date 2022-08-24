@@ -22,7 +22,7 @@ public class ServiceNotAvailableException : DanException
     /// Source Not Available Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public ServiceNotAvailableException(string message) : base(ErrorCode.ServiceNotAvailableException, message)
+    public ServiceNotAvailableException(string? message) : base(ErrorCode.ServiceNotAvailableException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class ServiceNotAvailableException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public ServiceNotAvailableException(string message, Exception innerException) : base(ErrorCode.ServiceNotAvailableException, message, innerException)
+    public ServiceNotAvailableException(string? message, Exception? innerException) : base(ErrorCode.ServiceNotAvailableException, message, innerException)
     {
     }
 }

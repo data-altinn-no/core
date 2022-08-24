@@ -1,5 +1,4 @@
 ﻿using Dan.Common.Enums;
-using Dan.Common.Helpers.Extensions;
 using Dan.Common.Helpers.Util;
 using Dan.Common.Models;
 using Dan.Core.Config;
@@ -78,7 +77,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         var evidenceHarvesterRequest = new EvidenceHarvesterRequest()
         {
             OrganizationNumber = identifier,
-            SubjectParty = PartyParser.GetPartyFromIdentifier(identifier, out string _),
+            SubjectParty = PartyParser.GetPartyFromIdentifier(identifier, out string? _),
             EvidenceCodeName = evidenceCode.EvidenceCodeName,
             Parameters = evidenceCode.Parameters
         };
@@ -152,6 +151,11 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
     private async Task<string> GetAccessToken(EvidenceCode evidenceCode, Accreditation accreditation, EvidenceHarvesterOptions evidenceHarvesterOptions)
     {
+        if (_requestContextService.Request == null)
+        {
+            throw new ArgumentNullException(nameof(_requestContextService.Request));
+        }
+
         if (evidenceHarvesterOptions.ReuseClientAccessToken && _requestContextService.Request.GetAuthorizationToken() != null)
         {
             return _requestContextService.Request.GetAuthorizationToken()!;
@@ -160,6 +164,11 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         if (evidenceHarvesterOptions.OverriddenAccessToken != null)
         {
             return evidenceHarvesterOptions.OverriddenAccessToken;
+        }
+
+        if (evidenceCode.RequiredScopes == null)
+        {
+            throw new ArgumentNullException(nameof(evidenceCode.RequiredScopes));
         }
 
         var metricName = evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner
@@ -192,6 +201,15 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
             }
 
             var response = JsonConvert.DeserializeObject<Dictionary<string, string>>(token);
+
+            if (response?["access_token"] == null)
+            {
+                _log.LogError(
+                    $"Failed parsing maskinporten token for requiredScopes={evidenceCode.RequiredScopes}");
+                throw new ServiceNotAvailableException(
+                    "Temporarily unable to retrieve authentication token from third party service");
+            }
+
             return response["access_token"];
         }
     }

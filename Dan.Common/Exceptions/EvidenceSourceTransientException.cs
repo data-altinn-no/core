@@ -34,7 +34,7 @@ public class EvidenceSourceTransientException : EvidenceSourceException
     /// <param name="message">
     /// Error Message
     /// </param>
-    public EvidenceSourceTransientException(int detailErrorCode, string message) : base(ErrorCode.EvidenceSourceTransientException, detailErrorCode, message)
+    public EvidenceSourceTransientException(int detailErrorCode, string? message) : base(ErrorCode.EvidenceSourceTransientException, detailErrorCode, message)
     {
     }
 
@@ -50,7 +50,7 @@ public class EvidenceSourceTransientException : EvidenceSourceException
     /// <param name="innerException">
     /// Inner exception
     /// </param>
-    public EvidenceSourceTransientException(int detailErrorCode, string message, Exception innerException) : base(ErrorCode.EvidenceSourceTransientException, detailErrorCode, message, innerException)
+    public EvidenceSourceTransientException(int detailErrorCode, string? message, Exception? innerException) : base(ErrorCode.EvidenceSourceTransientException, detailErrorCode, message, innerException)
     {
     }
 }

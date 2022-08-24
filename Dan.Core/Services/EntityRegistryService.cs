@@ -14,12 +14,12 @@ class EntityRegistryService : IEntityRegistryService
 
     public static TimeSpan DistributedCacheTtl = TimeSpan.FromHours(12);
 
-    private IHttpClientFactory _httpClientFactory;
-    private IPolicyRegistry<string> _policyRegistry;
-    private readonly string[] validUnitTypes = { "ADOS", "FKF", "FYLK", "KF", "KOMM", "ORGL", "STAT", "SF", "SÆR" };
-    private readonly string[] validSectorCodes = { "1110", "1120", "1510", "1520", "3900", "6100", "6500" };
-    private const string CACHING_POLICY = "ERCachePolicy";
-    private const string HTTP_CLIENT_NAME = "SafeHttpClient";
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IPolicyRegistry<string> _policyRegistry;
+    private readonly string[] _validUnitTypes = { "ADOS", "FKF", "FYLK", "KF", "KOMM", "ORGL", "STAT", "SF", "SÆR" };
+    private readonly string[] _validSectorCodes = { "1110", "1120", "1510", "1520", "3900", "6100", "6500" };
+    private const string CachingPolicy = "ERCachePolicy";
+    private const string HttpClientName = "SafeHttpClient";
 
     public EntityRegistryService(IHttpClientFactory httpClientFactory, IPolicyRegistry<string> policyRegistry)
     {
@@ -28,7 +28,7 @@ class EntityRegistryService : IEntityRegistryService
     }
 
     /// <inheritdoc/>
-    public async Task<BREntityRegisterEntry> GetOrganizationEntry(string orgNumber)
+    public async Task<BREntityRegisterEntry?> GetOrganizationEntry(string orgNumber)
     {
         if (Settings.IsDevEnvironment && Settings.TestEnvironmentValidOrgs.Contains(orgNumber))
         {
@@ -57,14 +57,13 @@ class EntityRegistryService : IEntityRegistryService
 
     private bool IsPublicAgency(BREntityRegisterEntry entity)
     {
-        return (!string.IsNullOrEmpty(entity.Organisasjonsform.Kode) && validUnitTypes.Contains(entity.Organisasjonsform.Kode))
-               || (!string.IsNullOrEmpty(entity.Naeringskode1?.Kode) && entity.Naeringskode1.Kode.StartsWith("84"))
-               || (!string.IsNullOrEmpty(entity.InstitusjonellSektorkode?.Kode) && validSectorCodes.Contains(entity.InstitusjonellSektorkode.Kode));
+        return (!string.IsNullOrEmpty(entity.Organisasjonsform.Kode) && _validUnitTypes.Contains(entity.Organisasjonsform.Kode))
+               || (!string.IsNullOrEmpty(entity.Naeringskode1.Kode) && entity.Naeringskode1.Kode.StartsWith("84"))
+               || (!string.IsNullOrEmpty(entity.InstitusjonellSektorkode.Kode) && _validSectorCodes.Contains(entity.InstitusjonellSektorkode.Kode));
     }
 
     private bool IsSyntheticOrganizationNumber(string organizationNumber)
     {
-        if (organizationNumber == null) return false;
         return organizationNumber.StartsWith("2") || organizationNumber.StartsWith("3");
     }
 
@@ -86,7 +85,8 @@ class EntityRegistryService : IEntityRegistryService
         return string.Format(validationUrl, organizationNumber);
     }
 
-    private async Task<BREntityRegisterEntry> GetUnitFromBR(string organizationNumber, bool isMainUnit)
+    // ReSharper disable once InconsistentNaming
+    private async Task<BREntityRegisterEntry?> GetUnitFromBR(string organizationNumber, bool isMainUnit)
     {
         var validationUrl = isMainUnit
             ? GetValidationUrl(organizationNumber)
@@ -96,11 +96,11 @@ class EntityRegistryService : IEntityRegistryService
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.SetAllowedErrorCodes(HttpStatusCode.NotFound, HttpStatusCode.BadRequest);
 
-        var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CACHING_POLICY);
-        var responseContent = await cachePolicy.ExecuteAsync(async context => await GetResponseString(request),
+        var cachePolicy = _policyRegistry.Get<AsyncPolicy<string?>>(CachingPolicy);
+        var responseContent = await cachePolicy.ExecuteAsync(async _ => await GetResponseString(request),
             new Context(request.Key(CacheArea.Absolute)));
 
-        BREntityRegisterEntry result;
+        BREntityRegisterEntry? result;
         if (responseContent == null) return null;
         try
         {
@@ -114,9 +114,9 @@ class EntityRegistryService : IEntityRegistryService
         return result;
     }
 
-    private async Task<string> GetResponseString(HttpRequestMessage request)
+    private async Task<string?> GetResponseString(HttpRequestMessage request)
     {
-        var client = _httpClientFactory.CreateClient(HTTP_CLIENT_NAME);
+        var client = _httpClientFactory.CreateClient(HttpClientName);
         HttpResponseMessage response = await client.SendAsync(request);
         if (response.IsSuccessStatusCode)
         {

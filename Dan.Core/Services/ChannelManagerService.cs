@@ -26,7 +26,7 @@ public class ChannelManagerService : IChannelManagerService
     {
         var type = typeof(T);
         if (!_endpoints.ContainsKey(type))
-            return null;
+            throw new AltinnServiceException($"Unknown type: {type.Name}");
         if (!_channels.ContainsKey(type))
             _channels.TryAdd(type, ClientFactory<T>(_url + _endpoints[type]));
         return (T)_channels[type];
@@ -68,10 +68,7 @@ public class ChannelManagerService : IChannelManagerService
             basicBinding.Security.Mode = BasicHttpSecurityMode.Transport;
         }
 
-        var obj = (T)Activator.CreateInstance(typeof(T), new object[] {
-            basicBinding,
-            new EndpointAddress(new Uri(endpoint))
-        });
+        var obj = (T)Activator.CreateInstance(typeof(T), basicBinding, new EndpointAddress(new Uri(endpoint)))!;
 
         return obj;
     }

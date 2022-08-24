@@ -22,7 +22,7 @@ public class InvalidCertificateException : DanException
     /// Invalid Certificate Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidCertificateException(string message) : base(ErrorCode.InvalidCertificateException, message)
+    public InvalidCertificateException(string? message) : base(ErrorCode.InvalidCertificateException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidCertificateException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidCertificateException(string message, Exception innerException) : base(ErrorCode.InvalidCertificateException, message, innerException)
+    public InvalidCertificateException(string? message, Exception? innerException) : base(ErrorCode.InvalidCertificateException, message, innerException)
     {
     }
 }

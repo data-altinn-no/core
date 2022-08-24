@@ -22,7 +22,7 @@ public class InvalidAuthorizationRequestException : DanException
     /// Invalid Authorization Request Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidAuthorizationRequestException(string message) : base(ErrorCode.InvalidAuthorizationRequestException, message)
+    public InvalidAuthorizationRequestException(string? message) : base(ErrorCode.InvalidAuthorizationRequestException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidAuthorizationRequestException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidAuthorizationRequestException(string message, Exception innerException) : base(ErrorCode.InvalidAuthorizationRequestException, message, innerException)
+    public InvalidAuthorizationRequestException(string? message, Exception? innerException) : base(ErrorCode.InvalidAuthorizationRequestException, message, innerException)
     {
     }
 }

@@ -9,7 +9,7 @@ public interface IEntityRegistryService
     /// </summary>
     /// <param name="orgNumber">The organization number</param>
     /// <returns>The organization entry from ER, null if not found</returns>
-    public Task<BREntityRegisterEntry> GetOrganizationEntry(string orgNumber);
+    public Task<BREntityRegisterEntry?> GetOrganizationEntry(string orgNumber);
 
     /// <summary>
     /// Uses various heuristics to determine if a organization is a public agency

@@ -22,7 +22,7 @@ public class InvalidRequestorException : DanException
     /// Invalid Requestor Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidRequestorException(string message) : base(ErrorCode.InvalidRequestorException, message)
+    public InvalidRequestorException(string? message) : base(ErrorCode.InvalidRequestorException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidRequestorException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidRequestorException(string message, Exception innerException) : base(ErrorCode.InvalidRequestorException, message, innerException)
+    public InvalidRequestorException(string? message, Exception? innerException) : base(ErrorCode.InvalidRequestorException, message, innerException)
     {
     }
 }

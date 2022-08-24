@@ -23,7 +23,7 @@ public class DeletedConsentException : DanException
     /// Deleted Consent Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public DeletedConsentException(string message) : base(ErrorCode.DeletedConsentException, message)
+    public DeletedConsentException(string? message) : base(ErrorCode.DeletedConsentException, message)
     {
     }
 
@@ -32,7 +32,7 @@ public class DeletedConsentException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public DeletedConsentException(string message, Exception innerException) : base(ErrorCode.DeletedConsentException, message, innerException)
+    public DeletedConsentException(string? message, Exception? innerException) : base(ErrorCode.DeletedConsentException, message, innerException)
     {
     }
 }

@@ -11,7 +11,7 @@ public class AltinnRoleRequirement : Requirement
     /// </summary>
     [DataMember(Name = "roleCode")]
     [Required]
-    public string RoleCode { get; set; }
+    public string? RoleCode { get; set; }
 
     /// <summary>
     /// Which party needs to delegate the role

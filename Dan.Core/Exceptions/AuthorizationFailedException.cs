@@ -22,7 +22,7 @@ public class AuthorizationFailedException : DanException
     /// Authorization Failed Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public AuthorizationFailedException(string message) : base(ErrorCode.AuthorizationFailedException, message)
+    public AuthorizationFailedException(string? message) : base(ErrorCode.AuthorizationFailedException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class AuthorizationFailedException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public AuthorizationFailedException(string message, Exception innerException) : base(ErrorCode.AuthorizationFailedException, message, innerException)
+    public AuthorizationFailedException(string? message, Exception? innerException) : base(ErrorCode.AuthorizationFailedException, message, innerException)
     {
     }
 }

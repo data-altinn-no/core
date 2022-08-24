@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using Dan.Common;
-using Dan.Common.Helpers.Util;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
 

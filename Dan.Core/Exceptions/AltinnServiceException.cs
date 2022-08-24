@@ -31,7 +31,7 @@ public class AltinnServiceException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public AltinnServiceException(string message, Exception innerException) : base(ErrorCode.AltinnServiceException, message, innerException)
+    public AltinnServiceException(string? message, Exception? innerException) : base(ErrorCode.AltinnServiceException, message, innerException)
     {
     }
 }

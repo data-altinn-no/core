@@ -8,6 +8,8 @@ using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
 using Dan.Core.UnitTest.Settings;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dan.Core.UnitTest
@@ -17,11 +19,11 @@ namespace Dan.Core.UnitTest
     public class EvidenceHarvesterServiceTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
-        private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        private readonly Mock<IConsentService> _mockConsentService = new Mock<IConsentService>();
-        private readonly Mock<IEvidenceStatusService> _mockEvidenceStatusService = new Mock<IEvidenceStatusService>();
-        private readonly Mock<ITokenRequesterService> _mockTokenRequesterService = new Mock<ITokenRequesterService>();
-        private readonly Mock<IRequestContextService> _mockRequestContextService = new Mock<IRequestContextService>();
+        private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new();
+        private readonly Mock<IConsentService> _mockConsentService = new();
+        private readonly Mock<IEvidenceStatusService> _mockEvidenceStatusService = new();
+        private readonly Mock<ITokenRequesterService> _mockTokenRequesterService = new();
+        private readonly Mock<IRequestContextService> _mockRequestContextService = new();
 
         private const string CONSENT_DENIED = "denied";
 
@@ -38,6 +40,8 @@ namespace Dan.Core.UnitTest
             _mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(TestHelpers.GetHttpClientMock("[{}]"));
             _mockTokenRequesterService.Setup(_ => _.GetMaskinportenToken(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.FromResult("{\"access_token\":\"\"}"));
+            _mockRequestContextService.SetupProperty(_ => _.Request,
+                new Mock<HttpRequestData>(new Mock<FunctionContext>().Object).Object);
         }
 
         [TestMethod]

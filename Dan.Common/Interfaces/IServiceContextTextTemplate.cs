@@ -11,6 +11,7 @@ public interface IServiceContextTextTemplate<out T>
 
     public T EmailNotificationContent { get; }
 
+    // ReSharper disable once InconsistentNaming
     public T SMSNotificationContent { get; }
 
     public T CorrespondenceSender { get; }

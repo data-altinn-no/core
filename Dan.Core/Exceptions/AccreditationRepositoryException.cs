@@ -22,7 +22,7 @@ public class AccreditationRepositoryException : DanException
     /// Accreditation Repository Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public AccreditationRepositoryException(string message) : base(ErrorCode.AccreditationRepositoryException, message)
+    public AccreditationRepositoryException(string? message) : base(ErrorCode.AccreditationRepositoryException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class AccreditationRepositoryException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public AccreditationRepositoryException(string message, Exception innerException) : base(ErrorCode.AccreditationRepositoryException, message, innerException)
+    public AccreditationRepositoryException(string? message, Exception? innerException) : base(ErrorCode.AccreditationRepositoryException, message, innerException)
     {
     }
 }

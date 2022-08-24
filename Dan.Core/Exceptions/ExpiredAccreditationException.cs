@@ -22,7 +22,7 @@ public class ExpiredAccreditationException : DanException
     /// Expired Accreditation Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public ExpiredAccreditationException(string message) : base(ErrorCode.ExpiredAccreditationException, message)
+    public ExpiredAccreditationException(string? message) : base(ErrorCode.ExpiredAccreditationException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class ExpiredAccreditationException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public ExpiredAccreditationException(string message, Exception innerException) : base(ErrorCode.ExpiredAccreditationException, message, innerException)
+    public ExpiredAccreditationException(string? message, Exception? innerException) : base(ErrorCode.ExpiredAccreditationException, message, innerException)
     {
     }
 }

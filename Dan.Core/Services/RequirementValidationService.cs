@@ -5,6 +5,7 @@ using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
 using Dan.Core.Services.Interfaces;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using Dan.Common.Helpers.Util;
 
@@ -18,8 +19,8 @@ public class RequirementValidationService : IRequirementValidationService
     private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
     private readonly IEntityRegistryService _entityRegistryService;
     private readonly IRequestContextService _requestContextService;
-    private AuthorizationRequest? _authRequest;
-    private string? _owner;
+    private AuthorizationRequest _authRequest;
+    private string _owner;
     private List<string>? _maskinportenScopes;
     private readonly ConcurrentBag<string> _errors;
     private readonly ConcurrentDictionary<string, Requirement> _skippedEvidenceCodes;
@@ -35,7 +36,8 @@ public class RequirementValidationService : IRequirementValidationService
         _altinnServiceOwnerApiService = altinnServiceOwnerApiService;
         _entityRegistryService = entityRegistryService;
         _requestContextService = requestContextService;
-
+        _owner = string.Empty;
+        _authRequest = new AuthorizationRequest();
         _errors = new ConcurrentBag<string>();
         _skippedEvidenceCodes = new ConcurrentDictionary<string, Requirement>();
     }
@@ -46,14 +48,14 @@ public class RequirementValidationService : IRequirementValidationService
     /// <returns>The list of found request validation errors</returns>
     public async Task<List<string>> ValidateRequirements(Dictionary<string, List<Requirement>> evidenceCodeRequirements, AuthorizationRequest? authorizationRequest)
     {
-        _owner = _requestContextService.AuthenticatedOrgNumber;
-        _maskinportenScopes = _requestContextService.Scopes;
-        _authRequest = authorizationRequest;
-
-        if (_authRequest == null)
+        if (authorizationRequest == null)
         {
             throw new InvalidAuthorizationRequestException();
         }
+
+        _owner = _requestContextService.AuthenticatedOrgNumber;
+        _maskinportenScopes = _requestContextService.Scopes;
+        _authRequest = authorizationRequest;
 
         var taskList = new List<Task>();
         foreach (var er in _authRequest.EvidenceRequests)
@@ -66,10 +68,7 @@ public class RequirementValidationService : IRequirementValidationService
 
             foreach (var req in evidenceCodeRequirements[er.EvidenceCodeName])
             {
-                if (req.AppliesToServiceContext != null)
-                {
-                    if (!req.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)) continue;
-                }
+                if (req.AppliesToServiceContext.Count > 0 && !req.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)) continue;
 
                 taskList.Add(Task.Run(() => ValidateSingleRequirement(req, er.EvidenceCodeName)));
             }
@@ -95,7 +94,7 @@ public class RequirementValidationService : IRequirementValidationService
         {
             WhiteListFromConfigRequirement r => ValidateWhiteListWithConfig(r, _authRequest, _owner, evidenceCodeName),
             WhiteListRequirement r => ValidateWhitelist(r, _authRequest, _owner, evidenceCodeName),
-            ConsentRequirement r => ValidateConsent(r, _authRequest, _owner, evidenceCodeName),
+            ConsentRequirement r => ValidateConsent(r, _authRequest, evidenceCodeName),
             AltinnRoleRequirement r => await ValidateAltinnRole(r, _owner, _authRequest.Subject, _authRequest.Requestor, evidenceCodeName),
             AltinnRightsRequirement r => await ValidateAltinnRights(r, _owner, _authRequest.Subject, _authRequest.Requestor, evidenceCodeName),
             MaskinportenScopeRequirement r => ValidateMaskinportScopes(r, _maskinportenScopes, evidenceCodeName),
@@ -104,7 +103,7 @@ public class RequirementValidationService : IRequirementValidationService
             PartyTypeRequirement r => await ValidatePartyTypes(r, _authRequest.Subject, _authRequest.Requestor, _owner, evidenceCodeName),
             AccreditationPartyRequirement r => ValidateAccreditationPartyRequirement(r, _authRequest.Subject, _authRequest.Requestor, _owner, evidenceCodeName),
             ReferenceRequirement r => ValidateReferenceRequirement(r, _authRequest, evidenceCodeName),
-            ProvideOwnTokenRequirement r => ValidateProvideOwnTokenRequirement(r, _authRequest, evidenceCodeName),
+            ProvideOwnTokenRequirement r => ValidateProvideOwnTokenRequirement(r, evidenceCodeName),
             _ => false
         };
 
@@ -113,15 +112,15 @@ public class RequirementValidationService : IRequirementValidationService
         return true;
     }
 
-    private bool ValidateWhiteListWithConfig(WhiteListFromConfigRequirement req, AuthorizationRequest? authRequest, string owner, string evidenceCodeName)
+    private bool ValidateWhiteListWithConfig(WhiteListFromConfigRequirement req, AuthorizationRequest authRequest, string owner, string evidenceCodeName)
     {
         bool subjectResult;
         bool requestorResult;
         bool ownerResult;
 
-        string[] subjectReqs = new string[0];
-        string[] requestorReqs = new string[0];
-        string[] ownerReqs = new string[0];
+        string[] subjectReqs = Array.Empty<string>();
+        string[] requestorReqs = Array.Empty<string>();
+        string[] ownerReqs = Array.Empty<string>();
 
         if (!string.IsNullOrWhiteSpace(req.SubjectConfigKey))
         {
@@ -192,7 +191,7 @@ public class RequirementValidationService : IRequirementValidationService
         return (subjectResult && requestorResult && ownerResult);
     }
 
-    private bool ValidateAccreditationPartyRequirement(AccreditationPartyRequirement req, string subject, string requestor, string owner, string evidenceCodeName)
+    private bool ValidateAccreditationPartyRequirement(AccreditationPartyRequirement req, string? subject, string? requestor, string owner, string evidenceCodeName)
     {
         bool result = true;
 
@@ -234,13 +233,13 @@ public class RequirementValidationService : IRequirementValidationService
         return result;
     }
 
-    private async Task<bool> ValidatePartyTypes(PartyTypeRequirement req, string subject, string requestor, string owner, string evidenceCodeName)
+    private async Task<bool> ValidatePartyTypes(PartyTypeRequirement req, string? subject, string? requestor, string owner, string evidenceCodeName)
     {
         bool subjectResult;
         bool ownerResult;
         bool requestorResult;
 
-        if (req.AllowedPartyTypes == null || req.AllowedPartyTypes.Count < 1)
+        if (req.AllowedPartyTypes.Count < 1)
         {
             return true;
         }
@@ -284,7 +283,7 @@ public class RequirementValidationService : IRequirementValidationService
 
     private bool ValidateLegalBasis(LegalBasisRequirement req, AuthorizationRequest? authRequest, string evidenceCodeName)
     {
-        LegalBasis selectedlegalBasis = authRequest.LegalBasisList.Where(legalBasis => legalBasis.Type.HasValue).FirstOrDefault(legalBasis => req.ValidLegalBasisTypes.HasFlag(legalBasis.Type));
+        LegalBasis? selectedlegalBasis = authRequest?.LegalBasisList.FirstOrDefault(legalBasis => legalBasis.Type.HasValue && req.ValidLegalBasisTypes.HasFlag(legalBasis.Type));
 
         if (selectedlegalBasis == null)
         {
@@ -298,43 +297,48 @@ public class RequirementValidationService : IRequirementValidationService
         return false;
     }
 
-    private bool ValidateSRR(Requirement req, AuthorizationRequest? authRequest, string owner, string evidenceCodeName)
+    
+    [SuppressMessage("ReSharper", "UnusedParameter.Local")]
+    private bool ValidateSRR(Requirement req, AuthorizationRequest authRequest, string owner, string evidenceCodeName)
     {
         throw new NotImplementedException();
     }
 
-    private bool ValidateMaskinportScopes(MaskinportenScopeRequirement req, List<string>? maskinportenScopes, string evidenceCodeName)
+    private bool ValidateMaskinportScopes(MaskinportenScopeRequirement req, IEnumerable<string>? maskinportenScopes, string evidenceCodeName)
     {
-        var result = maskinportenScopes.Intersect(req.RequiredScopes).Count() == req.RequiredScopes.Count();
+        var result = maskinportenScopes?.Intersect(req.RequiredScopes).Count() == req.RequiredScopes.Count();
 
         if (!result)
         {
-            AddError(req, $"Missing required maskinport scopes {String.Join(", ", req.RequiredScopes.ToArray())}", evidenceCodeName);
+            AddError(req, $"Missing required maskinport scopes {string.Join(", ", req.RequiredScopes.ToArray())}", evidenceCodeName);
         }
 
         return result;
     }
 
-    private async Task<bool> ValidateAltinnRights(AltinnRightsRequirement req, string owner, string subject, string requestor, string evidenceCodeName)
+    private async Task<bool> ValidateAltinnRights(AltinnRightsRequirement req, string owner, string? subject, string? requestor, string evidenceCodeName)
     {
-        var result = true;
         if (subject == null)
         {
             AddError(req, "Altinn service delegations can only be checked beween norwegian parties; supplied subject is not", evidenceCodeName);
-            result = false;
+            return false;
         }
 
         if (requestor == null)
         {
             AddError(req, "Altinn service delegations can only be checked beween norwegian parties; supplied requestor is not", evidenceCodeName);
-            result = false;
+            return false;
         }
 
-        if (!result) return false;
+        if (req.ServiceCode == null || req.ServiceEdition == null)
+        {
+            AddError(req, "Cannot validate Altinn rights, missing service code / service edition", evidenceCodeName);
+            return false;
+        }
 
         GetOfferedByAndCoveredBy(req.OfferedBy, req.CoveredBy, owner, subject, requestor, out var offeredby, out var coveredby);
 
-        result = await _altinnServiceOwnerApiService.VerifyAltinnRight(offeredby, coveredby, req.ServiceCode, req.ServiceEdition);
+        var result = await _altinnServiceOwnerApiService.VerifyAltinnRight(offeredby, coveredby, req.ServiceCode, req.ServiceEdition);
 
         if (!result)
         {
@@ -376,26 +380,29 @@ public class RequirementValidationService : IRequirementValidationService
         }
     }
 
-    private async Task<bool> ValidateAltinnRole(AltinnRoleRequirement req, string owner, string subject, string requestor, string evidenceCodeName)
+    private async Task<bool> ValidateAltinnRole(AltinnRoleRequirement req, string owner, string? subject, string? requestor, string evidenceCodeName)
     {
-        var result = true;
         if (subject == null)
         {
             AddError(req, "Altinn role delegations can only be checked beween norwegian parties; supplied subject is not", evidenceCodeName);
-            result = false;
+            return false;
         }
 
         if (requestor == null)
         {
             AddError(req, "Altinn role delegations can only be checked beween norwegian parties; supplied requestor is not", evidenceCodeName);
-            result = false;
+            return false;
         }
 
-        if (!result) return false;
+        if (req.RoleCode == null)
+        {
+            AddError(req, "Cannot validate Altinn role, role code not set", evidenceCodeName);
+            return false;
+        }
 
         GetOfferedByAndCoveredBy(req.OfferedBy, req.CoveredBy, owner, subject, requestor, out var offeredby, out var coveredby);
 
-        result = await _altinnServiceOwnerApiService.VerifyAltinnRole(offeredby, coveredby, req.RoleCode);
+        var result = await _altinnServiceOwnerApiService.VerifyAltinnRole(offeredby, coveredby, req.RoleCode);
         if (!result)
         {
             AddError(req, $"Missing Altinn role {req.RoleCode} from {offeredby} to {coveredby}", evidenceCodeName);
@@ -404,7 +411,7 @@ public class RequirementValidationService : IRequirementValidationService
         return result;
     }
 
-    private bool ValidateConsent(Requirement req, AuthorizationRequest? authRequest, string owner, string evidenceCodeName)
+    private bool ValidateConsent(Requirement req, AuthorizationRequest authRequest, string evidenceCodeName)
     {
         var result = true;
 
@@ -435,37 +442,37 @@ public class RequirementValidationService : IRequirementValidationService
         return result;
     }
 
-    private bool ValidateWhitelist(WhiteListRequirement req, AuthorizationRequest? authRequest, string owner, string evidenceCodeName)
+    private bool ValidateWhitelist(WhiteListRequirement req, AuthorizationRequest authRequest, string owner, string evidenceCodeName)
     {
-        bool subjectResult = true;
-        bool requestorResult = true;
-        bool ownerResult = true;
+        var subjectResult = true;
+        var requestorResult = true;
+        var ownerResult = true;
 
-        var subjectReqs = req.AllowedParties.Where(pair => pair.Key == AccreditationPartyTypes.Subject);
-        var requestorReqs = req.AllowedParties.Where(pair => pair.Key == AccreditationPartyTypes.Requestor);
-        var ownerReqs = req.AllowedParties.Where(pair => pair.Key == AccreditationPartyTypes.Owner);
+        var hasSubjectReqs = req.AllowedParties.Any(pair => pair.Key == AccreditationPartyTypes.Subject);
+        var hasRequestorReqs = req.AllowedParties.Any(pair => pair.Key == AccreditationPartyTypes.Requestor);
+        var hasOwnerReqs = req.AllowedParties.Any(pair => pair.Key == AccreditationPartyTypes.Owner);
 
-        if (subjectReqs.Any())
+        if (hasSubjectReqs)
         {
-            if (!subjectReqs.Any(pairs => pairs.Value.Equals(authRequest.SubjectParty.ToString())))
+            if (!req.AllowedParties.Any(pair => pair.Key == AccreditationPartyTypes.Subject && pair.Value.Equals(authRequest.SubjectParty.ToString())))
             {
                 AddError(req, $"Subject {authRequest.SubjectParty} is not whitelisted for this evidence code", evidenceCodeName);
                 subjectResult = false;
             }
         }
 
-        if (requestorReqs.Any())
+        if (hasRequestorReqs)
         {
-            if (!requestorReqs.Any(pairs => pairs.Value.Equals(authRequest.RequestorParty.ToString())))
+            if (!req.AllowedParties.Any(pair => pair.Key == AccreditationPartyTypes.Requestor && pair.Value.Equals(authRequest.RequestorParty.ToString())))
             {
                 AddError(req, $"Requestor {authRequest.RequestorParty} is not whitelisted for this evidence code", evidenceCodeName);
                 requestorResult = false;
             }
         }
 
-        if (ownerReqs.Any())
+        if (hasOwnerReqs)
         {
-            if (!ownerReqs.Any(pairs => pairs.Value.Equals(owner)))
+            if (!req.AllowedParties.Any(pair => pair.Key == AccreditationPartyTypes.Owner && pair.Value.Equals(owner)))
             {
                 AddError(req, $"Owner {owner} is not whitelisted for this evidence code", evidenceCodeName);
                 ownerResult = false;
@@ -475,10 +482,10 @@ public class RequirementValidationService : IRequirementValidationService
         return (subjectResult && requestorResult && ownerResult);
     }
 
-    private bool ValidateReferenceRequirement(ReferenceRequirement req, AuthorizationRequest? authRequest, string evidenceCodeName)
+    private bool ValidateReferenceRequirement(ReferenceRequirement req, AuthorizationRequest authRequest, string evidenceCodeName)
     {
         string referenceType;
-        string referenceValue;
+        string? referenceValue;
 
         if (req.ReferenceType == ReferenceType.ConsentReference)
         {
@@ -514,14 +521,14 @@ public class RequirementValidationService : IRequirementValidationService
         {
             validReference = new Regex(req.AcceptedFormat);
         }
-        catch (Exception Ex)
+        catch (Exception e)
         {
-            if (Ex is ArgumentNullException)
+            if (e is ArgumentNullException)
             {
                 AddError(req, $"A valid reference is required but no accepted format is provided.", evidenceCodeName);
             }
 
-            if (Ex is ArgumentException)
+            if (e is ArgumentException)
             {
                 AddError(req, $"The accepted format is invalid; '{req.AcceptedFormat}' is not a valid regular expression.", evidenceCodeName);
             }
@@ -541,22 +548,20 @@ public class RequirementValidationService : IRequirementValidationService
         }
     }
 
-    private bool ValidateProvideOwnTokenRequirement(Requirement req, AuthorizationRequest authRequest, string evidenceCodeName)
+    private bool ValidateProvideOwnTokenRequirement(Requirement req, string evidenceCodeName)
     {
-        EvidenceHarvesterOptions evidenceHarvesterOptions = _requestContextService.GetEvidenceHarvesterOptionsFromRequest();
+        var evidenceHarvesterOptions = _requestContextService.GetEvidenceHarvesterOptionsFromRequest();
 
-        if (evidenceHarvesterOptions.OverriddenAccessToken != null || evidenceHarvesterOptions.ReuseClientAccessToken == true || evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner == true)
+        if (evidenceHarvesterOptions.OverriddenAccessToken != null || evidenceHarvesterOptions.ReuseClientAccessToken || evidenceHarvesterOptions.FetchSupplierAccessTokenOnBehalfOfOwner)
         {
             return true;
         }
-        else
-        {
-            AddError(req, $"The dataset {evidenceCodeName} requires that the client provides a bearer token or delegates access to Digitaliseringsdirektoratet", evidenceCodeName);
-            return false;
-        }
+
+        AddError(req, $"The dataset {evidenceCodeName} requires that the client provides a bearer token or delegates access to Digitaliseringsdirektoratet", evidenceCodeName);
+        return false;
     }
 
-    private async Task<PartyTypeConstraint> GetPartyType(string identifier)
+    private async Task<PartyTypeConstraint> GetPartyType(string? identifier)
     {
         if (identifier == null) return PartyTypeConstraint.Foreign; 
 

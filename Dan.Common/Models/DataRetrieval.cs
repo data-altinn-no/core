@@ -4,7 +4,7 @@
 public class DataRetrieval
 {
     [DataMember(Name = "evidenceCodeName")]
-    public string EvidenceCodeName { get; set; }
+    public string? EvidenceCodeName { get; set; }
 
     [DataMember(Name = "timeStamp")]
     public DateTime TimeStamp { get; set; }

@@ -19,6 +19,7 @@ public abstract class LegalBasisValidator
     /// <param name="authorizationRequest">
     /// The authorization request.
     /// </param>
+    /// <param name="legalBasis"></param>
     protected LegalBasisValidator(AuthorizationRequest? authorizationRequest, LegalBasis? legalBasis)
     {
         AuthorizationRequest = authorizationRequest;

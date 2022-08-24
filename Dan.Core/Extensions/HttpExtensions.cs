@@ -9,7 +9,6 @@ using Dan.Common;
 using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
-using Dan.Core.Filters;
 using Dan.Core.Helpers;
 using Dan.Core.Middleware;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -21,6 +20,8 @@ namespace Dan.Core.Extensions;
 /// </summary>
 public static class HttpExtensions
 {
+    public static readonly HttpRequestOptionsKey<List<HttpStatusCode>> AllowedStatusCodes = new("AllowedStatusCodes");
+
     /// <summary>
     /// Get a single header from a request. If multiple are found, only return the first item
     /// </summary>
@@ -44,13 +45,6 @@ public static class HttpExtensions
         response.Content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
         return response;
     }
-
-    /// <summary>
-    /// The key for properties for allowed status codes 
-    /// </summary>
-    public const string ALLOWEDSTATUSCODES = "AllowedStatusCodes";
-
-    public const string AUTHORIZATION_HEADER = "X-NADOBE-AUTHORIZATION";
 
     /// <summary>
     /// Get the value of a query parameter or <c>null</c> if not found.
@@ -125,7 +119,7 @@ public static class HttpExtensions
     /// </summary>
     /// <param name="request"></param>
     /// <returns></returns>
-    public static async Task<string> GetSubjectIdentifierFromPost(this HttpRequestData request)
+    public static async Task<string?> GetSubjectIdentifierFromPost(this HttpRequestData request)
     {
         try
         {
@@ -137,10 +131,10 @@ public static class HttpExtensions
             // ignored
         }
 
-        return null!;
+        return null;
     }
 
-    public static List<string>? GetMaskinportenScopes(this HttpRequestData request)
+    public static List<string> GetMaskinportenScopes(this HttpRequestData request)
     {
         if (!request.FunctionContext.Items.TryGetValue(Constants.SCOPES, out var scopes))
         {
@@ -182,12 +176,15 @@ public static class HttpExtensions
         var assembly = Assembly.GetExecutingAssembly();
         var resourceName = $"Dan.Core.Views.{view}";
 
-        string textView;
+        var textView = string.Empty;
 
-        using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-        using (StreamReader reader = new StreamReader(stream))
+        using (var stream = assembly.GetManifestResourceStream(resourceName))
         {
-            textView = reader.ReadToEnd();
+            if (stream != null)
+            {
+                using StreamReader reader = new StreamReader(stream);
+                textView = reader.ReadToEnd();
+            }
         }
 
         var replacements = viewData.GetType().GetProperties()
@@ -228,7 +225,7 @@ public static class HttpExtensions
     /// <param name="codes">The allowed error status codes</param>
     public static void SetAllowedErrorCodes(this HttpRequestMessage request, params HttpStatusCode[] codes)
     {
-        request.Properties[ALLOWEDSTATUSCODES] = codes.ToList();
+        request.Options.Set(AllowedStatusCodes, codes.ToList());
     }
 
     /// <summary>
@@ -238,12 +235,9 @@ public static class HttpExtensions
     /// <returns>A list of allowed http status codes</returns>
     public static List<HttpStatusCode> GetAllowedErrorCodes(this HttpRequestMessage request)
     {
-        if (request.Properties.ContainsKey(ALLOWEDSTATUSCODES))
-        {
-            return (request.Properties[ALLOWEDSTATUSCODES] as List<HttpStatusCode>)!;
-        }
-
-        return new List<HttpStatusCode>();
+        return request.Options.TryGetValue(HttpExtensions.AllowedStatusCodes, out var allowedStatusCodes) 
+            ? allowedStatusCodes 
+            : new List<HttpStatusCode>();
     }
 
     /// <summary>
@@ -282,12 +276,12 @@ public static class HttpExtensions
         switch (evidence.ValueType)
         {
             case EvidenceValueType.JsonSchema:
-                await response.WriteStringAsync((string)evidence.Value);
+                await response.WriteStringAsync((string?)evidence.Value ?? string.Empty);
                 response.Headers.Add("Content-Type", "application/json");
-                response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt((string)evidence.Value));
+                response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt((string?)evidence.Value ?? string.Empty));
                 break;
             case EvidenceValueType.Attachment:
-                await response.WriteBytesAsync(Convert.FromBase64String((string)evidence.Value));
+                await response.WriteBytesAsync(evidence.Value == null ? Array.Empty<byte>() : Convert.FromBase64String((string)evidence.Value));
                 response.Headers.Add("Content-Type", "application/octet-stream");
                 // TODO! How to calculate digest?
                 break;
@@ -297,7 +291,7 @@ public static class HttpExtensions
                 response.Headers.Add("Content-Type", "application/json");
                 response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt(jsonResult));
                 break;
-        };
+        }
     }
 
     public static async Task SetEvidenceAsync(this HttpResponseData response, Evidence evidence)

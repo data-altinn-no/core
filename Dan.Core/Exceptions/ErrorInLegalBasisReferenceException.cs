@@ -23,7 +23,7 @@ public class ErrorInLegalBasisReferenceException : DanException
     /// Error In Legal Basis Reference Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public ErrorInLegalBasisReferenceException(string message) : base(ErrorCode.ErrorInLegalBasisReferenceException, message)
+    public ErrorInLegalBasisReferenceException(string? message) : base(ErrorCode.ErrorInLegalBasisReferenceException, message)
     {
     }
 
@@ -32,7 +32,7 @@ public class ErrorInLegalBasisReferenceException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public ErrorInLegalBasisReferenceException(string message, Exception innerException) : base(ErrorCode.ErrorInLegalBasisReferenceException, message, innerException)
+    public ErrorInLegalBasisReferenceException(string? message, Exception? innerException) : base(ErrorCode.ErrorInLegalBasisReferenceException, message, innerException)
     {
     }
 }

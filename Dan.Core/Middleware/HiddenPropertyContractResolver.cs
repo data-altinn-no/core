@@ -17,6 +17,6 @@ public class HiddenPropertyContractResolver : DefaultContractResolver
             x => x.GetCustomAttributes(true).Any(
                 y => y is HiddenAttribute)).Select(x => x.Name).ToList();
 
-        return properties.Where(p => !propertiesWithHiddenAttribute.Contains(p.UnderlyingName)).ToList();
+        return properties.Where(p => !propertiesWithHiddenAttribute.Contains(p.UnderlyingName!)).ToList();
     }
 }

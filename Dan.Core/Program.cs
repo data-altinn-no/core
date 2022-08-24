@@ -3,7 +3,6 @@ using Dan.Common.Models;
 using Dan.Core.Attributes;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
-using Dan.Core.Filters;
 using Dan.Core.Helpers;
 using Dan.Core.Middleware;
 using Dan.Core.Services;

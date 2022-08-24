@@ -22,7 +22,7 @@ public class InvalidSubjectException : DanException
     /// Invalid Subject Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidSubjectException(string message) : base(ErrorCode.InvalidSubjectException, message)
+    public InvalidSubjectException(string? message) : base(ErrorCode.InvalidSubjectException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidSubjectException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidSubjectException(string message, Exception innerException) : base(ErrorCode.InvalidSubjectException, message, innerException)
+    public InvalidSubjectException(string? message, Exception? innerException) : base(ErrorCode.InvalidSubjectException, message, innerException)
     {
     }
 }

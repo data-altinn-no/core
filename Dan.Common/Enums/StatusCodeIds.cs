@@ -6,6 +6,11 @@
 public enum StatusCodeId
 {
     /// <summary>
+    /// The status is not set
+    /// </summary>
+    Unknown = 0,
+
+    /// <summary>
     /// The evidence is available for harvesting
     /// </summary>
     Available = 1,

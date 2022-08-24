@@ -22,7 +22,7 @@ public class InvalidOwnerException : DanException
     /// Invalid Subject Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidOwnerException(string message) : base(ErrorCode.InvalidOwnerException, message)
+    public InvalidOwnerException(string? message) : base(ErrorCode.InvalidOwnerException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidOwnerException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidOwnerException(string message, Exception innerException) : base(ErrorCode.InvalidOwnerException, message, innerException)
+    public InvalidOwnerException(string? message, Exception? innerException) : base(ErrorCode.InvalidOwnerException, message, innerException)
     {
     }
 }

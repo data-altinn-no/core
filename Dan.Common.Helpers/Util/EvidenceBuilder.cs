@@ -41,7 +41,7 @@ public class EvidenceBuilder
     public void AddEvidenceValue(string evidenceValueName, object? value)
     {
         var evidenceValue = GetEvidenceValue(evidenceValueName);
-        evidenceValue.Value = value == null ? null : ConvertToEvidenceType(evidenceValue.ValueType, value);
+        evidenceValue.Value = value == null ? default : ConvertToEvidenceType(evidenceValue.ValueType, value);
         evidenceValue.Timestamp = DateTime.UtcNow;
         _evidenceValues.Add(evidenceValue);
     }

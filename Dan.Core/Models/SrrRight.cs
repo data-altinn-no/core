@@ -6,14 +6,6 @@ namespace Dan.Core.Models;
 public class SrrRight
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="SrrRight"/> class with a new empty <see cref="SrrRightCondition"/>.
-    /// </summary>
-    public SrrRight()
-    {
-        Condition = new SrrRightCondition();
-    }
-
-    /// <summary>
     /// Gets or sets the identifier for a the right.
     /// </summary>
     [DataMember(IsRequired = false, EmitDefaultValue = false)]
@@ -25,7 +17,7 @@ public class SrrRight
     /// </summary>
     [DataMember(IsRequired = true)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string ServiceCode { get; set; }
+    public string? ServiceCode { get; set; }
 
     /// <summary>
     /// Gets or sets the service edition code of the service that this right gives access to.
@@ -39,14 +31,14 @@ public class SrrRight
     /// </summary>
     [DataMember(IsRequired = true)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string Reportee { get; set; }
+    public string? Reportee { get; set; }
 
     /// <summary>
     /// Gets or sets the operation type that this right is giving to the reportee.
     /// </summary>
     [DataMember(IsRequired = true)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string Right { get; set; }
+    public string? Right { get; set; }
 
     /// <summary>
     /// Gets or sets the date and time for when the right will expire.
@@ -60,12 +52,12 @@ public class SrrRight
     /// </summary>
     [DataMember(IsRequired = true)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public SrrRightCondition Condition { get; set; }
+    public SrrRightCondition? Condition { get; set; }
 
     /// <summary>
     /// Gets or sets the result of operations in SRR. This is used by add, update and delete operations in the API.
     /// </summary>
     [DataMember(IsRequired = false, EmitDefaultValue = false)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string OperationStatus { get; set; }
+    public string? OperationStatus { get; set; }
 }

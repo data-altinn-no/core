@@ -11,6 +11,7 @@ public interface IConsentService
     /// <param name="accreditation">
     /// The accreditation.
     /// </param>
+    /// <param name="skipAltinnNotification"></param>
     /// <returns>
     /// The <see cref="Task"/>.
     /// </returns>

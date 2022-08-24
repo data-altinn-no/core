@@ -18,7 +18,7 @@ public static class ExceptionExtensions
     /// <param name="exception">The Nadobe Exception</param>
     public static ErrorModel GetErrorModel(this DanException exception)
     {
-        string detailedErrorCode = null;
+        string? detailedErrorCode = null;
         if (exception.DetailErrorCode.HasValue)
         {
             detailedErrorCode = string.IsNullOrEmpty(exception.DetailErrorSource)

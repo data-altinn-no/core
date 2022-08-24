@@ -6,14 +6,6 @@ namespace Dan.Core.Models;
 public class SrrRightCondition
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="SrrRightCondition"/> class.
-    /// </summary>
-    public SrrRightCondition()
-    {
-        AllowedRedirectDomain = new List<string>();
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="SrrRightCondition"/> class from a "classic" SRR condition string.
     /// </summary>
     public SrrRightCondition(string conditionString)
@@ -24,7 +16,7 @@ public class SrrRightCondition
         foreach (var c in conditions)
         {
             var idx = c.IndexOf(':');
-            string field = "";
+            string field;
             if (idx == -1)
             {
                 //KeepSessionAlive
@@ -35,7 +27,6 @@ public class SrrRightCondition
                 field = c.Substring(0, idx).ToUpper();
             }
 
-            var value = string.Empty;
             switch (field)
             {
                 case "HANDLEDBY":
@@ -61,7 +52,7 @@ public class SrrRightCondition
     /// </summary>
     [DataMember(IsRequired = false, EmitDefaultValue = false)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string HandledBy { get; set; }
+    public string? HandledBy { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether should keep session alive

@@ -8,7 +8,7 @@ public class AltinnRoleDefinition
     /// <summary>
     /// Type of Role (altinn or other)
     /// </summary>
-    public string RoleType { get; set; }
+    public string? RoleType { get; set; }
 
     /// <summary>
     /// The unique id
@@ -18,15 +18,15 @@ public class AltinnRoleDefinition
     /// <summary>
     /// The name of the role in Altinn
     /// </summary>
-    public string RoleName { get; set; }
+    public string? RoleName { get; set; }
 
     /// <summary>
     /// Role definition description
     /// </summary>
-    public string RoleDescription { get; set; }
+    public string? RoleDescription { get; set; }
 
     /// <summary>
     /// The unique role code - same across all of Altinn's environments, whilst the id may differ
     /// </summary>
-    public string RoleDefinitionCode { get; set; }
+    public string? RoleDefinitionCode { get; set; }
 }

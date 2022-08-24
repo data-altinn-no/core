@@ -20,7 +20,7 @@ public class EvidenceHarvesterOptions
     /// <value>
     /// The overridden access token as a string. 
     /// </value>
-    public string OverriddenAccessToken { get; set; } = null;
+    public string? OverriddenAccessToken { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the access token used to request DAN should be reused against the evidence source.

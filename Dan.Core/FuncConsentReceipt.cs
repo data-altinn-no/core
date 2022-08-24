@@ -125,7 +125,7 @@ namespace Dan.Core
                 return CreateRedirectResponse(req, accreditation, req.GetQueryParam("status")!);
             }
 
-            accreditation.AuthorizationCode = ConsentService.CONSENT_DENIED;
+            accreditation.AuthorizationCode = ConsentService.ConsentDenied;
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
             _logger.DanLog(accreditation, LogAction.ConsentDenied);
@@ -167,7 +167,7 @@ namespace Dan.Core
             if (party.NorwegianOrganizationNumber == null) return party.ToString();
 
             var result = await _entityRegistryService.GetOrganizationEntry(party.NorwegianOrganizationNumber);
-            return result.Navn;
+            return result?.Navn ?? party.NorwegianOrganizationNumber;
         }
 
         private static bool ValidateHMac(Accreditation accreditation, string? hmac)

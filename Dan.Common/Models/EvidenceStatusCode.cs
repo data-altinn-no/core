@@ -7,6 +7,11 @@ namespace Dan.Common.Models;
 public class EvidenceStatusCode
 {
     /// <summary>
+    /// Default unset value
+    /// </summary>
+    public static EvidenceStatusCode Unknown => new EvidenceStatusCode() { Code = (int)StatusCodeId.Unknown, Description = string.Empty };
+
+    /// <summary>
     /// The requested information can be harvested at any time
     /// </summary>
     public static EvidenceStatusCode Available => new EvidenceStatusCode() { Code = (int)StatusCodeId.Available, Description = "The information is available for harvest" };
@@ -53,7 +58,7 @@ public class EvidenceStatusCode
     /// </summary>
     [Required]
     [DataMember(Name = "description")]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     /// <summary>
     /// For asynchronous data sources, might include a hint at which point another attempt should be made to see if the information requested is available

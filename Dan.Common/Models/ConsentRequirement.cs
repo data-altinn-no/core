@@ -11,7 +11,7 @@ public class ConsentRequirement : Requirement
     /// </summary>
     [DataMember(Name = "serviceCode")]
     [Required]
-    public string ServiceCode { get; set; }
+    public string ServiceCode { get; set; } = string.Empty;
 
     /// <summary>
     /// Service edition for consent service in Altinn

@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Reflection;
 using Dan.Common.Exceptions;
 using Dan.Common.Models;
 using Dan.Core.Config;
@@ -56,10 +55,10 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                 nex = serviceNotAvailableException;
                 logLevel = LogLevel.Error;
             }
-            else if (exception is DanException DanException)
+            else if (exception is DanException danException)
             {
                 // Use the exception verbatim
-                nex = DanException;
+                nex = danException;
 
                 // Most errors are just functional user errors, but EvidenceSourcePermanentServerException indicates a serverside misconfiguration or similar
                 logLevel = exception is EvidenceSourcePermanentServerException ? LogLevel.Error : LogLevel.Information;
@@ -99,8 +98,8 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                 context.FunctionDefinition.Name, // functionName
                 context.InvocationId, // invocationId
                 cert, // cert
-                errorModel.DetailDescription, // detailDescription
-                errorModel.DetailCode // detailedErrorCode
+                errorModel.DetailDescription ?? string.Empty, // detailDescription
+                errorModel.DetailCode ?? string.Empty // detailedErrorCode
             };
 
             _logger.Log(logLevel, 0, exception, message, args);
@@ -108,7 +107,7 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
             if (request == null) return;
 
             var response = request.CreateResponse();
-            await response!.WriteAsJsonAsync(errorModel, statusCode);
+            await response.WriteAsJsonAsync(errorModel, statusCode);
             context.SetInvocationResult(response);
         }
     }

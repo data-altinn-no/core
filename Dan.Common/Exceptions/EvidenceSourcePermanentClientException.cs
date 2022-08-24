@@ -34,7 +34,7 @@ public class EvidenceSourcePermanentClientException : EvidenceSourceException
     /// <param name="message">
     /// Error Message
     /// </param>
-    public EvidenceSourcePermanentClientException(int detailErrorCode, string message) : base(ErrorCode.EvidenceSourcePermanentClientException, detailErrorCode, message)
+    public EvidenceSourcePermanentClientException(int detailErrorCode, string? message) : base(ErrorCode.EvidenceSourcePermanentClientException, detailErrorCode, message)
     {
     }
 
@@ -50,7 +50,7 @@ public class EvidenceSourcePermanentClientException : EvidenceSourceException
     /// <param name="innerException">
     /// Inner exception
     /// </param>
-    public EvidenceSourcePermanentClientException(int detailErrorCode, string message, Exception innerException) : base(ErrorCode.EvidenceSourcePermanentClientException, detailErrorCode, message, innerException)
+    public EvidenceSourcePermanentClientException(int detailErrorCode, string? message, Exception? innerException) : base(ErrorCode.EvidenceSourcePermanentClientException, detailErrorCode, message, innerException)
     {
     }
 }

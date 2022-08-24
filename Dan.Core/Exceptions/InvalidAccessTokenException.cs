@@ -18,7 +18,7 @@ public class InvalidAccessTokenException : DanException
     /// Invalid Certificate Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidAccessTokenException(string message) : base(ErrorCode.InvalidAccessTokenException, message)
+    public InvalidAccessTokenException(string? message) : base(ErrorCode.InvalidAccessTokenException, message)
     {
     }
 
@@ -27,7 +27,7 @@ public class InvalidAccessTokenException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidAccessTokenException(string message, Exception innerException) : base(ErrorCode.InvalidAccessTokenException, message, innerException)
+    public InvalidAccessTokenException(string? message, Exception? innerException) : base(ErrorCode.InvalidAccessTokenException, message, innerException)
     {
     }
 

@@ -11,14 +11,14 @@ public class AltinnRightsRequirement : Requirement
     /// </summary>
     [DataMember(Name = "serviceCode")]
     [Required]
-    public string ServiceCode { get; set; }
+    public string? ServiceCode { get; set; }
 
     /// <summary>
     /// Service edition for the Altinn service
     /// </summary>
     [DataMember(Name = "serviceEdition")]
     [Required]
-    public string ServiceEdition { get; set; }
+    public string? ServiceEdition { get; set; }
 
     /// <summary>
     /// Which party needs to delegate the rights
@@ -42,5 +42,5 @@ public class AltinnRightsRequirement : Requirement
     [DataMember(Name = "actions")]
     [Required]
     [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
-    public List<AltinnAction> RightsActions { get; set; }
+    public List<AltinnAction> RightsActions { get; set; } = new();
 }

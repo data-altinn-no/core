@@ -11,7 +11,7 @@ public class EvidenceParameter
     /// </summary>
     [Required]
     [DataMember(Name = "evidenceParamName")]
-    public string EvidenceParamName { get; set; }
+    public string? EvidenceParamName { get; set; }
 
     /// <summary>
     /// The format of the evidence parameter
@@ -33,5 +33,5 @@ public class EvidenceParameter
     /// </summary>
     [DataMember(Name = "value")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public object Value { get; set; }
+    public object? Value { get; set; }
 }

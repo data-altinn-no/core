@@ -22,7 +22,7 @@ public class ConsentAlreadyHandledException : DanException
     /// Authorization Failed Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public ConsentAlreadyHandledException(string message) : base(ErrorCode.ConsentAlreadyHandledException, message)
+    public ConsentAlreadyHandledException(string? message) : base(ErrorCode.ConsentAlreadyHandledException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class ConsentAlreadyHandledException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public ConsentAlreadyHandledException(string message, Exception innerException) : base(ErrorCode.ConsentAlreadyHandledException, message, innerException)
+    public ConsentAlreadyHandledException(string? message, Exception? innerException) : base(ErrorCode.ConsentAlreadyHandledException, message, innerException)
     {
     }
 }

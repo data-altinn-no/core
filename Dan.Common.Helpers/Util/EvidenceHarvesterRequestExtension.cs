@@ -118,9 +118,9 @@ public static class EvidenceHarvesterRequestExtension
     /// <param name="ehr">The evidence harvester request</param>
     /// <param name="paramName">The parameter name</param>
     /// <returns>The parameter value</returns>
-    public static T GetParameterValue<T>(this EvidenceHarvesterRequest ehr, string paramName)
+    public static T? GetParameterValue<T>(this EvidenceHarvesterRequest ehr, string paramName)
     {
-        return (T)ehr.GetParameter(paramName).Value;
+        return (T?)ehr.GetParameter(paramName).Value;
     }
 
     /// <summary>

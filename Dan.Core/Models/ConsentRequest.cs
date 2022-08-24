@@ -25,41 +25,41 @@ public class ConsentRequest
     ///  Gets or sets The OrgID/personalID for who get consent 
     /// </summary>
     [DataMember(IsRequired = true)]
-    public string CoveredBy { get; set; }
+    public string CoveredBy { get; set; } = string.Empty;
 
     /// <summary>
     ///  Gets or sets The personalID who offer the consent
     /// </summary>
     [DataMember(IsRequired = true)]
-    public string OfferedBy { get; set; }
+    public string OfferedBy { get; set; } = string.Empty;
 
     /// <summary>
     ///  Gets or sets The name who offer the consent
     /// </summary>
     [DataMember(IsRequired = true)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string OfferedByName { get; set; }
+    public string? OfferedByName { get; set; }
 
     /// <summary>
     ///  Gets or sets The PersonalID/Org, ThirdPart who can use the consent 
     /// </summary>
     [DataMember]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string HandledBy { get; set; }
+    public string? HandledBy { get; set; }
 
     /// <summary>
     ///  Gets or sets The PersonaID for particular person who can use this consent 
     /// </summary>
     [DataMember]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string RequiredDelegator { get; set; }
+    public string? RequiredDelegator { get; set; }
 
     /// <summary>
     ///  Gets or sets The Name for particular person who can use this consent 
     /// </summary>
     [DataMember]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string RequiredDelegatorName { get; set; }
+    public string? RequiredDelegatorName { get; set; }
 
     /// <summary>
     ///  Gets or sets The ValidTo is the time that consent can be valid
@@ -72,25 +72,25 @@ public class ConsentRequest
     /// </summary>
     [DataMember]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public string RedirectUrl { get; set; }
+    public string? RedirectUrl { get; set; }
 
     /// <summary>
     ///  Gets or sets The RequestServices are all information of services which consent need 
     /// </summary>
     [DataMember(IsRequired = true)]
-    public List<ConsentRequestResource> RequestResources { get; set; }
+    public List<ConsentRequestResource> RequestResources { get; set; } = new();
 
     /// <summary>
     ///  Gets or sets The RequestMessage which consent need
     /// </summary>
     [DataMember(IsRequired = false, EmitDefaultValue = false)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public Dictionary<string, string> RequestMessage { get; set; }
+    public Dictionary<string, string> RequestMessage { get; set; } = new();
 
     /// <summary>
     ///  Gets or sets the ErrorObject if any if the model is not valid
     /// </summary>
     [DataMember(IsRequired = false, EmitDefaultValue = false)]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public List<ConsentRequestError> Errors { get; set; }
+    public List<ConsentRequestError> Errors { get; set; } = new();
 }

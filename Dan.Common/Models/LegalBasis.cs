@@ -11,14 +11,14 @@ public class LegalBasis
     /// </summary>
     [Required]
     [DataMember(Name = "content")]
-    public string Content { get; set; }
+    public string? Content { get; set; }
 
     /// <summary>
     /// Gets the arbitrary identifier for the legal basis, used to reference this from evidence requests
     /// </summary>
     [Required]
     [DataMember(Name = "id")]
-    public string Id { get; set; }
+    public string? Id { get; set; }
 
     /// <summary>
     /// The type of legal basis, usually ESPD

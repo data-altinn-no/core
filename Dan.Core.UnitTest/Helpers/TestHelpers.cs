@@ -25,7 +25,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <returns>
         /// A <see cref="HttpRequestMessage"/>.
         /// </returns>
-        public static HttpRequestMessage CreateGetRequest(string? hostName = null, Dictionary<string, string>? queryString = null)
+        public static HttpRequestMessage CreateGetRequest(string hostName = null, Dictionary<string, string> queryString = null)
         {
             var requestPath = string.IsNullOrWhiteSpace(hostName) ? "https://localhost" : hostName;
             requestPath += queryString == null ? string.Empty : $"?{string.Join("&", queryString.Select(kvp => $"{kvp.Key}={kvp.Value}"))}";
@@ -54,7 +54,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <returns>
         /// The <see cref="HttpRequestMessage"/>.
         /// </returns>
-        public static HttpRequestMessage CreatePostRequest<T>(T obj, string? hostName = null)
+        public static HttpRequestMessage CreatePostRequest<T>(T obj, string hostName = null)
         {
             var requestPath = string.IsNullOrWhiteSpace(hostName) ? "https://localhost" : hostName;
             var json = JsonConvert.SerializeObject(obj);
@@ -134,7 +134,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <param name="response">Function taking in a http request and returning content</param>
         /// <param name="certificate">Optional certificate to use</param>
         /// <returns>A http client that uses the webserver</returns>
-        public static HttpClient GetHttpClientMock(Func<HttpRequestMessage, HttpResponseMessage> response, X509Certificate2? certificate = null)
+        public static HttpClient GetHttpClientMock(Func<HttpRequestMessage, HttpResponseMessage> response, X509Certificate2 certificate = null)
         {
             var handler = new Mock<HttpClientHandler>();
 
@@ -166,7 +166,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <param name="request">The http request message</param>
         /// <param name="name">The name of the header</param>
         /// <returns>The content of the first matching header</returns>
-        public static string? GetHeader(this HttpRequestMessage request, string name)
+        public static string GetHeader(this HttpRequestMessage request, string name)
         {
             var headers = request.Headers.FirstOrDefault(x => x.Key == name).Value;
             return headers.FirstOrDefault();
@@ -178,7 +178,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <param name="response">The http response message</param>
         /// <param name="name">The name of the header</param>
         /// <returns>The content of the first matching header</returns>
-        public static string? GetHeader(this HttpResponseMessage response, string name)
+        public static string GetHeader(this HttpResponseMessage response, string name)
         {
             var headers = response.Headers.FirstOrDefault(x => x.Key == name).Value;
             return headers.FirstOrDefault();
@@ -190,7 +190,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <param name="request">The http request message</param>
         /// <param name="name">The name of the header</param>
         /// <returns>The content of the first matching header</returns>
-        public static string? GetHeader(this HttpContent request, string name)
+        public static string GetHeader(this HttpContent request, string name)
         {
             var headers = request.Headers.FirstOrDefault(x => x.Key == name).Value;
             return headers.FirstOrDefault();
@@ -202,7 +202,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <param name="request">The http request message</param>
         /// <param name="name">The name of the header</param>
         /// <returns>The content of the first matching header</returns>
-        public static string? GetHeader(this CacheSafeHttpContent request, string name)
+        public static string GetHeader(this CacheSafeHttpContent request, string name)
         {
             var headers = request.Headers.FirstOrDefault(x => x.Key == name).Value;
             return headers.FirstOrDefault();
@@ -214,7 +214,7 @@ namespace Dan.Core.UnitTest.Helpers
         /// <param name="request">The http request message</param>
         /// <param name="name">The name of the parameter</param>
         /// <returns>The content of the first matching parameter</returns>
-        public static string? GetParameter(this HttpRequestMessage request, string name)
+        public static string GetParameter(this HttpRequestMessage request, string name)
         {
             var queryParams = request.RequestUri?.Query.Split('?').Last().Split('&').ToDictionary(x => x.Split('=').First(), x => x.Split('=').Skip(1).FirstOrDefault());
             var parameter = queryParams != null && queryParams.ContainsKey(name) ? queryParams[name] : null;

@@ -10,13 +10,13 @@ public class EvidenceStatus
     /// The name of the evidence code this status refers to
     /// </summary>
     [DataMember(Name = "evidenceCodeName")]
-    public string EvidenceCodeName { get; set; }
+    public string? EvidenceCodeName { get; set; }
 
     /// <summary>
     /// Gets or Sets Status
     /// </summary>
     [DataMember(Name = "status")]
-    public EvidenceStatusCode Status { get; set; }
+    public EvidenceStatusCode Status { get; set; } = new();
 
     /// <summary>
     /// From when the evidence code is available

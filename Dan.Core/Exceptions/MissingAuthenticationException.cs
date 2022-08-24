@@ -19,7 +19,7 @@ public class MissingAuthenticationException : DanException
     /// Invalid Certificate Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public MissingAuthenticationException(string message) : base(ErrorCode.MissingAuthenticationException, message)
+    public MissingAuthenticationException(string? message) : base(ErrorCode.MissingAuthenticationException, message)
     {
     }
 
@@ -28,7 +28,7 @@ public class MissingAuthenticationException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public MissingAuthenticationException(string message, Exception innerException) : base(ErrorCode.MissingAuthenticationException, message, innerException)
+    public MissingAuthenticationException(string? message, Exception? innerException) : base(ErrorCode.MissingAuthenticationException, message, innerException)
     {
     }
 }

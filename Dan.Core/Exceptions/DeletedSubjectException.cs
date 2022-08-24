@@ -23,7 +23,7 @@ public class DeletedSubjectException : DanException
     /// Deleted Subject Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public DeletedSubjectException(string message) : base(ErrorCode.DeletedSubjectException, message)
+    public DeletedSubjectException(string? message) : base(ErrorCode.DeletedSubjectException, message)
     {
     }
 
@@ -32,7 +32,7 @@ public class DeletedSubjectException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public DeletedSubjectException(string message, Exception innerException) : base(ErrorCode.DeletedSubjectException, message, innerException)
+    public DeletedSubjectException(string? message, Exception? innerException) : base(ErrorCode.DeletedSubjectException, message, innerException)
     {
     }
 }

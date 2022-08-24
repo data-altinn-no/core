@@ -64,7 +64,7 @@ namespace Dan.Core
 
             foreach (var es in evidenceCodes)
             {
-                es.AuthorizationRequirements = null;
+                es.AuthorizationRequirements = new List<Requirement>();
             }
 
             var validTo = _authorizationRequestValidatorService.GetValidTo();

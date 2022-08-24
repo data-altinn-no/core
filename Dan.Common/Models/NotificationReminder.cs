@@ -7,13 +7,13 @@
 public class NotificationReminder
 {
     [DataMember(Name = "notificationType")]
-    public string NotificationType { get; set; }
+    public string? NotificationType { get; set; }
 
     [DataMember(Name = "success")]
     public bool Success { get; set; }
 
     [DataMember(Name = "description")]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     [DataMember(Name = "recipientCount")]
     public int RecipientCount { get; set; }

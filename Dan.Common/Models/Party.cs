@@ -4,18 +4,18 @@
 public class Party
 {
     [DataMember(Name = "scheme")]
-    public string Scheme { get; set; }
+    public string? Scheme { get; set; }
 
     [DataMember(Name = "id")]
-    public string Id { get; set; }
+    public string? Id { get; set; }
 
     [DataMember(Name = "norwegianOrganizationNumber")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public string NorwegianOrganizationNumber { get; set; }
+    public string? NorwegianOrganizationNumber { get; set; }
 
     [DataMember(Name = "norwegianSocialSecurityNumber")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public string NorwegianSocialSecurityNumber { get; set; }
+    public string? NorwegianSocialSecurityNumber { get; set; }
 
     public string GetAsString(bool maskString = true)
     {

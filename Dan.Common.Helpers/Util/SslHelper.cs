@@ -10,8 +10,8 @@ public static class SslHelper
     /// </summary>
     /// <param name="certificate">The Certificate</param>
     /// <param name="verifyCertificateChain">If the certificate should be verified</param>
-    /// <returns>True or False</returns>
-    public static string? GetValidOrgNumberFromCertificate(X509Certificate2 certificate, bool verifyCertificateChain = false)
+    /// <returns>The organization number. Throws on error.</returns>
+    public static string GetValidOrgNumberFromCertificate(X509Certificate2 certificate, bool verifyCertificateChain = false)
     {
         if (!verifyCertificateChain) return GetOrgFromCertificate(certificate);
 
@@ -24,18 +24,21 @@ public static class SslHelper
         {
             if (!element.Certificate.Verify())
             {
-                return null;
+                throw new CryptographicException("Unable to verify certificate chain");
             }
         }
 
         return GetOrgFromCertificate(certificate);
     }
 
-    private static string? GetOrgFromCertificate(X509Certificate2 certificate)
+    private static string GetOrgFromCertificate(X509Certificate2 certificate)
     {
         var certificateSubject = certificate.Subject;
         var orgNumber = string.Empty;
-        if (string.IsNullOrEmpty(certificateSubject)) return null;
+        if (string.IsNullOrEmpty(certificateSubject))
+        {
+            throw new CryptographicException("No subject found on certificate");
+        }
 
         var subjectList = certificateSubject.Split(',');
 
@@ -47,7 +50,11 @@ public static class SslHelper
             break;
         }
 
-        return !OrganizationNumberValidator.IsWellFormed(orgNumber) ? null : orgNumber;
-
+        if (!OrganizationNumberValidator.IsWellFormed(orgNumber))
+        {
+            throw new CryptographicException("Organization number on certificate was not well-formed");
+        } 
+        
+        return orgNumber;
     }
 }

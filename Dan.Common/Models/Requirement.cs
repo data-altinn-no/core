@@ -11,7 +11,7 @@ public class Requirement
     /// </summary>
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     [DataMember(Name = "type")]
-    public string RequirementType;
+    public string? RequirementType;
 
     /// <summary>
     /// Action to take if requirement is not satisified
@@ -23,8 +23,7 @@ public class Requirement
     /// <summary>
     ///  A requirement may apply to one, several or all servicecontexts using the dataset
     /// </summary>
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    [DataMember(Name = "appliesToServiceContext")]
-    public List<string> AppliesToServiceContext;
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] [DataMember(Name = "appliesToServiceContext")]
+    public List<string> AppliesToServiceContext = new();
 
 }

@@ -16,7 +16,7 @@ public static class Jwt
     /// <summary>
     /// The field name for the claim
     /// </summary>
-    public const string CLAIM = "SHA256PayloadDigest";
+    public const string Claim = "SHA256PayloadDigest";
 
     /// <summary>
     /// Creates a JWT with a payload of the SHA256 hash of the content as payload
@@ -27,7 +27,7 @@ public static class Jwt
     {
         var claims = new Dictionary<string, object>()
         {
-            { CLAIM, GetSha256DigestAsHex(payload) },
+            { Claim, GetSha256DigestAsHex(payload) },
         };
 
         return JWT.Encode(claims, Settings.AltinnCertificate.GetRSAPrivateKey(), JwsAlgorithm.RS256);
@@ -72,7 +72,7 @@ public static class Jwt
         }
     }
 
-    public static string GetOrgNumberFromMaskinportenToken(JwtSecurityToken jwt)
+    public static string? GetOrgNumberFromMaskinportenToken(JwtSecurityToken jwt)
     {
         var consumer = jwt.Claims.FirstOrDefault(j => j.Type == "consumer");
         if (consumer == null)

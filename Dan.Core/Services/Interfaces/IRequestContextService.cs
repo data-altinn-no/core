@@ -9,7 +9,7 @@ public interface IRequestContextService
     string SubscriptionKey { get; set; }
     List<string>? Scopes { get; set; }
     ServiceContext ServiceContext { get; set; }
-    HttpRequestData Request { get; set; }
+    HttpRequestData? Request { get; set; }
     Task BuildRequestContext(HttpRequestData request);
     EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest();
 }

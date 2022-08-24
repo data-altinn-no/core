@@ -105,13 +105,13 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
             Notifications = new NotificationBEList()
         };
 
-        if (correspondence.Notification?.SmsText != null)
+        if (correspondence.Notification.SmsText != null)
         {
             insertCorrespondence.Notifications.Add(
-                CreateNotification(Helpers.Correspondence.TransportType.SMS, correspondence.Notification.EmailSubject, string.Empty));
+                CreateNotification(Helpers.Correspondence.TransportType.SMS, correspondence.Notification.SmsText, string.Empty));
         }
 
-        if (correspondence.Notification?.EmailSubject != null)
+        if (correspondence.Notification.EmailSubject != null && correspondence.Notification.EmailBody != null)
         {
             insertCorrespondence.Notifications.Add(
                 CreateNotification(Helpers.Correspondence.TransportType.Email, correspondence.Notification.EmailSubject, correspondence.Notification.EmailBody));
@@ -121,27 +121,27 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
                 await x.InsertCorrespondenceBasicV2Async(SystemUserName, SystemPassword, SystemUserCode, $"EXT_SHIP{Rand}", insertCorrespondence))
             as InsertCorrespondenceBasicV2Response;
 
-        ReceiptExternal reply;
+        ReceiptExternal? reply;
         try
         {
             reply = result?.Body.InsertCorrespondenceBasicV2Result;
 
-            if (reply != null && reply.ReceiptStatusCode != ReceiptStatusEnum.OK)
+            if (reply == null)
+            {
+                throw new Exception("Response was unexpectedly null");
+            }
+            else if (reply.ReceiptStatusCode != ReceiptStatusEnum.OK)
             {
                 throw new AltinnServiceException($"{reply.ReceiptStatusCode}: {reply.ReceiptText}");
             }
         }
-        catch (FaultException<AltinnFault>)
+        catch (FaultException<AltinnFault> e)
         {
-            // logger.LogWarning("Send correspondence failed: {errormessage}", fault.Detail.AltinnErrorMessage);
-            throw new AltinnServiceException("Could not send correspondence to Altinn");
-
-
+            throw new AltinnServiceException($"Could not send correspondence to Altinn: {e.Detail.AltinnErrorMessage}");
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            // logger.LogError("Send correspondence failed: {errormessage}", ex.Message);
-            throw new AltinnServiceException("Could not send correspondence to Altinn");
+            throw new AltinnServiceException($"Could not send correspondence to Altinn: {e.Message}");
         }
 
 
@@ -185,22 +185,30 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
 
         foreach (var notification in notifications)
         {
+            var transportType = notification.ReceiverEndPoints.FirstOrDefault()?.TransportType.ToString();
+            if (transportType == null)
+            {
+                continue;
+            }
+
             try
             {
-                var singleList = new StandaloneNotificationBEList();
-                singleList.Add(notification);
-                var result = (SendStandaloneNotificationBasicV3Response)await _channelManagerService.With<NotificationAgencyExternalBasicClient>(async x => await x.SendStandaloneNotificationBasicV3Async(SystemUserName, SystemPassword, singleList));
-                resultList.Add(GetNotificationReminderResponse("Sent", true, notification.ReceiverEndPoints.FirstOrDefault().TransportType.ToString(), result.Body.SendStandaloneNotificationBasicV3Result.Count()));
+                var singleList = new StandaloneNotificationBEList { notification };
+                var result =
+                    (SendStandaloneNotificationBasicV3Response)await _channelManagerService
+                        .With<NotificationAgencyExternalBasicClient>(async x =>
+                            await x.SendStandaloneNotificationBasicV3Async(SystemUserName, SystemPassword, singleList));
+
+                resultList.Add(GetNotificationReminderResponse("Sent", true, transportType,
+                    result.Body.SendStandaloneNotificationBasicV3Result.Count()));
             }
             catch (FaultException<AltinnFault>)
             {
-                resultList.Add(GetNotificationReminderResponse("Failed Altinn validation", false, notification.ReceiverEndPoints.FirstOrDefault().TransportType.ToString(), 0));
-                // logger.LogInformation("Failed sending notification for reminders: {altinnErrorMessage}", fault.Detail.AltinnErrorMessage);
+                resultList.Add(GetNotificationReminderResponse("Failed Altinn validation", false, transportType, 0));
             }
             catch (Exception)
             {
-                resultList.Add(GetNotificationReminderResponse("Failed", false, notification.ReceiverEndPoints.FirstOrDefault().TransportType.ToString(), 0));
-                // logger.LogError("Failed sending notification for reminders: {message}", ex.Message); 
+                resultList.Add(GetNotificationReminderResponse("Failed", false, transportType, 0));
             }
         }
 
@@ -225,11 +233,21 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
         if (party.NorwegianOrganizationNumber == null) return party.ToString();
 
         var result = await _entityRegistryService.GetOrganizationEntry(party.NorwegianOrganizationNumber);
-        return result.Navn;
+        return result?.Navn ?? party.NorwegianOrganizationNumber;
     }
 
     private async Task<StandaloneNotificationBEList> CreateNotifications(Accreditation accreditation, ServiceContext serviceContext)
     {
+        if (accreditation.RequestorParty == null)
+        {
+            throw new InvalidRequestorException("Accreditation missing requestor party");
+        }
+
+        if (accreditation.SubjectParty == null)
+        {
+            throw new InvalidSubjectException("Accreditation missing subject party");
+        }
+
         var requestorName = await GetPartyDisplayName(accreditation.RequestorParty);
         var subjectName = await GetPartyDisplayName(accreditation.SubjectParty);
 
@@ -237,7 +255,7 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
             TextTemplateProcessor.GetRenderedTexts(serviceContext, accreditation, requestorName, subjectName, null);
 
         var list = new StandaloneNotificationBEList();
-        var notificationSMS = new StandaloneNotification()
+        var notificationSms = new StandaloneNotification()
         {
             FromAddress = FromAddress,
             IsReservable = true,
@@ -275,7 +293,7 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
             ReceiverEndPoints = GetReceiverEndpoints(Helpers.Notification.TransportType.Email)
         };
 
-        list.Add(notificationSMS);
+        list.Add(notificationSms);
         list.Add(notificationEmail);
 
         return list;

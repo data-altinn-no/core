@@ -98,7 +98,7 @@ public class FuncAuthorization
 
         // Remove authreqs before saving accreditation
         foreach (var es in accreditation.EvidenceCodes)
-            es.AuthorizationRequirements = null;
+            es.AuthorizationRequirements = new List<Requirement>();
 
         await _accreditationRepository.CreateAccreditationAsync(accreditation);
 

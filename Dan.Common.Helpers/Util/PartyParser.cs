@@ -13,9 +13,14 @@ public class PartyParser
     };
 
 
-    public static Party? GetPartyFromIdentifier(string partyIdentifier, out string? error)
+    public static Party? GetPartyFromIdentifier(string? partyIdentifier, out string? error)
     {
         error = null;
+        if (partyIdentifier == null)
+        {
+            error = "Party identifier was null";
+            return null;
+        }
 
         if (!partyIdentifier.Contains("::"))
         {

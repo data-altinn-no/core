@@ -26,10 +26,7 @@ public static class EvidenceCodeExtensions
     public static List<string> GetBelongsToServiceContexts(this EvidenceCode evidenceCode)
     {
         var listOfServiceContexts = new List<string>();
-        if (evidenceCode.BelongsToServiceContexts != null)
-        {
-            listOfServiceContexts.AddRange(evidenceCode.BelongsToServiceContexts);
-        }
+        listOfServiceContexts.AddRange(evidenceCode.BelongsToServiceContexts);
 
         if (evidenceCode.ServiceContext != null && !listOfServiceContexts.Contains(evidenceCode.ServiceContext))
         {
@@ -48,8 +45,7 @@ public static class EvidenceCodeExtensions
     /// <returns>True if available; otherwise false</returns>
     public static bool IsValidServiceContext(this EvidenceCode evidenceCode, string serviceContextName)
     {
-        if ((evidenceCode.BelongsToServiceContexts == null || evidenceCode.BelongsToServiceContexts.Count == 0) &&
-            evidenceCode.ServiceContext == null)
+        if (evidenceCode.BelongsToServiceContexts.Count == 0 && evidenceCode.ServiceContext == null)
         {
             return true;
         }

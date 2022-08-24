@@ -43,7 +43,7 @@ namespace Dan.Core.UnitTest
             _mockRequestContextService.SetupAllProperties();
             _mockRequestContextService.SetupGet(_ => _.AuthenticatedOrgNumber).Returns("912345678");
             _mockRequestContextService.SetupGet(_ => _.Scopes).Returns(new List<string>() { "a", "b" });
-
+            _mockRequestContextService.SetupProperty(_ => _.ServiceContext, new Mock<ServiceContext>().Object);
         }
 
         [TestMethod]

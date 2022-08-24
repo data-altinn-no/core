@@ -4,5 +4,5 @@
 public class Subject
 {
     [DataMember(Name = "subject")]
-    public string SubjectId { get; set; }
+    public string? SubjectId { get; set; }
 }

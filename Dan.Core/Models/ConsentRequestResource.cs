@@ -9,7 +9,7 @@ public class ConsentRequestResource
     /// Gets or sets the ServiceCode that is requested
     /// </summary>
     [DataMember(IsRequired = true)]
-    public string ServiceCode { get; set; }
+    public string ServiceCode { get; set; } = string.Empty;
 
     /// <summary>
     ///  Gets or sets the ServiceEditionCode that is requested
@@ -22,5 +22,5 @@ public class ConsentRequestResource
     /// </summary>
     [DataMember]
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-    public Dictionary<string, string> Metadata { get; set; }
+    public Dictionary<string, string> Metadata { get; set; } = new();
 }

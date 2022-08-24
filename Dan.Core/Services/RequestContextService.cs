@@ -10,11 +10,11 @@ class RequestContextService : IRequestContextService
 {
     private readonly IServiceContextService _serviceContextService;
 
-    public string AuthenticatedOrgNumber { get; set; }
-    public string SubscriptionKey { get; set; }
+    public string AuthenticatedOrgNumber { get; set; } = string.Empty;
+    public string SubscriptionKey { get; set; } = string.Empty;
     public List<string>? Scopes { get; set; }
-    public ServiceContext ServiceContext { get; set; }
-    public HttpRequestData Request { get; set; }
+    public ServiceContext ServiceContext { get; set; } = new();
+    public HttpRequestData? Request { get; set; }
 
     public const string ServicecontextHeader = "X-NADOBE-SERVICECONTEXT";
     public const string QueryParamTokenOnBehalfOf = "tokenonbehalfof";
@@ -32,16 +32,12 @@ class RequestContextService : IRequestContextService
         SubscriptionKey = request.GetSubscriptionKey() ?? "(unknown)";
         Scopes = request.GetMaskinportenScopes();
         Request = request;
+        
         var serviceContext = GetServiceContextFromRequest(request);
-
         var serviceContexts = await _serviceContextService.GetRegisteredServiceContexts();
+        var foundServiceContext = serviceContexts.Find(c => c.Id.ToLowerInvariant() == serviceContext);
 
-        ServiceContext = serviceContexts.Find(c => c.Id.ToLowerInvariant() == serviceContext);
-
-        if (ServiceContext == null)
-        {
-            throw new InternalServerErrorException($"Unknown service context identifier: {serviceContext}. Known: {string.Join(", ", serviceContexts.Select(x => x.Id))}");
-        }
+        ServiceContext = foundServiceContext ?? throw new InternalServerErrorException($"Unknown service context identifier: {foundServiceContext}. Known: {string.Join(", ", serviceContexts.Select(x => x.Id))}");
     }
 
     private string GetServiceContextFromRequest(HttpRequestData request)
@@ -54,6 +50,11 @@ class RequestContextService : IRequestContextService
 
     public EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest()
     {
+        if (Request == null)
+        {
+            throw new ArgumentNullException(nameof(Request));
+        }
+
         return new EvidenceHarvesterOptions
         {
             OverriddenAccessToken = Request.Headers.Get(RequestHeaderForwardAccessToken),

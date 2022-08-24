@@ -11,21 +11,21 @@ public class EvidenceValue : ICloneable
     /// </summary>
     [DataMember(Name = "mimeType")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public string MimeType { get; set; }
+    public string? MimeType { get; set; }
 
     /// <summary>
     /// A name describing the evidence value
     /// </summary>
     [Required]
     [DataMember(Name = "evidenceValueName")]
-    public string EvidenceValueName { get; set; }
+    public string EvidenceValueName { get; set; } = string.Empty;
 
     /// <summary>
     /// The source from which the evidence is harvested
     /// </summary>
     [Required]
     [DataMember(Name = "source")]
-    public string Source { get; set; }
+    public string Source { get; set; } = string.Empty;
 
     /// <summary>
     /// The time of which the evidence was collected from the source, if used in context of an Evidence
@@ -39,7 +39,7 @@ public class EvidenceValue : ICloneable
     /// </summary>
     [DataMember(Name = "value")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public object Value { get; set; }
+    public object? Value { get; set; }
 
     /// <summary>
     /// The format over the evidence value
@@ -54,7 +54,7 @@ public class EvidenceValue : ICloneable
     /// </summary>
     [DataMember(Name = "jsonSchemaDefintion")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public string JsonSchemaDefintion { get; set; }
+    public string? JsonSchemaDefintion { get; set; }
 
     /// <inheritdoc />
     public object Clone()

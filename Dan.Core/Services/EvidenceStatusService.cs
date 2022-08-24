@@ -1,5 +1,4 @@
 ﻿using Dan.Common.Enums;
-using Dan.Common.Helpers.Extensions;
 using Dan.Common.Helpers.Util;
 using Dan.Common.Models;
 using Dan.Core.Extensions;
@@ -81,11 +80,6 @@ public class EvidenceStatusService : IEvidenceStatusService
     public async Task<List<EvidenceStatus>> GetEvidenceStatusListAsync(Accreditation accreditation)
     {
         var list = new List<EvidenceStatus>();
-
-        if (accreditation.EvidenceCodes == null)
-        {
-            return list;
-        }
 
         using (var t = _logger.Timer("get-evidence-status-list"))
         {

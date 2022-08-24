@@ -22,7 +22,7 @@ public class InvalidValidToDateTimeException : DanException
     /// Invalid valid to date Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public InvalidValidToDateTimeException(string message) : base(ErrorCode.InvalidValidToDateTimeException, message)
+    public InvalidValidToDateTimeException(string? message) : base(ErrorCode.InvalidValidToDateTimeException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class InvalidValidToDateTimeException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public InvalidValidToDateTimeException(string message, Exception innerException) : base(ErrorCode.InvalidValidToDateTimeException, message, innerException)
+    public InvalidValidToDateTimeException(string? message, Exception? innerException) : base(ErrorCode.InvalidValidToDateTimeException, message, innerException)
     {
     }
 }

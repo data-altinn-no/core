@@ -18,14 +18,14 @@ namespace Dan.Core.Middleware;
 
 public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 {
-    public const string AUTHORIZATION_HEADER = "X-NADOBE-AUTHORIZATION";
-    public const string AUTHORIZATION_HEADER_LOCAL = "Authorization";
-    public const string DEFAULT_SCOPE = "altinn:dataaltinnno";
+    public const string AuthorizationHeader = "X-NADOBE-AUTHORIZATION";
+    public const string AuthorizationHeaderLocal = "Authorization";
+    public const string DefaultScope = "altinn:dataaltinnno";
 
-    private static readonly object _cmLockMaskinporten = new object();
-    private static readonly object _cmLockAltinnPlatform = new object();
-    private static volatile ConfigurationManager<OpenIdConnectConfiguration> _cmMaskinporten;
-    private static volatile ConfigurationManager<OpenIdConnectConfiguration> _cmAltinnPlatform;
+    private static readonly object CmLockMaskinporten = new();
+    private static readonly object CmLockAltinnPlatform = new();
+    private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmMaskinporten;
+    private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmAltinnPlatform;
 
     /// <summary>
     /// Gets or sets maskinporten ConfigManager
@@ -34,17 +34,15 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     {
         get
         {
-            if (_cmMaskinporten == null)
+            if (_cmMaskinporten != null) return _cmMaskinporten;
+            lock (CmLockMaskinporten)
             {
-                lock (_cmLockMaskinporten)
+                if (_cmMaskinporten == null)
                 {
-                    if (_cmMaskinporten == null)
-                    {
-                        _cmMaskinporten = new ConfigurationManager<OpenIdConnectConfiguration>(
-                            Settings.MaskinportenWellknownUrl,
-                            new OpenIdConnectConfigurationRetriever(),
-                            new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
-                    }
+                    _cmMaskinporten = new ConfigurationManager<OpenIdConnectConfiguration>(
+                        Settings.MaskinportenWellknownUrl,
+                        new OpenIdConnectConfigurationRetriever(),
+                        new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
                 }
             }
 
@@ -53,7 +51,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
         set
         {
-            lock (_cmLockMaskinporten)
+            lock (CmLockMaskinporten)
             {
                 _cmMaskinporten = value;
             }
@@ -67,17 +65,15 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     {
         get
         {
-            if (_cmAltinnPlatform == null)
+            if (_cmAltinnPlatform != null) return _cmAltinnPlatform;
+            lock (CmLockAltinnPlatform)
             {
-                lock (_cmLockAltinnPlatform)
+                if (_cmAltinnPlatform == null)
                 {
-                    if (_cmAltinnPlatform == null)
-                    {
-                        _cmAltinnPlatform = new ConfigurationManager<OpenIdConnectConfiguration>(
-                            Settings.AltinnWellknownUrl,
-                            new OpenIdConnectConfigurationRetriever(),
-                            new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
-                    }
+                    _cmAltinnPlatform = new ConfigurationManager<OpenIdConnectConfiguration>(
+                        Settings.AltinnWellknownUrl,
+                        new OpenIdConnectConfigurationRetriever(),
+                        new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
                 }
             }
 
@@ -86,7 +82,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
         set
         {
-            lock (_cmLockAltinnPlatform)
+            lock (CmLockAltinnPlatform)
             {
                 _cmAltinnPlatform = value;
             }
@@ -95,8 +91,8 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
     public async Task Invoke(FunctionContext context, FunctionExecutionDelegate next)
     {
-        string orgNumber;
-        List<string> scopes = null;
+        string? orgNumber;
+        List<string> scopes = new();
 
         var request = await context.GetHttpRequestDataAsync();
         if (request == null)
@@ -108,34 +104,26 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         }
 
         // Usually this header is set by APIM, but for local testing check Authorization header as well
-        if (!request.Headers.TryGetValues(AUTHORIZATION_HEADER, out IEnumerable<string> headerValues))
+        if (!request.Headers.TryGetValues(AuthorizationHeader, out IEnumerable<string>? headerValues))
         {
-            request.Headers.TryGetValues(AUTHORIZATION_HEADER_LOCAL, out headerValues);
+            request.Headers.TryGetValues(AuthorizationHeaderLocal, out headerValues);
         }
 
         // check authorization header for bearer token
         // Also check if certificate header is set (x-nadobe-cert) to prevent apim's MSI token from being attempted as auth when testing locally 
         if (headerValues != null && (request.Headers.Get(Settings.CertificateHeader) == null))
         {
-            var accessTokenJwt = headerValues.FirstOrDefault();
+            var accessTokenJwt = headerValues.First();
             accessTokenJwt = Jwt.RemoveBearer(accessTokenJwt);
-
             var claimsPrincipal = await ValidateJwt(accessTokenJwt);
-            if (claimsPrincipal != null)
+            if (ValidateScopes(claimsPrincipal, DefaultScope))
             {
-                if (ValidateScopes(claimsPrincipal, DEFAULT_SCOPE))
-                {
-                    orgNumber = claimsPrincipal.GetOrganizationNumberClaim();
-                    scopes = claimsPrincipal.GetScopes().ToList();
-                }
-                else
-                {
-                    throw new InvalidAccessTokenException($"Missing required scope(s)");
-                }
+                orgNumber = claimsPrincipal.GetOrganizationNumberClaim();
+                scopes = claimsPrincipal.GetScopes()!.ToList();
             }
             else
             {
-                throw new InvalidAccessTokenException($"Could not validate bearer token");
+                throw new InvalidAccessTokenException($"Missing required scope(s)");
             }
 
             context.Items.Add(Constants.ACCESS_TOKEN, accessTokenJwt);
@@ -159,12 +147,19 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
                     throw new InvalidCertificateException("Unable to parse supplied certificate: " + e.Message);
                 }
 
-                orgNumber = SslHelper.GetValidOrgNumberFromCertificate(suppliedCertificate);
+                try
+                {
+                    orgNumber = SslHelper.GetValidOrgNumberFromCertificate(suppliedCertificate);
+                }
+                catch (Exception e)
+                {
+                    throw new MissingAuthenticationException("Unable to parse organization number from certificate", e);
+                }
             }
             // No token or certificate found 
             else
             {
-                throw new MissingAuthenticationException($"No authentication method supplied");
+                throw new MissingAuthenticationException("No authentication method supplied");
             }
         }
 
@@ -213,6 +208,11 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     {
         var requiredScopeList = requiredScopes.Split(',');
         var principalScopeList = claimsPrincipal.GetScopes();
+        if (principalScopeList == null)
+        {
+            return false;
+        }
+
         foreach (var requiredScope in requiredScopeList)
         {
             // Note that this use of .Contains does a substring match. This means that a requirement for

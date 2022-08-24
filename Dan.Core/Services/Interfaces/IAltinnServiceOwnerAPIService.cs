@@ -47,6 +47,7 @@ public interface IAltinnServiceOwnerApiService
     /// </summary>
     /// <param name="requestor">The reportee in SRR</param>
     /// <param name="validTo">How long the rule should be valid</param>
+    /// <param name="evidenceCodesRequiringConsent">List of evidence codes requiring consent</param>
     /// <returns></returns>
     Task EnsureSrrRights(string requestor, DateTime validTo, IEnumerable<EvidenceCode> evidenceCodesRequiringConsent);
 
@@ -55,5 +56,5 @@ public interface IAltinnServiceOwnerApiService
     /// </summary>
     /// <param name="orgNumber">Organization number</param>
     /// <returns>The organization</returns>
-    Task<Organization> GetOrganization(string orgNumber);
+    Task<Organization?> GetOrganization(string orgNumber);
 }

@@ -22,7 +22,7 @@ public class NonExistentAccreditationException : DanException
     /// Non-Existent Accreditation Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public NonExistentAccreditationException(string message) : base(ErrorCode.NonExistentAccreditationException, message)
+    public NonExistentAccreditationException(string? message) : base(ErrorCode.NonExistentAccreditationException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class NonExistentAccreditationException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public NonExistentAccreditationException(string message, Exception innerException) : base(ErrorCode.NonExistentAccreditationException, message, innerException)
+    public NonExistentAccreditationException(string? message, Exception? innerException) : base(ErrorCode.NonExistentAccreditationException, message, innerException)
     {
     }
 }

@@ -23,14 +23,12 @@ public class ConsentService : IConsentService
     /// <summary>
     /// Magic string used as authorization code when the user has actively denied a consent request
     /// </summary>
-    public const string CONSENT_DENIED = "denied";
+    public const string ConsentDenied = "denied";
 
-
-    public const string EBEVIS_NAME = "eBevis";
     /// <summary>
     /// Magic string for claim name for validTo
     /// </summary>
-    public const string CONSENT_JWT_VALIDTO_KEY = "ValidToDate";
+    public const string ConsentJwtValidtoKey = "ValidToDate";
 
     private readonly HttpClient _httpClient;
     private readonly HttpClient _noCertHttpClient;
@@ -49,6 +47,7 @@ public class ConsentService : IConsentService
     /// <param name="altinnCorrespondenceService"></param>
     /// <param name="entityRegistryService"></param>
     /// <param name="altinnServiceOwnerApiService"></param>
+    /// <param name="availableEvidenceCodesService"></param>
     /// <param name="requestContextService"></param>
     public ConsentService(
         ILoggerFactory loggerFactory,
@@ -76,6 +75,7 @@ public class ConsentService : IConsentService
     /// <param name="accreditation">
     /// The accreditation.
     /// </param>
+    /// <param name="skipAltinnNotification"></param>
     /// <returns>
     /// The <see cref="Task"/>.
     /// </returns>
@@ -87,10 +87,26 @@ public class ConsentService : IConsentService
             throw new ArgumentException("Expected at least one evidencecode in the accreditation requiring consent");
         }
 
+        if (accreditation.Requestor == null)
+        {
+            throw new InvalidRequestorException("Requestor was null for consent initiation");
+        }
+
+        if (accreditation.Subject == null)
+        {
+            throw new InvalidSubjectException("Subject was null for consent initiation");
+        }
+
         var requestorName = await GetPartyDisplayName(accreditation.RequestorParty);
         var subjectName = await GetPartyDisplayName(accreditation.SubjectParty);
 
         await _altinnServiceOwnerApiService.EnsureSrrRights(accreditation.Requestor, accreditation.ValidTo.AddYears(10), evidenceCodesRequiringConsent);
+
+        if (_requestContextService.ServiceContext.ServiceContextTextTemplate == null)
+        {
+            throw new ServiceContextException(
+                "ServiceContextTemplate was not defined, required for consent initiation");
+        }
 
         var processedConsentRequestStrings = TextTemplateProcessor.ProcessConsentRequestMacros(_requestContextService.ServiceContext.ServiceContextTextTemplate.ConsentDelegationContexts, accreditation, requestorName, subjectName, _requestContextService.ServiceContext.Name);
         var consentRequest = await CreateConsentRequest(accreditation, evidenceCodesRequiringConsent, processedConsentRequestStrings);
@@ -98,12 +114,10 @@ public class ConsentService : IConsentService
 
         var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl);
 
-
         if (!skipAltinnNotification)
         {
-            await SendCorrespondence(accreditation, accreditation.AltinnConsentUrl, renderedTexts);
+            await SendCorrespondence(accreditation, renderedTexts);
         }
-
     }
 
     /// <summary>
@@ -131,7 +145,7 @@ public class ConsentService : IConsentService
             return ConsentStatus.Pending;
         }
 
-        if (accreditation.AuthorizationCode == CONSENT_DENIED)
+        if (accreditation.AuthorizationCode == ConsentDenied)
         {
             return ConsentStatus.Denied;
         }
@@ -147,16 +161,11 @@ public class ConsentService : IConsentService
 
             if (claims == null)
             {
-                if (accreditation.ValidTo < DateTime.Now)
-                {
-                    return ConsentStatus.Expired;
-                }
-
-                return ConsentStatus.Revoked;
+                return accreditation.ValidTo < DateTime.Now ? ConsentStatus.Expired : ConsentStatus.Revoked;
             }
 
             // Probably not needed; Altinn will not return an expired token
-            var secSince1970 = Convert.ToInt64(claims.FindFirst(CONSENT_JWT_VALIDTO_KEY).Value);
+            var secSince1970 = Convert.ToInt64(claims.FindFirst(ConsentJwtValidtoKey)?.Value);
             var validTo = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(secSince1970);
             if (validTo < DateTime.UtcNow)
             {
@@ -174,13 +183,18 @@ public class ConsentService : IConsentService
     /// <returns>A JWT</returns>
     public async Task<string> GetJwt(Accreditation accreditation)
     {
+        if (accreditation.AuthorizationCode is null or ConsentDenied)
+        {
+            throw new RequiresConsentException("The accreditation is missing a valid authorization code for the consent");
+        }
+
         var url = Settings.GetConsentStatusUrl(accreditation.AuthorizationCode);
 
         var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnApiKey);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.SetAllowedErrorCodes(HttpStatusCode.BadRequest, HttpStatusCode.Forbidden);
-        _log.LogInformation("Getting jwt: " + request.RequestUri.ToString());
+        _log.LogInformation("Getting jwt: " + url);
         try
         {
             var result = await _noCertHttpClient.SendAsync(request);
@@ -189,9 +203,12 @@ public class ConsentService : IConsentService
 
             // Altinn returns JWTs as bare JSON strings (with leading and trailing double quotes) 
             var jwt = await result.Content.ReadAsStringAsync();
+            if (string.IsNullOrEmpty(jwt))
+            {
+                throw new ServiceNotAvailableException("Unable to parse consent token from Altinn");
+            }
 
-            //EDIT: Erlend - so these must be removed in v3 funcs of data.altinn.no for some reason, otherwise it fails validation at SKE
-            return string.IsNullOrEmpty(jwt) ? null : jwt.Replace('"', ' ').Trim();
+            return jwt.Replace('"', ' ').Trim();
         }
         catch (Exception ex)
         {
@@ -207,13 +224,12 @@ public class ConsentService : IConsentService
     public bool EvidenceCodeRequiresConsent(EvidenceCode evidenceCode)
     {
 
-        if (evidenceCode.AuthorizationRequirements == null || !evidenceCode.AuthorizationRequirements.OfType<ConsentRequirement>().Any())
+        if (!evidenceCode.AuthorizationRequirements.OfType<ConsentRequirement>().Any())
         {
             return false;
         }
 
         return evidenceCode.AuthorizationRequirements.OfType<ConsentRequirement>().Any(x =>
-            x.AppliesToServiceContext == null ||
             x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name));
     }
 
@@ -226,7 +242,12 @@ public class ConsentService : IConsentService
     /// <returns>Success status</returns>
     public async Task<bool> LogUse(Accreditation accreditation, EvidenceCode evidence, DateTime? dateTime = null)
     {
-        dateTime = dateTime ?? DateTime.Now;
+        if (accreditation.AuthorizationCode is null or ConsentDenied)
+        {
+            throw new RequiresConsentException("The accreditation is missing a valid authorization code for the consent");
+        }
+
+        dateTime ??= DateTime.Now;
 
         var url = Settings.GetConsentLoggingUrl(accreditation.AuthorizationCode);
 
@@ -267,7 +288,7 @@ public class ConsentService : IConsentService
         var availableEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
         foreach (var accreditationEvidenceCode in accreditation.EvidenceCodes)
         {
-            if (accreditationEvidenceCode.AuthorizationRequirements == null)
+            if (accreditationEvidenceCode.AuthorizationRequirements.Count == 0)
             {
                 var evidenceCode = availableEvidenceCodes.FirstOrDefault(x =>
                     x.EvidenceCodeName == accreditationEvidenceCode.EvidenceCodeName);
@@ -282,15 +303,15 @@ public class ConsentService : IConsentService
                     continue;
                 }
 
-                accreditationEvidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements ?? new List<Requirement>();
+                accreditationEvidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements;
             }
 
             accreditationEvidenceCode.AuthorizationRequirements = accreditationEvidenceCode.AuthorizationRequirements.Where(
-                    x => x.AppliesToServiceContext == null || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
+                    x => x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
         }
     }
 
-    private async Task<ClaimsIdentity> GetClaims(Accreditation accreditation)
+    private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)
     {
         var jwt = await GetJwt(accreditation);
 
@@ -301,9 +322,10 @@ public class ConsentService : IConsentService
 
         var payload = jwt.Split('.')[1];
         var token = Base64Url.Decode(payload);
+        if (token == null) return null;
         var localClaimsIdentityModel = JsonConvert.DeserializeObject<Dictionary<string, object>>(token);
 
-        return CreateClaimsIdentity(localClaimsIdentityModel);
+        return localClaimsIdentityModel == null ? null : CreateClaimsIdentity(localClaimsIdentityModel);
     }
 
     private ClaimsIdentity CreateClaimsIdentity(Dictionary<string, object> localClaimsIdentity)
@@ -311,7 +333,7 @@ public class ConsentService : IConsentService
         var claimsIdentity = new ClaimsIdentity();
         foreach (var claim in localClaimsIdentity)
         {
-            claimsIdentity.AddClaim(new Claim(claim.Key, claim.Value.ToString()));
+            claimsIdentity.AddClaim(new Claim(claim.Key, claim.Value.ToString()!));
         }
 
         return claimsIdentity;
@@ -339,26 +361,25 @@ public class ConsentService : IConsentService
                 ServiceEditionCode = serviceEdtionCode,
                 Metadata = new Dictionary<string, string>()
                 {
-                    { "requestor", accreditation.Requestor },
+                    { "requestor", accreditation.Requestor! },
                     { "requestorName", requestorName }
                 }
             });
         }
 
-        var serviceContextName = _requestContextService.ServiceContext.Name;
         var consentRequest = new ConsentRequest()
         {
             RequestMessage = new Dictionary<string, string>()
             {
                 // We have already made sure they all belong to the same service context
-                { "no-nb", consentRequestStrings.NoNb },
-                { "no-nn", consentRequestStrings.NoNn },
-                { "en", consentRequestStrings.En }
+                { "no-nb", consentRequestStrings.NoNb! },
+                { "no-nn", consentRequestStrings.NoNn! },
+                { "en", consentRequestStrings.En! }
             },
             RequestResources = consentResources,
-            CoveredBy = accreditation.Requestor,
+            CoveredBy = accreditation.Requestor!,
             HandledBy = Settings.AltinnOrgNumber,
-            OfferedBy = accreditation.Subject,
+            OfferedBy = accreditation.Subject!,
             OfferedByName = subjectName,
             RedirectUrl = Settings.GetConsentRedirectUrl(accreditation.AccreditationId, accreditation.GetHmac()),
             ValidTo = accreditation.ValidTo
@@ -369,11 +390,10 @@ public class ConsentService : IConsentService
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.JsonContent(consentRequest);
 
-        HttpResponseMessage response = null;
         try
         {
             request.SetAllowedErrorCodes(HttpStatusCode.BadRequest);
-            response = await _httpClient.SendAsync(request);
+            var response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 var errors = JsonConvert.DeserializeObject<List<ConsentRequestError>>(await response.Content.ReadAsStringAsync());
@@ -387,11 +407,17 @@ public class ConsentService : IConsentService
                 }
 
                 _log.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}, RequestJson={requestJson}",
-                    accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString, await request.Content.ReadAsStringAsync());
+                    accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString, request.Content == null ? string.Empty : await request.Content.ReadAsStringAsync());
                 throw new ServiceNotAvailableException("Altinn denied the consent request. This is an internal error, please contact support");
             }
 
-            return JsonConvert.DeserializeObject<ConsentRequest>(await response.Content.ReadAsStringAsync());
+            var cr = JsonConvert.DeserializeObject<ConsentRequest>(await response.Content.ReadAsStringAsync());
+            if (cr == null)
+            {
+                throw new Exception("Deserialize returned null");
+            }
+
+            return cr;
         }
         catch (Exception ex)
         {
@@ -417,7 +443,7 @@ public class ConsentService : IConsentService
 
         // We assume that we only have a single ConsentRequirement for each service context. At this point, the evidence code should only 
         // contain the requirements that apply to the active request context
-        var req = ec.AuthorizationRequirements.OfType<ConsentRequirement>().First()!;
+        var req = ec.AuthorizationRequirements.OfType<ConsentRequirement>().First();
 
         return (req.ServiceCode, req.ServiceEdition);
     }
@@ -463,17 +489,17 @@ public class ConsentService : IConsentService
         if (organization == null)
             throw new InvalidSubjectException($"{subject} was not found in Altinn and can not receive consent request");
         else
-            return organization.Name;
+            return organization.Name!;
     }
 
-    private async Task SendCorrespondence(Accreditation accreditation, string consentUrl, IServiceContextTextTemplate<string> renderedTexts)
+    private async Task SendCorrespondence(Accreditation accreditation, IServiceContextTextTemplate<string> renderedTexts)
     {
         if (_correspondenceService == null)
         {
             throw new ServiceNotAvailableException("IAltinnService could not be resolved");
         }
 
-        CorrespondenceDetails correspondence = CreateCorrespondence(accreditation, consentUrl, renderedTexts);
+        CorrespondenceDetails correspondence = CreateCorrespondence(accreditation, renderedTexts);
         try
         {
             await _correspondenceService.SendCorrespondence(correspondence);
@@ -484,7 +510,7 @@ public class ConsentService : IConsentService
         }
     }
 
-    private CorrespondenceDetails CreateCorrespondence(Accreditation accreditation, string consentUrl, IServiceContextTextTemplate<string> renderedTexts)
+    private CorrespondenceDetails CreateCorrespondence(Accreditation accreditation, IServiceContextTextTemplate<string> renderedTexts)
     {
         var correspondence = new CorrespondenceDetails();
 
@@ -513,7 +539,7 @@ public class ConsentService : IConsentService
         /// <summary>
         /// Service Code
         /// </summary>
-        public string ServiceCode { get; set; }
+        public string ServiceCode { get; set; } = string.Empty;
 
         /// <summary>
         /// Service Edition Code
@@ -523,6 +549,6 @@ public class ConsentService : IConsentService
         /// <summary>
         /// Usage Date Time
         /// </summary>
-        public string UsageDateTime { get; set; }
+        public string UsageDateTime { get; set; } = string.Empty;
     }
 }

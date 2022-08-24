@@ -29,7 +29,7 @@ public abstract class EvidenceSourceException : DanException
     /// <param name="errorCode">Error Code</param>
     /// <param name="detailErrorCode">Evidence Source specific error code</param>
     /// <param name="message">The message</param>
-    protected EvidenceSourceException(ErrorCode errorCode, int detailErrorCode, string message) : base(errorCode, message)
+    protected EvidenceSourceException(ErrorCode errorCode, int detailErrorCode, string? message) : base(errorCode, message)
     {
         DetailErrorCode = detailErrorCode;
     }
@@ -41,7 +41,7 @@ public abstract class EvidenceSourceException : DanException
     /// <param name="detailErrorCode">Evidence Source specific error code</param>
     /// <param name="message">The message</param>
     /// <param name="innerException">Inner Exception</param>
-    protected EvidenceSourceException(ErrorCode errorCode, int detailErrorCode, string message, Exception innerException) : base(errorCode, message, innerException)
+    protected EvidenceSourceException(ErrorCode errorCode, int detailErrorCode, string? message, Exception? innerException) : base(errorCode, message, innerException)
     {
         DetailErrorCode = detailErrorCode;
     }

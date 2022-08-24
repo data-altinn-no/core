@@ -25,13 +25,13 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private List<EvidenceCode> _memoryCache = new List<EvidenceCode>();
     private DateTime _updateMemoryCache = DateTime.MinValue;
-    private readonly SemaphoreSlim _semaphoreForceRefresh = new SemaphoreSlim(1, 1);
-    private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-    private const int MEMORY_CACHE_TTL_SECONDS = 120;
+    private readonly SemaphoreSlim _semaphoreForceRefresh = new(1, 1);
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private const int MemoryCacheTtlSeconds = 120;
 
-    private const string CACHING_POLICY = "EvidenceCodesCachePolicy";
-    private const string HTTP_CLIENT_NAME = "EvidenceCodesClient";
-    private const string CACHE_CONTEXT_KEY = "AvailableEvidenceCodes";
+    private const string CachingPolicy = "EvidenceCodesCachePolicy";
+    private const string HttpClientName = "EvidenceCodesClient";
+    private const string CacheContextKey = "AvailableEvidenceCodes";
 
     public AvailableEvidenceCodesService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IPolicyRegistry<string> policyRegistry, IDistributedCache distributedCache, IServiceContextService serviceContextService)
     {
@@ -85,7 +85,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
             // This uses Polly to get from the distributed cache, or refresh from source if Redis cache is expired.
             _memoryCache = await GetAvailableEvidenceCodesFromDistributedCache();
-            _updateMemoryCache = DateTime.UtcNow.AddSeconds(MEMORY_CACHE_TTL_SECONDS);
+            _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
 
             return FilterInactive(_memoryCache);
 
@@ -103,13 +103,13 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
     private async Task RefreshEvidenceCodesCache()
     {
         var evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
-        if (evidenceCodes == null || evidenceCodes.Count == 0)
+        if (evidenceCodes.Count == 0)
         {
             _logger.LogWarning("Failed to refresh evidence codes cache, received empty list");
             return;
         }
 
-        await _distributedCache.SetAsync(CACHE_CONTEXT_KEY, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
+        await _distributedCache.SetAsync(CacheContextKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
             evidenceCodes,
             new JsonSerializerSettings
             {
@@ -121,14 +121,14 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             });
 
         _memoryCache = evidenceCodes;
-        _updateMemoryCache = DateTime.UtcNow.AddSeconds(MEMORY_CACHE_TTL_SECONDS);
+        _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
     }
 
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromDistributedCache()
     {
-        var cachePolicy = _policyRegistry.Get<AsyncPolicy<List<EvidenceCode>>>(CACHING_POLICY);
+        var cachePolicy = _policyRegistry.Get<AsyncPolicy<List<EvidenceCode>>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(
-            async context => await GetAvailableEvidenceCodesFromEvidenceSources(), new Context(CACHE_CONTEXT_KEY));
+            async _ => await GetAvailableEvidenceCodesFromEvidenceSources(), new Context(CacheContextKey));
     }
 
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromEvidenceSources()
@@ -157,7 +157,6 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
                 var serviceContextRequirements = serviceContext.AuthorizationRequirements.DeepCopy();
                 serviceContextRequirements.ForEach(x => x.AppliesToServiceContext = new List<string> { serviceContext.Name });
 
-                evidenceCode.AuthorizationRequirements ??= new List<Requirement>();
                 evidenceCode.AuthorizationRequirements.AddRange(serviceContextRequirements);
             }
         }
@@ -165,7 +164,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private async Task<List<EvidenceCode>> GetEvidenceCodesFromSource(EvidenceSource source)
     {
-        var client = _httpClientFactory.CreateClient(HTTP_CLIENT_NAME);
+        var client = _httpClientFactory.CreateClient(HttpClientName);
 
         try
         {
@@ -243,11 +242,11 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         /// <summary>
         /// The url to the evidence source
         /// </summary>
-        public string Url { get; set; }
+        public string Url { get; set; } = string.Empty;
 
         /// <summary>
         /// The provider of the evidence source
         /// </summary>
-        public string Provider { get; set; }
+        public string Provider { get; set; } = string.Empty;
     }
 }

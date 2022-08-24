@@ -22,7 +22,7 @@ public class RequiresConsentException : DanException
     /// Requires Consent Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public RequiresConsentException(string message) : base(ErrorCode.RequiresConsentException, message)
+    public RequiresConsentException(string? message) : base(ErrorCode.RequiresConsentException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class RequiresConsentException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public RequiresConsentException(string message, Exception innerException) : base(ErrorCode.RequiresConsentException, message, innerException)
+    public RequiresConsentException(string? message, Exception? innerException) : base(ErrorCode.RequiresConsentException, message, innerException)
     {
     }
 }

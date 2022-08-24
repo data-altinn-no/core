@@ -22,7 +22,7 @@ public class AsyncEvidenceStillWaitingException : DanException
     /// Asynchronous Evidence Still Waiting Exception
     /// </summary>
     /// <param name="message">Error Message</param>
-    public AsyncEvidenceStillWaitingException(string message) : base(ErrorCode.AsyncEvidenceStillWaitingException, message)
+    public AsyncEvidenceStillWaitingException(string? message) : base(ErrorCode.AsyncEvidenceStillWaitingException, message)
     {
     }
 
@@ -31,7 +31,7 @@ public class AsyncEvidenceStillWaitingException : DanException
     /// </summary>
     /// <param name="message">Error message</param>
     /// <param name="innerException">Inner exception</param>
-    public AsyncEvidenceStillWaitingException(string message, Exception innerException) : base(ErrorCode.AsyncEvidenceStillWaitingException, message, innerException)
+    public AsyncEvidenceStillWaitingException(string? message, Exception? innerException) : base(ErrorCode.AsyncEvidenceStillWaitingException, message, innerException)
     {
     }
 }

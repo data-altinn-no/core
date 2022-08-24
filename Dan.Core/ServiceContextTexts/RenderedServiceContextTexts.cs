@@ -8,27 +8,27 @@ namespace Dan.Core.ServiceContextTexts;
 /// </summary>
 public class RenderedServiceContextTexts : IServiceContextTextTemplate<string>
 {
-    public LocalizedString ConsentDelegationContexts { get; set; }
+    public LocalizedString ConsentDelegationContexts { get; set; } = new();
 
-    public string CorrespondenceBody { get; set; }
+    public string CorrespondenceBody { get; set; } = string.Empty;
 
-    public string CorrespondenceSender { get; set; }
+    public string CorrespondenceSender { get; set; } = string.Empty;
 
-    public string CorrespondenceSummary { get; set; }
+    public string CorrespondenceSummary { get; set; } = string.Empty;
 
-    public string CorrespondenceTitle { get; set; }
+    public string CorrespondenceTitle { get; set; } = string.Empty;
 
-    public string EmailNotificationContent { get; set; }
+    public string EmailNotificationContent { get; set; } = string.Empty;
 
-    public string EmailNotificationSubject { get; set; }
+    public string EmailNotificationSubject { get; set; } = string.Empty;
 
-    public string SMSNotificationContent { get; set; }
+    public string SMSNotificationContent { get; set; } = string.Empty;
 
-    public string ConsentButtonText { get; set; }
+    public string ConsentButtonText { get; set; } = string.Empty;
 
-    public string ConsentGivenReceiptText { get; set; }
+    public string ConsentGivenReceiptText { get; set; } = string.Empty;
 
-    public string ConsentDeniedReceiptText { get; set; }
+    public string ConsentDeniedReceiptText { get; set; } = string.Empty;
 
-    public string ConsentTitleText { get; set; }
+    public string ConsentTitleText { get; set; } = string.Empty;
 }

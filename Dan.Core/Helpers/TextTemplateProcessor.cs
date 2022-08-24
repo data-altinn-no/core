@@ -16,9 +16,20 @@ public static class TextTemplateProcessor
         return $"<a href =\"{consenturl}\" class=\"a-btn mt-2\">{buttonText}</a>";
     }
 
-    public static IServiceContextTextTemplate<string> GetRenderedTexts(ServiceContext context, Accreditation acc, string requestorName, string subjectName, string consentUrl)
+    public static IServiceContextTextTemplate<string> GetRenderedTexts(ServiceContext context, Accreditation acc, string requestorName, string subjectName, string? consentUrl)
     {
         var template = context.ServiceContextTextTemplate;
+        if (template == null)
+        {
+            throw new ServiceContextException($"The current service context, {context.Name}, does not define a ServiceContextTextTemplate");
+        }
+
+        if (acc.LanguageCode == null)
+        {
+            throw new ServiceContextException($"The given accreditation, {acc.AccreditationId}, does not specify a LanguageCode");
+        }
+
+        consentUrl ??= string.Empty;
 
         string buttonText = GetLocalisedTemplate(template.ConsentButtonText, acc.LanguageCode);
 
@@ -42,17 +53,19 @@ public static class TextTemplateProcessor
         return result;
     }
 
-    private static string ProcessMacros(string input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "", string consentUrl = "", string buttonText = "")
+    private static string ProcessMacros(string? input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "", string consentUrl = "", string buttonText = "")
     {
-        input = acc.Requestor != "" ? input.Replace(TextMacros.Requestor, acc.Requestor, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = requestorName != "" ? input.Replace(TextMacros.RequestorName, requestorName, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = acc.Subject != "" ? input.Replace(TextMacros.Subject, acc.Subject, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = subjectName != "" ? input.Replace(TextMacros.SubjectName, subjectName, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = serviceContextName != "" ? input.Replace(TextMacros.ServiceContextName, serviceContextName, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = acc.ConsentReference != "" ? input.Replace(TextMacros.ConsentReference, acc.ConsentReference, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = acc.ExternalReference != "" ? input.Replace(TextMacros.ExternalReference, acc.ExternalReference, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = buttonText != "" ? input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = acc.ConsentReference != "" ? input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input;
+        if (input == null) return string.Empty;
+
+        input = !string.IsNullOrEmpty(acc.Requestor) ? input.Replace(TextMacros.Requestor, acc.Requestor, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(requestorName) ? input.Replace(TextMacros.RequestorName, requestorName, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(acc.Subject) ? input.Replace(TextMacros.Subject, acc.Subject, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(subjectName) ? input.Replace(TextMacros.SubjectName, subjectName, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(serviceContextName) ? input.Replace(TextMacros.ServiceContextName, serviceContextName, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.ConsentReference, acc.ConsentReference, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(acc.ExternalReference) ? input.Replace(TextMacros.ExternalReference, acc.ExternalReference, StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(buttonText) ? input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input;
 
         input = input.Replace(TextMacros.ConsentOrExternalReference, acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);
         input = input.Replace(TextMacros.ConsentAndExternalReference, acc.ConsentReference + acc.ExternalReference != "" ? ", " + acc.ExternalReference : "");
@@ -72,23 +85,15 @@ public static class TextTemplateProcessor
 
     private static string GetLocalisedTemplate(LocalizedString stringTemplates, string accrediationLanguageCode)
     {
-        string res = string.Empty;
-
-        if (accrediationLanguageCode == Constants.LANGUAGE_CODE_ENGLISH)
+        string? res = accrediationLanguageCode switch
         {
-            res = stringTemplates.En;
-        }
-        else if (accrediationLanguageCode == Constants.LANGUAGE_CODE_NORWEGIAN_NN)
-        {
-            res = stringTemplates.NoNn;
-        }
-        else
-        {
-            res = stringTemplates.NoNb;
-        }
+            Constants.LANGUAGE_CODE_ENGLISH => stringTemplates.En,
+            Constants.LANGUAGE_CODE_NORWEGIAN_NN => stringTemplates.NoNn,
+            _ => stringTemplates.NoNb
+        };
 
         //Indicates we have forgot to define texts for servicecontext
-        if (res == string.Empty)
+        if (res == null)
             throw new ServiceContextException();
 
         return res;
@@ -96,7 +101,7 @@ public static class TextTemplateProcessor
 
     private static string GetEbevisRef(string consentReference)
     {
-        string caseReferenceBody = string.Empty;
+        string caseReferenceBody;
 
         if (IsDoffinReference(consentReference))
         {
