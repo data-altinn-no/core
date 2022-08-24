@@ -6,4 +6,5 @@ public interface IEvidenceStatusService
 {
     public Task<EvidenceStatus> GetEvidenceStatusAsync(Accreditation accreditation, EvidenceCode requestedEvidenceCode, bool onlyLocalChecks);
     public Task<List<EvidenceStatus>> GetEvidenceStatusListAsync(Accreditation accreditation);
+    public Task DetermineAggregateStatus(List<Accreditation> accreditations, bool onlyLocalChecks = true);
 }

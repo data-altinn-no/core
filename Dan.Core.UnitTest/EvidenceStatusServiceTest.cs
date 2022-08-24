@@ -7,6 +7,8 @@ using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
 using Dan.Core.UnitTest.Settings;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using ConsentRequirement = Nadobe.Common.Models.ConsentRequirement;
 
@@ -17,9 +19,10 @@ namespace Dan.Core.UnitTest
     public class EvidenceStatusServiceTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
-        private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        private readonly Mock<IConsentService> _mockConsentService = new Mock<IConsentService>();
-        private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService = new Mock<IAvailableEvidenceCodesService>();
+        private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new();
+        private readonly Mock<IConsentService> _mockConsentService = new();
+        private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService = new();
+        private readonly Mock<IRequestContextService> _mockRequestContextService = new();
 
         private const string CONSENT_DENIED = "denied";
 
@@ -41,6 +44,8 @@ namespace Dan.Core.UnitTest
                 .Returns(true);
             _mockConsentService.Setup(_ => _.Check(It.IsAny<Accreditation>(), It.IsAny<bool>()))
                 .Returns(Task.FromResult(ConsentStatus.Pending));
+            _mockRequestContextService.SetupProperty(_ => _.Request,
+                new Mock<HttpRequestData>(new Mock<FunctionContext>().Object).Object);
         }
 
         [TestMethod]
@@ -52,7 +57,7 @@ namespace Dan.Core.UnitTest
 
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1));
             var evidenceHarvesterService = new EvidenceStatusService(_mockAvailableEvidenceCodesService.Object,
-                _mockConsentService.Object, _mockHttpClientFactory.Object, _loggerFactory);
+                _mockConsentService.Object, _mockRequestContextService.Object, _mockHttpClientFactory.Object, _loggerFactory);
 
             // Act
             var response = await evidenceHarvesterService.GetEvidenceStatusAsync(accreditation, new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_OPEN }, true);
@@ -67,7 +72,7 @@ namespace Dan.Core.UnitTest
             // Setup
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1), null, new List<string> { EVIDENCECODE_CONSENT });
             var evidenceHarvesterService = new EvidenceStatusService(_mockAvailableEvidenceCodesService.Object,
-                _mockConsentService.Object, _mockHttpClientFactory.Object, _loggerFactory);
+                _mockConsentService.Object, _mockRequestContextService.Object, _mockHttpClientFactory.Object, _loggerFactory);
 
             // Act
             var response = await evidenceHarvesterService.GetEvidenceStatusAsync(accreditation, new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_CONSENT }, true);
@@ -82,7 +87,7 @@ namespace Dan.Core.UnitTest
             // Setup
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1), null, new List<string> { EVIDENCECODE_CONSENT_WITH_REQUIREMENTS });
             var evidenceHarvesterService = new EvidenceStatusService(_mockAvailableEvidenceCodesService.Object,
-                _mockConsentService.Object, _mockHttpClientFactory.Object, _loggerFactory);
+                _mockConsentService.Object, _mockRequestContextService.Object, _mockHttpClientFactory.Object, _loggerFactory);
 
             // Act
             var response = await evidenceHarvesterService.GetEvidenceStatusAsync(accreditation, new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_CONSENT_WITH_REQUIREMENTS }, true);
@@ -97,7 +102,7 @@ namespace Dan.Core.UnitTest
             // Setup
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1), null, new List<string> { "nolongeravailable" });
             var evidenceHarvesterService = new EvidenceStatusService(_mockAvailableEvidenceCodesService.Object,
-                _mockConsentService.Object, _mockHttpClientFactory.Object, _loggerFactory);
+                _mockConsentService.Object, _mockRequestContextService.Object, _mockHttpClientFactory.Object, _loggerFactory);
 
             // Act
             var response = await evidenceHarvesterService.GetEvidenceStatusAsync(accreditation, new EvidenceCode() { EvidenceCodeName = "nolongeravailable" }, true);

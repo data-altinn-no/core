@@ -12,29 +12,33 @@ public class EvidenceStatusService : IEvidenceStatusService
 {
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly IConsentService _consentService;
+    private readonly IRequestContextService _requestContextService;
     private readonly ILogger<EvidenceStatusService> _logger;
     private readonly IHttpClientFactory _clientFactory;
 
-    public EvidenceStatusService(IAvailableEvidenceCodesService availableEvidenceCodesService, IConsentService consentService, IHttpClientFactory clientFactory, ILoggerFactory loggerFactory)
+    public EvidenceStatusService(
+        IAvailableEvidenceCodesService availableEvidenceCodesService, 
+        IConsentService consentService,
+        IRequestContextService requestContextService,
+        IHttpClientFactory clientFactory, 
+        ILoggerFactory loggerFactory)
     {
         _availableEvidenceCodesService = availableEvidenceCodesService;
         _consentService = consentService;
+        _requestContextService = requestContextService;
         _logger = loggerFactory.CreateLogger<EvidenceStatusService>();
         _clientFactory = clientFactory;
     }
 
-    public async Task<EvidenceStatus> GetEvidenceStatusAsync(Accreditation accreditation, EvidenceCode requestedEvidenceCode, bool onlyLocalChecks)
+    public async Task<EvidenceStatus> GetEvidenceStatusAsync(Accreditation accreditation, EvidenceCode evidenceCode, bool onlyLocalChecks)
     {
         EvidenceStatusCode status;
         var isConsentRequest = false;
 
-        // Since evidencecodes in stored accreditation does not contain requirements, we need to get it from availableevidenceservice
+        // Since evidencecodes in stored accreditation does not contain requirements, we need to rehydrate it from availableevidenceservice
         // This also validates that the evidence code requested is still available at the ES
-        var availableEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
-        var evidenceCode = availableEvidenceCodes.FirstOrDefault(x =>
-            x.EvidenceCodeName == requestedEvidenceCode.EvidenceCodeName);
-
-        if (evidenceCode == null)
+        var stillAvailable = await TryRehydrateEvidenceCodeAuthorizationRequirements(evidenceCode);
+        if (!stillAvailable)
         {
             status = EvidenceStatusCode.Unavailable;
         }
@@ -50,7 +54,7 @@ public class EvidenceStatusService : IEvidenceStatusService
         }
 
         // If the code is marked as asyncronous, we need to actually ask the ES itself about the status
-        if (evidenceCode != null && evidenceCode.IsAsynchronous && !isConsentRequest)
+        if (stillAvailable && evidenceCode.IsAsynchronous && !isConsentRequest)
         {
             if (onlyLocalChecks)
             {
@@ -67,10 +71,9 @@ public class EvidenceStatusService : IEvidenceStatusService
             }
         }
 
-        _logger.LogInformation("Returning evidence status aid={accreditationId} codename={evidenceCodeName} status={evidenceStatus} valid from={validFrom} valid to={validTo}", accreditation.AccreditationId, requestedEvidenceCode.EvidenceCodeName, status.Code, accreditation.Issued, accreditation.ValidTo);
         return new EvidenceStatus
         {
-            EvidenceCodeName = requestedEvidenceCode.EvidenceCodeName,
+            EvidenceCodeName = evidenceCode.EvidenceCodeName,
             Status = status,
             ValidFrom = accreditation.Issued,
             ValidTo = accreditation.ValidTo
@@ -94,6 +97,50 @@ public class EvidenceStatusService : IEvidenceStatusService
         }
 
         return list;
+    }
+
+    public async Task DetermineAggregateStatus(List<Accreditation> accreditations, bool onlyLocalChecks = true)
+    {
+        foreach (var accreditation in accreditations)
+        {
+            await DetermineAggregateStatus(accreditation, onlyLocalChecks);
+        }
+    }
+
+    private async Task<bool> TryRehydrateEvidenceCodeAuthorizationRequirements(EvidenceCode evidenceCode)
+    {
+        var availableEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
+        if (evidenceCode.AuthorizationRequirements.Count == 0)
+        {
+            var availableEvidenceCode = availableEvidenceCodes.FirstOrDefault(x =>
+                x.EvidenceCodeName == evidenceCode.EvidenceCodeName);
+
+            if (availableEvidenceCode == null)
+            {
+                // The evidence code is no longer available
+                return false;
+            }
+
+            evidenceCode.AuthorizationRequirements = availableEvidenceCode.AuthorizationRequirements;
+        }
+
+        evidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements.Where(
+            x => x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
+
+        return true;
+    }
+
+    private async Task DetermineAggregateStatus(Accreditation accreditation, bool onlyLocalChecks = false)
+    {
+        foreach (var evidenceCode in accreditation.EvidenceCodes)
+        {
+            var evidenceStatus = await GetEvidenceStatusAsync(accreditation, evidenceCode, onlyLocalChecks);
+            if (evidenceStatus.Status == EvidenceStatusCode.Available) continue;
+            accreditation.AggregateStatus = evidenceStatus.Status;
+            return;
+        }
+            
+        accreditation.AggregateStatus = EvidenceStatusCode.Available;
     }
 
     private async Task<EvidenceStatusCode> GetAsynchronousEvidenceStatusCode(Accreditation accreditation, EvidenceCode evidenceCode)

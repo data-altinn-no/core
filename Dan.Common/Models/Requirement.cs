@@ -16,14 +16,19 @@ public class Requirement
     /// <summary>
     /// Action to take if requirement is not satisified
     /// </summary>
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     [DataMember(Name = "failureAction")]
     public FailureAction FailureAction;
 
     /// <summary>
     ///  A requirement may apply to one, several or all servicecontexts using the dataset
     /// </summary>
-    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] [DataMember(Name = "appliesToServiceContext")]
+    [DataMember(Name = "appliesToServiceContext")]
     public List<string> AppliesToServiceContext = new();
 
+    public bool ShouldSerializeAppliesToServiceContext()
+    {
+        // This causes Json.NET to skip serializing AppliesToServiceContext if it's empty, as it
+        // may be confusing that this being empty means it applies to _all_ service contexts
+        return AppliesToServiceContext.Count > 0;
+    }
 }

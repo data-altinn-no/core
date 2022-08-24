@@ -59,7 +59,7 @@ namespace Dan.Core
         {
             await _requestContextService.BuildRequestContext(req);
 
-            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService);
+            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
             if (accreditation == null)
             {
                 throw new NonExistentAccreditationException("The supplied accreditation id was not found or authorization for it failed");

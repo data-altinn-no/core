@@ -1,13 +1,9 @@
-using System.Net;
-using Dan.Common.Helpers.Util;
-using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
 using Dan.Core.Services.Interfaces;
-using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace Dan.Core;
 
@@ -49,7 +45,7 @@ public class FuncAccreditationStatus
         string accreditationId)
     {
         await _requestContextService.BuildRequestContext(req);
-        var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService);
+        var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
         if (accreditation == null)
         {
             throw new NonExistentAccreditationException();

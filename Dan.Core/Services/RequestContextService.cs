@@ -43,7 +43,7 @@ class RequestContextService : IRequestContextService
     private string GetServiceContextFromRequest(HttpRequestData request)
     {
         if (!request.Headers.TryGetValues(ServicecontextHeader, out var header))
-            throw new ServiceNotAvailableException("Missing Service Context definition in request.");
+            throw new ServiceContextException("Missing Service Context definition in request.");
 
         return header.First().ToLowerInvariant();
     }

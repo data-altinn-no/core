@@ -54,7 +54,8 @@ namespace Dan.Core
             HttpRequestData req,
             string accreditationId)
         {
-            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId);
+            // Pass null as partitionKeyValue since we're unauthenticated. This will cause a cross partition query.
+            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, null);
             
             if (accreditation == null)
             {

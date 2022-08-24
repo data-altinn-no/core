@@ -10,85 +10,69 @@ using Microsoft.Azure.Cosmos;
 namespace Dan.Core.Services;
 public class CosmosDbAccreditationRepository : IAccreditationRepository
 {
-    private readonly IEvidenceStatusService _evidenceStatusService;
-    private readonly PartitionKey _accreditationsPartitionKey;
     private readonly Container _container;
 
-    public CosmosDbAccreditationRepository(CosmosClient cosmosClient, IEvidenceStatusService evidenceStatusService)
+    public CosmosDbAccreditationRepository(CosmosClient cosmosClient)
     {
-        _evidenceStatusService = evidenceStatusService;
-        _accreditationsPartitionKey = new PartitionKey(Settings.CosmosbDbAccreditationsPartitionKey);
         _container = cosmosClient.GetContainer(Settings.CosmosDbDatabase, Settings.CosmosDbAccreditations);
     }
 
-    public async Task<Accreditation?> GetAccreditationAsync(string accreditationId, IRequestContextService requestContextService, bool allowExpired = false)
-    {
-        var queryDefinition =
-            new QueryDefinition("SELECT * FROM c WHERE c.Owner = @owner AND c.AccreditationId = @aid AND c.serviceContext = @serviceContext")
-                .WithParameter("@owner", requestContextService.AuthenticatedOrgNumber)
-                .WithParameter("@aid", accreditationId)
-                .WithParameter("@serviceContext", requestContextService.ServiceContext.Name);
-
-        using (var feedIterator = _container.GetItemQueryIterator<Accreditation>(queryDefinition, null,
-                   new QueryRequestOptions { PartitionKey = _accreditationsPartitionKey }))
-        {
-            while (feedIterator.HasMoreResults)
-            {
-                foreach (var accreditation in await feedIterator.ReadNextAsync())
-                {
-                    if (!allowExpired && accreditation.ValidTo < DateTime.Now)
-                    {
-                        throw new ExpiredAccreditationException();
-                    }
-
-                    accreditation.PopulateParties();
-                    return accreditation;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public async Task<Accreditation?> GetAccreditationAsync(string accreditationId, bool allowExpired = false)
+    public async Task<Accreditation?> GetAccreditationAsync(string accreditationId, string? partitionKeyValue)
     {
         Accreditation? accreditation = null;
-        try
+
+        // We assume using ReadItemAsync is faster than a query iterator when we have a partition key value.
+        // When null, call QueryAccreditationsAsync which uses a GetItemQueryIterator that supports cross-partition queries
+        if (partitionKeyValue == null)
         {
-            accreditation =
-                await _container.ReadItemAsync<Accreditation>(accreditationId, _accreditationsPartitionKey);
+            try
+            {
+                accreditation =
+                    await _container.ReadItemAsync<Accreditation>(accreditationId, new PartitionKey(partitionKeyValue));
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound) { }
         }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound) { }
+        else
+        {
+            var accreditations =
+                await QueryAccreditationsAsync(new AccreditationsQuery { AccreditationId = accreditationId }, partitionKeyValue);
+
+            if (accreditations.Count == 0) return null;
+            accreditation = accreditations[0];
+        }
 
         if (accreditation == null) return null;
-
-        if (!allowExpired && accreditation.ValidTo < DateTime.Now)
-        {
-            throw new ExpiredAccreditationException();
-        }
 
         accreditation.PopulateParties();
         return accreditation;
     }
 
-    public async Task<List<Accreditation>> QueryAccreditationsAsync(AccreditationsQuery accreditationsQuery, IRequestContextService requestContextService)
+    public async Task<List<Accreditation>> QueryAccreditationsAsync(AccreditationsQuery accreditationsQuery, string? partitionKeyValue)
     {
-        var queryText = "SELECT * FROM c WHERE c.Owner = @owner AND c.validTo > NOW() AND serviceContext = @serviceContext";
-        var parameters = new Dictionary<string, string>
-            {
-                { "@owner", accreditationsQuery.Owner ?? requestContextService.AuthenticatedOrgNumber },
-                { "@serviceContext", accreditationsQuery.ServiceContext ?? requestContextService.ServiceContext.Name }
-            };
+        var queryText = "SELECT * FROM c WHERE 1=1 ";
+        var parameters = new Dictionary<string, string>();
+
+        if (accreditationsQuery.AccreditationId != null)
+        {
+            queryText += " AND c.id = @accreditationId";
+            parameters.Add("@accreditationId", accreditationsQuery.AccreditationId);
+        }
+
+        if (accreditationsQuery.ServiceContext != null)
+        {
+            queryText += " AND c.serviceContext = @serviceContext";
+            parameters.Add("@serviceContext", accreditationsQuery.ServiceContext);
+        }
 
         if (accreditationsQuery.ChangedAfter.HasValue)
         {
-            queryText += " AND lastChanged > @changedAfter";
+            queryText += " AND c.lastChanged > @changedAfter";
             parameters.Add("@changedAfter", accreditationsQuery.ChangedAfter.Value.ToString("O"));
         }
 
         if (accreditationsQuery.Requestor != null)
         {
-            queryText += " AND requestor = @requestor";
+            queryText += " AND c.requestor = @requestor";
             parameters.Add("@requestor", accreditationsQuery.Requestor);
         }
 
@@ -98,9 +82,12 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
             queryDefinition.WithParameter(param.Key, param.Value);
         }
 
-        List<Accreditation> accreditations = new List<Accreditation>();
-        using (var feedIterator = _container.GetItemQueryIterator<Accreditation>(queryDefinition, null,
-                   new QueryRequestOptions { PartitionKey = _accreditationsPartitionKey }))
+        var queryOptions = partitionKeyValue != null
+            ? new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKeyValue) }
+            : null;
+
+        var accreditations = new List<Accreditation>();
+        using (var feedIterator = _container.GetItemQueryIterator<Accreditation>(queryDefinition, null, queryOptions))
         {
             while (feedIterator.HasMoreResults)
             {
@@ -111,16 +98,9 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
             }
         }
 
-        await DetermineAggregateStatus(accreditations);
-
-        if (accreditationsQuery.OnlyAvailableForHarvest)
-        {
-            accreditations = accreditations.Where(x => x.AggregateStatus.Code == EvidenceStatusCode.Available.Code).ToList();
-        }
-
+        // TODO! This is only requires for legacy accreditations. Should be removed when all legacy accreditations have expired from the database.
         accreditations.ForEach(x =>
         {
-            x.EvidenceCodes = new List<EvidenceCode>();
             x.PopulateParties();
         });
 
@@ -129,60 +109,24 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
 
     public async Task<Accreditation> CreateAccreditationAsync(Accreditation accreditation)
     {
-        var result = await _container.CreateItemAsync(accreditation, _accreditationsPartitionKey);
-        if (result.StatusCode != HttpStatusCode.Created)
-        {
-            throw new AccreditationRepositoryException();
-        }
-
+        var result = await _container.CreateItemAsync(accreditation, new PartitionKey(accreditation.Owner));
         var savedAccreditation = (Accreditation)result;
+
+        // TODO! This is only requires for legacy accreditations. Should be removed when all legacy accreditations have expired from the database.
         savedAccreditation.PopulateParties();
+        
         return savedAccreditation;
     }
 
     public async Task<bool> UpdateAccreditationAsync(Accreditation accreditation)
     {
-        var result = await _container.ReplaceItemAsync(accreditation, accreditation.AccreditationId, _accreditationsPartitionKey);
+        var result = await _container.ReplaceItemAsync(accreditation, accreditation.AccreditationId, new PartitionKey(accreditation.Owner));
         return result.StatusCode == HttpStatusCode.OK;
     }
 
-    public async Task<bool> DeleteAccreditationAsync(string accreditationId)
+    public async Task<bool> DeleteAccreditationAsync(Accreditation accreditation)
     {
-        var result = await _container.DeleteItemAsync<Accreditation>(accreditationId, _accreditationsPartitionKey);
+        var result = await _container.DeleteItemAsync<Accreditation>(accreditation.AccreditationId, new PartitionKey(accreditation.Owner));
         return result.StatusCode == HttpStatusCode.NoContent;
     }
-
-    /// <summary>
-    /// Populates the Aggregate Status property for the accreditations
-    /// </summary>
-    /// <param name="accreditations">A list of accreditations</param>
-    /// <param name="onlyLocalChecks">Whether or not to only do local checks without hitting the network</param>
-    /// <returns>An async task</returns>
-    private async Task DetermineAggregateStatus(List<Accreditation> accreditations, bool onlyLocalChecks = true)
-    {
-        foreach (var accreditation in accreditations)
-        {
-            await DetermineAggregateStatus(accreditation, onlyLocalChecks);
-        }
-    }
-
-    /// <summary>
-    /// Populates the Aggregate Status property for the accreditation
-    /// </summary>
-    /// <param name="accreditation">A accreditation</param>
-    /// <param name="onlyLocalChecks">Whether or not to only do local checks without hitting the network</param>
-    /// <returns>An async task</returns>
-    private async Task DetermineAggregateStatus(Accreditation accreditation, bool onlyLocalChecks = false)
-    {
-        foreach (var evidenceCode in accreditation.EvidenceCodes)
-        {
-            var evidenceStatus = await _evidenceStatusService.GetEvidenceStatusAsync(accreditation, evidenceCode, onlyLocalChecks);
-            if (evidenceStatus.Status.Code == EvidenceStatusCode.Available.Code) continue;
-            accreditation.AggregateStatus = evidenceStatus.Status;
-            return;
-        }
-
-        accreditation.AggregateStatus = EvidenceStatusCode.Available;
-    }
-
 }

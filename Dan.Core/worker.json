@@ -1,0 +1,33 @@
+﻿{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "Function": "Information",
+      "Host.Aggregator": "Error",
+      "Host.Results": "Information",
+      "Function.Accreditation.User": "Debug",
+      "Function.Authorization.User": "Debug",
+      "Function.DirectHarvester.User": "Debug",
+      "Function.EvidenceHarvester.User": "Debug",
+      "Function.EvidenceStatus.User": "Debug",
+      "Function.FuncAccreditationDelete.User": "Debug",
+      "Function.FuncConsentReceipt.User": "Debug",
+      "Function.FuncConsentReminderGet.User": "Debug",
+      "Function.FuncConsentReminderPost.User": "Debug",
+      "Function.FuncOpenData.User": "Debug",
+      "Function.FuncOpenDataIdentifier.User": "Debug",
+      "Function.MetadataErrorCodes.User": "Debug",
+      "Function.MetadataEvidence.User": "Debug",
+      "Function.MetadataEvidenceServiceContext.User": "Debug",
+      "Function.MetadataServiceContext.User": "Debug",
+      "Function.MetadataStatusCodes.User": "Debug",
+      "Function.version.User": "Debug",
+      "Function.EvidenceCodesListRefresher.User": "Debug"
+    },
+    "ApplicationInsights": {
+      "SamplingSettings": {
+        "IsEnabled": false
+      }
+    }
+  }
+}

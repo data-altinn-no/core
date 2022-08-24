@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography.X509Certificates;
+using Dan.Core.Helpers;
 
 namespace Dan.Core.Config;
 
@@ -9,7 +10,6 @@ namespace Dan.Core.Config;
 /// </summary>
 public static class Settings
 {
-    private static IConfigurationRoot? _config;
     private static CoreKeyVault? _keyVault;
     private static X509Certificate2? _altinnCertificate;
     private static string? _altinnApiKey;
@@ -123,7 +123,7 @@ public static class Settings
     public static string AgencySystemPassword =>
         _agencySystemPassword ??= string.IsNullOrEmpty(GetSetting("AgencySystemPassword"))
             ? KeyVault.Get(KeyVaultAgencySystemPassword).Result
-            : GetSetting("AgencySystemUserName");
+            : GetSetting("AgencySystemPassword");
 
     /// <summary>
     /// Function key value
@@ -358,21 +358,9 @@ public static class Settings
 
     public const int MaxReferenceLength = 50;
 
-    private static IConfigurationRoot Config
-    {
-        get
-        {
-            return _config ??= new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .AddJsonFile("appsettings.unittest.json", true)
-                .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
-                .Build();
-        }
-    }
-
     private static string GetSetting(string settingKey)
     {
-        var value = Config[settingKey];
+        var value = ConfigurationHelper.ConfigurationRoot[settingKey];
         if (value == null)
         {
             throw new MissingSettingsException($"Missing settings key: {settingKey}");

@@ -81,7 +81,7 @@ public class ConsentService : IConsentService
     /// </returns>
     public async Task Initiate(Accreditation accreditation, bool skipAltinnNotification)
     {
-        var evidenceCodesRequiringConsent = await GetEvidenceCodesRequiringConsentForActiveContext(accreditation);
+        var evidenceCodesRequiringConsent = GetEvidenceCodesRequiringConsentForActiveContext(accreditation);
         if (evidenceCodesRequiringConsent.Count == 0)
         {
             throw new ArgumentException("Expected at least one evidencecode in the accreditation requiring consent");
@@ -134,7 +134,7 @@ public class ConsentService : IConsentService
     /// </returns>
     public async Task<ConsentStatus> Check(Accreditation accreditation, bool onlyLocalCheck = false)
     {
-        var evidenceCodesRequiringConsent = await GetEvidenceCodesRequiringConsentForActiveContext(accreditation);
+        var evidenceCodesRequiringConsent = GetEvidenceCodesRequiringConsentForActiveContext(accreditation);
         if (evidenceCodesRequiringConsent.Count == 0)
         {
             _log.LogError("Expected at least one evidencecode in the accreditation requiring consent in accredition {accreditationId}", accreditation.AccreditationId);
@@ -223,14 +223,13 @@ public class ConsentService : IConsentService
 
     public bool EvidenceCodeRequiresConsent(EvidenceCode evidenceCode)
     {
-
         if (!evidenceCode.AuthorizationRequirements.OfType<ConsentRequirement>().Any())
         {
             return false;
         }
 
         return evidenceCode.AuthorizationRequirements.OfType<ConsentRequirement>().Any(x =>
-            x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name));
+            x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name));
     }
 
     /// <summary>
@@ -277,38 +276,9 @@ public class ConsentService : IConsentService
         }
     }
 
-    public async Task<List<EvidenceCode>> GetEvidenceCodesRequiringConsentForActiveContext(Accreditation accreditation)
+    public List<EvidenceCode> GetEvidenceCodesRequiringConsentForActiveContext(Accreditation accreditation)
     {
-        await PopulateEvidenceCodeRequirementsForActiveContext(accreditation);
         return accreditation.EvidenceCodes.Where(EvidenceCodeRequiresConsent).ToList();
-    }
-
-    private async Task PopulateEvidenceCodeRequirementsForActiveContext(Accreditation accreditation)
-    {
-        var availableEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
-        foreach (var accreditationEvidenceCode in accreditation.EvidenceCodes)
-        {
-            if (accreditationEvidenceCode.AuthorizationRequirements.Count == 0)
-            {
-                var evidenceCode = availableEvidenceCodes.FirstOrDefault(x =>
-                    x.EvidenceCodeName == accreditationEvidenceCode.EvidenceCodeName);
-
-                if (evidenceCode == null)
-                {
-                    // This can potentially happen for a ConsentReminder referring to a consent based evidence code that no longer is available
-                    _log.LogWarning(
-                        "Unable to re-populate evidence authorization requirements for code {evidenceCode}; no longer available",
-                        accreditationEvidenceCode.EvidenceCodeName);
-
-                    continue;
-                }
-
-                accreditationEvidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements;
-            }
-
-            accreditationEvidenceCode.AuthorizationRequirements = accreditationEvidenceCode.AuthorizationRequirements.Where(
-                    x => x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
-        }
     }
 
     private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)

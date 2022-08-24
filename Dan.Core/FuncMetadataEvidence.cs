@@ -43,12 +43,6 @@ public class FuncMetadataEvidence
         {
             var content = await _availableEvidenceCodesService.GetAvailableEvidenceCodes(req.GetQueryParam("forceRefresh") == Settings.FunctionKeyValue);
 
-            //  Add some metadata properties to make serialized output more parseable
-            foreach (var es in content)
-            {
-                es.AuthorizationRequirements?.ForEach(x => x.RequirementType = x.GetType().Name);
-            }
-
             var response = req.CreateExternalResponse(HttpStatusCode.OK, content);
             response.Headers.Add("Access-Control-Allow-Origin", "*");
             return response;

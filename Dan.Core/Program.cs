@@ -1,3 +1,4 @@
+using System.Reflection;
 using Azure.Core.Serialization;
 using Dan.Common.Models;
 using Dan.Core.Attributes;
@@ -8,7 +9,9 @@ using Dan.Core.Middleware;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Cosmos.Fluent;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
@@ -20,11 +23,30 @@ using Polly.Extensions.Http;
 using Polly.Registry;
 
 var host = new HostBuilder()
+    .ConfigureAppConfiguration((hostContext, config) =>
+    {
+        config
+            .AddEnvironmentVariables()
+            .AddJsonFile("worker.json");
+
+        if (hostContext.HostingEnvironment.IsDevelopment())
+        {
+            config.AddUserSecrets(Assembly.GetExecutingAssembly(), true);
+        }
+
+        ConfigurationHelper.ConfigurationRoot = config.Build();
+    })
     .ConfigureFunctionsWorkerDefaults(builder =>
     {
-        builder.UseWhen<ExceptionHandlerMiddleware>(context => !context.HasAttribute(typeof(HtmlErrorAttribute)));
-        builder.UseWhen<HtmlExceptionHandlerMiddleware>(context => context.HasAttribute(typeof(HtmlErrorAttribute)));
-        builder.UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)));
+        builder
+            .UseWhen<ExceptionHandlerMiddleware>(context => !context.HasAttribute(typeof(HtmlErrorAttribute)))
+            .UseWhen<HtmlExceptionHandlerMiddleware>(context => context.HasAttribute(typeof(HtmlErrorAttribute)))
+            .UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)))
+
+            // Using preview package Microsoft.Azure.Functions.Worker.ApplicationInsights, see https://github.com/Azure/azure-functions-dotnet-worker/pull/944
+            // Requires APPLICATIONINSIGHTS_CONNECTION_STRING being set. Note that host.json logging settings will have to be replicated to worker.json
+            .AddApplicationInsights()
+            .AddApplicationInsightsLogger();
     }, options =>
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();

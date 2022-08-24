@@ -32,13 +32,13 @@ public class FuncAccreditationDelete
     {
         await _requestContextService.BuildRequestContext(req);
 
-        var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService);
+        var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
         if (accreditation == null)
         {
             return req.CreateResponse(HttpStatusCode.NotFound);
         }
 
-        await _accreditationRepository.DeleteAccreditationAsync(accreditationId);
+        await _accreditationRepository.DeleteAccreditationAsync(accreditation);
 
         return req.CreateResponse(HttpStatusCode.NoContent);
     }

@@ -59,5 +59,5 @@ public interface IConsentService
     /// </summary>
     /// <param name="accreditation"></param>
     /// <returns></returns>
-    Task<List<EvidenceCode>> GetEvidenceCodesRequiringConsentForActiveContext(Accreditation accreditation);
+    List<EvidenceCode> GetEvidenceCodesRequiringConsentForActiveContext(Accreditation accreditation);
 }

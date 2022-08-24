@@ -243,28 +243,28 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
     private static void ThrowIfNotAvailableForHarvest(EvidenceStatus evidenceStatus)
     {
-        if (evidenceStatus.Status.Code == EvidenceStatusCode.PendingConsent.Code)
+        if (evidenceStatus.Status == EvidenceStatusCode.PendingConsent)
         {
             throw new RequiresConsentException("The evidence code requested is pending a reply to the consent request");
         }
 
-        if (evidenceStatus.Status.Code == EvidenceStatusCode.Denied.Code)
+        if (evidenceStatus.Status == EvidenceStatusCode.Denied)
         {
             throw new RequiresConsentException("The consent to harvest the data for the requested evidence code has been denied or revoked");
         }
 
-        if (evidenceStatus.Status.Code == EvidenceStatusCode.Expired.Code)
+        if (evidenceStatus.Status == EvidenceStatusCode.Expired)
         {
             throw new RequiresConsentException("The consent to harvest the data for the requested evidence code has expired");
         }
 
-        if (evidenceStatus.Status.Code == EvidenceStatusCode.Unavailable.Code)
+        if (evidenceStatus.Status == EvidenceStatusCode.Unavailable)
         {
             throw new ServiceNotAvailableException(
                 "The requested evidence code is not currently available. The evidence source plugin might be down.");
         }
 
-        if (evidenceStatus.Status.Code != EvidenceStatusCode.Waiting.Code) return;
+        if (evidenceStatus.Status != EvidenceStatusCode.Waiting) return;
 
         if (evidenceStatus.Status.RetryAt.HasValue)
         {

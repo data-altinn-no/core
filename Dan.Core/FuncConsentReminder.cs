@@ -43,7 +43,7 @@ namespace Dan.Core
             await _requestContextService.BuildRequestContext(req);
 
             // TODO! Should we allow GET on expired accreditations? (FuncEvidenceStatus does not)
-            var accreditation = await _applicationRepository.GetAccreditationAsync(accreditationId, _requestContextService, true);
+            var accreditation = await _applicationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
 
             return accreditation != null 
                 ? req.CreateExternalResponse(HttpStatusCode.OK, accreditation.Reminders)
@@ -57,16 +57,15 @@ namespace Dan.Core
         {
             await _requestContextService.BuildRequestContext(req);
 
-            var accreditation = await _applicationRepository.GetAccreditationAsync(accreditationId, _requestContextService);
+            var accreditation = await _applicationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
             if (accreditation == null)
             {
                 return req.CreateResponse(HttpStatusCode.Forbidden);
             }
 
-            await ValidateAccreditationForReminder(accreditationId, accreditation);
+            ValidateAccreditationForReminder(accreditationId, accreditation);
 
             var response = await _altinnCorrespondenceService.SendNotification(accreditation, _requestContextService.ServiceContext);
-            accreditation.Reminders ??= new List<NotificationReminder>();
             accreditation.Reminders.AddRange(response);
 
             await _applicationRepository.UpdateAccreditationAsync(accreditation);
@@ -75,9 +74,9 @@ namespace Dan.Core
             return req.CreateExternalResponse(HttpStatusCode.OK, response);
         }
 
-        private async Task ValidateAccreditationForReminder(string accreditationId, Accreditation accr)
+        private void ValidateAccreditationForReminder(string accreditationId, Accreditation accr)
         {
-            var evidenceCodesRequiringConsent = await _consentService.GetEvidenceCodesRequiringConsentForActiveContext(accr);
+            var evidenceCodesRequiringConsent = _consentService.GetEvidenceCodesRequiringConsentForActiveContext(accr);
             if (evidenceCodesRequiringConsent.Count < 1)
                 throw new RequiresConsentException($"There are no evidence codes requiring subject action");
 
@@ -87,7 +86,7 @@ namespace Dan.Core
             if (accr.ValidTo < DateTime.Now)
                 throw new ExpiredConsentException("The consent for this accreditation is expired");
 
-            if (accr.Reminders?.OrderByDescending(x=>x.Date).First().Date>DateTime.Now.AddDays(-7))
+            if (accr.Reminders.OrderByDescending(x=>x.Date).First().Date>DateTime.Now.AddDays(-7))
                 throw new AuthorizationFailedException("Reminders have already been sent the the last week");
 
             if (accr.Subject == null)

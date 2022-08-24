@@ -5,6 +5,15 @@ namespace Dan.Core.Models;
 
 public class SrrRightCondition
 {
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SrrRightCondition"/> class. This is used when deserializing JSON from Altinn.
+    /// </summary>
+    public SrrRightCondition()
+    {
+        AllowedRedirectDomain = new List<string>();
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SrrRightCondition"/> class from a "classic" SRR condition string.
     /// </summary>

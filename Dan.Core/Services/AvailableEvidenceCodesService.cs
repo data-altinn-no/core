@@ -23,7 +23,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
     private readonly IDistributedCache _distributedCache;
     private readonly IServiceContextService _serviceContextService;
 
-    private List<EvidenceCode> _memoryCache = new List<EvidenceCode>();
+    private List<EvidenceCode> _memoryCache = new();
     private DateTime _updateMemoryCache = DateTime.MinValue;
     private readonly SemaphoreSlim _semaphoreForceRefresh = new(1, 1);
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -107,6 +107,12 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         {
             _logger.LogWarning("Failed to refresh evidence codes cache, received empty list");
             return;
+        }
+
+        //  Add some metadata properties to make serialized output more parseable
+        foreach (var es in evidenceCodes)
+        {
+            es.AuthorizationRequirements?.ForEach(x => x.RequirementType = x.GetType().Name);
         }
 
         await _distributedCache.SetAsync(CacheContextKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
