@@ -4,7 +4,6 @@ using Dan.Common.Helpers.Util;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
-using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -69,7 +68,7 @@ namespace Dan.Core
                 throw new NonExistentAccreditationException("The supplied accreditation id was not found or authorization for it failed");
             }
 
-            var authorizationRequest = GetAuthorizationRequest(req, evidenceCodeName, accreditation);
+            var authorizationRequest = GetAuthorizationRequest(accreditation);
             await _authorizationRequestValidatorService.Validate(authorizationRequest);
 
             var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
@@ -110,47 +109,25 @@ namespace Dan.Core
             return _consentService.LogUse(accreditation, evidence, DateTime.Now);
         }
 
-        private static AuthorizationRequest GetAuthorizationRequest(HttpRequestData req, string evidenceCodeName, Accreditation accreditation)
+        private static AuthorizationRequest GetAuthorizationRequest(Accreditation accreditation)
         {
-            var requestor = accreditation.Requestor;
-            var subject = accreditation.Subject;
-
-            List<EvidenceParameter>? listOfEvidenceParameters = null;
-            foreach (var key in req.GetQueryParams().AllKeys.Except(GetQueryParamsToSkip(), StringComparer.OrdinalIgnoreCase))
-            {
-                (listOfEvidenceParameters ??= new List<EvidenceParameter>())
-                    .Add(new EvidenceParameter() { EvidenceParamName = key, Value = req.GetQueryParam(key!) });
-            }
-
             var listOfEvidenceRequests = new List<EvidenceRequest>();
-            var evidenceRequest = new EvidenceRequest()
+            foreach (var ec in accreditation.EvidenceCodes)
             {
-                EvidenceCodeName = evidenceCodeName,
-                Parameters = listOfEvidenceParameters
-            };
-            listOfEvidenceRequests.Add(evidenceRequest);
+                listOfEvidenceRequests.Add(new EvidenceRequest()
+                {
+                    EvidenceCodeName = ec.EvidenceCodeName,
+                    Parameters = ec.Parameters
+                });
+            }
 
             return new AuthorizationRequest()
             {
-                Requestor = requestor,
-                Subject = subject,
+                Requestor = accreditation.Requestor,
+                Subject = accreditation.Subject,
                 EvidenceRequests = listOfEvidenceRequests,
                 FromEvidenceHarvester = true
             };
         }
-
-        private static IEnumerable<string> GetQueryParamsToSkip()
-        {
-            return new[]
-            {
-                "requestor",
-                "subject",
-                "code",
-                "envelope",
-                EvidenceHarvesterService.QueryParamReuseToken,
-                EvidenceHarvesterService.QueryParamTokenOnBehalfOf
-            };
-        }
-
     }
 }
