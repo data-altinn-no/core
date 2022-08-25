@@ -68,4 +68,7 @@ public class AuthorizationRequest
 
     [DataMember(Name = "skipAltinnNotification")]
     public bool SkipAltinnNotification { get; set; }
+
+    [DataMember(Name = "fromEvidenceHarvester")]
+    public bool FromEvidenceHarvester = false;
 }

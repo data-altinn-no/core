@@ -4,6 +4,7 @@ using Dan.Common.Helpers.Util;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
+using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -20,15 +21,18 @@ namespace Dan.Core
         private readonly IEvidenceHarvesterService _evidenceHarvesterService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly IRequestContextService _requestContextService;
+        private readonly IAuthorizationRequestValidatorService _authorizationRequestValidatorService;
         private readonly ILogger<FuncEvidenceHarvester> _logger;
 
-        public FuncEvidenceHarvester(IConsentService consentService, 
+        public FuncEvidenceHarvester(IConsentService consentService,
                                      IRequestContextService requestContextService,
+                                     IAuthorizationRequestValidatorService authorizationRequestValidatorService,
                                      IEvidenceHarvesterService evidenceHarvesterService,
                                      IAccreditationRepository accreditationRepository,
                                      ILoggerFactory loggerFactory)
         {
             _consentService = consentService;
+            _authorizationRequestValidatorService = authorizationRequestValidatorService;
             _evidenceHarvesterService = evidenceHarvesterService;
             _accreditationRepository = accreditationRepository;
             _requestContextService = requestContextService;
@@ -64,7 +68,10 @@ namespace Dan.Core
             {
                 throw new NonExistentAccreditationException("The supplied accreditation id was not found or authorization for it failed");
             }
-            
+
+            var authorizationRequest = GetAuthorizationRequest(req, evidenceCodeName, accreditation);
+            await _authorizationRequestValidatorService.Validate(authorizationRequest);
+
             var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
 
             var response = req.CreateResponse(HttpStatusCode.OK);
@@ -89,7 +96,7 @@ namespace Dan.Core
                 }
             }
             // Save timestamp and evidencecode name for statistics
-            (accreditation.DataRetrievals ??= new List<DataRetrieval>()).Add(new DataRetrieval() {EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now});
+            (accreditation.DataRetrievals ??= new List<DataRetrieval>()).Add(new DataRetrieval() { EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now });
 
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
@@ -101,6 +108,48 @@ namespace Dan.Core
         private Task<bool> LogConsentBasedHarvest(EvidenceCode evidence, Accreditation accreditation)
         {
             return _consentService.LogUse(accreditation, evidence, DateTime.Now);
+        }
+
+        private static AuthorizationRequest GetAuthorizationRequest(HttpRequestData req, string evidenceCodeName, Accreditation accreditation)
+        {
+            var requestor = accreditation.Requestor;
+            var subject = accreditation.Subject;
+
+            List<EvidenceParameter>? listOfEvidenceParameters = null;
+            foreach (var key in req.GetQueryParams().AllKeys.Except(GetQueryParamsToSkip(), StringComparer.OrdinalIgnoreCase))
+            {
+                (listOfEvidenceParameters ??= new List<EvidenceParameter>())
+                    .Add(new EvidenceParameter() { EvidenceParamName = key, Value = req.GetQueryParam(key!) });
+            }
+
+            var listOfEvidenceRequests = new List<EvidenceRequest>();
+            var evidenceRequest = new EvidenceRequest()
+            {
+                EvidenceCodeName = evidenceCodeName,
+                Parameters = listOfEvidenceParameters
+            };
+            listOfEvidenceRequests.Add(evidenceRequest);
+
+            return new AuthorizationRequest()
+            {
+                Requestor = requestor,
+                Subject = subject,
+                EvidenceRequests = listOfEvidenceRequests,
+                FromEvidenceHarvester = true
+            };
+        }
+
+        private static IEnumerable<string> GetQueryParamsToSkip()
+        {
+            return new[]
+            {
+                "requestor",
+                "subject",
+                "code",
+                "envelope",
+                EvidenceHarvesterService.QueryParamReuseToken,
+                EvidenceHarvesterService.QueryParamTokenOnBehalfOf
+            };
         }
 
     }

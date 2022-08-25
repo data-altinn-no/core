@@ -73,6 +73,13 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         ValidateLanguageCodes();
 
         var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
+        if (authorizationRequest.FromEvidenceHarvester)
+        {
+            foreach (var requirement in requirements.Values.ToArray())
+            {
+                requirement.RemoveAll(x => x.RequiredOnEvidenceHarvester == false);
+            }
+        }
 
         var authorizationErrors = await _requirementValidationService.ValidateRequirements(requirements, _authRequest);
         if (authorizationErrors.Count > 0)
