@@ -1,4 +1,4 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿namespace Dan.Common.Extensions;
 
 /// <summary>
 /// Extension methods for evidence harvester requests

@@ -1,4 +1,7 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+
+namespace Dan.Core.Helpers;
 
 /// <summary>
 /// SSL helper methods

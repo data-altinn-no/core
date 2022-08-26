@@ -1,8 +1,7 @@
 ﻿using Dan.Common.Exceptions;
-using System.Net;
 using Microsoft.Azure.Functions.Worker.Http;
 
-namespace Dan.Common.Helpers.Util;
+namespace Dan.Common.Util;
 
 /// <summary>
 /// Helper class for evidence sources communicating with core

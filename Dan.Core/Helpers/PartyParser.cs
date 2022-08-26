@@ -1,4 +1,6 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿using Dan.Common.Models;
+
+namespace Dan.Core.Helpers;
 
 public class PartyParser
 {

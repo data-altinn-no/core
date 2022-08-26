@@ -1,4 +1,6 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿using System.Text;
+
+namespace Dan.Core.Helpers;
 
 /// <summary>
 /// Base64Url encode/decode functionality following the Base 64 URL standard

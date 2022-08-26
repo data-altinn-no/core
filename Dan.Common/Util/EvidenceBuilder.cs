@@ -1,4 +1,6 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿using Dan.Common.Interfaces;
+
+namespace Dan.Common.Util;
 
 /// <summary>
 /// The evidence builder.

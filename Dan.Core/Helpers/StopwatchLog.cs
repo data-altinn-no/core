@@ -1,4 +1,7 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+
+namespace Dan.Core.Helpers;
 
 /// <summary>
 /// Logger extension
