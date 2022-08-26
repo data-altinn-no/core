@@ -20,18 +20,15 @@ namespace Dan.Core
         private readonly IEvidenceHarvesterService _evidenceHarvesterService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly IRequestContextService _requestContextService;
-        private readonly IAuthorizationRequestValidatorService _authorizationRequestValidatorService;
         private readonly ILogger<FuncEvidenceHarvester> _logger;
 
         public FuncEvidenceHarvester(IConsentService consentService,
-                                     IRequestContextService requestContextService,
-                                     IAuthorizationRequestValidatorService authorizationRequestValidatorService,
-                                     IEvidenceHarvesterService evidenceHarvesterService,
-                                     IAccreditationRepository accreditationRepository,
-                                     ILoggerFactory loggerFactory)
+            IRequestContextService requestContextService,
+            IEvidenceHarvesterService evidenceHarvesterService,
+            IAccreditationRepository accreditationRepository,
+            ILoggerFactory loggerFactory)
         {
             _consentService = consentService;
-            _authorizationRequestValidatorService = authorizationRequestValidatorService;
             _evidenceHarvesterService = evidenceHarvesterService;
             _accreditationRepository = accreditationRepository;
             _requestContextService = requestContextService;
@@ -62,16 +59,16 @@ namespace Dan.Core
         {
             await _requestContextService.BuildRequestContext(req);
 
-            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
+            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId,
+                _requestContextService.AuthenticatedOrgNumber);
             if (accreditation == null)
             {
-                throw new NonExistentAccreditationException("The supplied accreditation id was not found or authorization for it failed");
+                throw new NonExistentAccreditationException(
+                    "The supplied accreditation id was not found or authorization for it failed");
             }
 
-            var authorizationRequest = GetAuthorizationRequest(accreditation);
-            await _authorizationRequestValidatorService.Validate(authorizationRequest);
-
-            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
+            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation,
+                _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))
@@ -89,13 +86,19 @@ namespace Dan.Core
             {
                 using (var t = _logger.Timer("consent-log-usage"))
                 {
-                    _logger.LogInformation("Start logging consent based harvest aid={accreditaionId} evidenceCode={evidenceCode}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
+                    _logger.LogInformation(
+                        "Start logging consent based harvest aid={accreditaionId} evidenceCode={evidenceCode}",
+                        accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
                     await LogConsentBasedHarvest(evidenceCode, accreditation);
-                    _logger.LogInformation("Completed logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode} elapsedMs={elapsedMs}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName, t.ElapsedMilliseconds);
+                    _logger.LogInformation(
+                        "Completed logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode} elapsedMs={elapsedMs}",
+                        accreditation.AccreditationId, evidenceCode.EvidenceCodeName, t.ElapsedMilliseconds);
                 }
             }
+
             // Save timestamp and evidencecode name for statistics
-            (accreditation.DataRetrievals ??= new List<DataRetrieval>()).Add(new DataRetrieval() { EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now });
+            accreditation.DataRetrievals.Add(new DataRetrieval()
+                { EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now });
 
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
@@ -109,25 +112,5 @@ namespace Dan.Core
             return _consentService.LogUse(accreditation, evidence, DateTime.Now);
         }
 
-        private static AuthorizationRequest GetAuthorizationRequest(Accreditation accreditation)
-        {
-            var listOfEvidenceRequests = new List<EvidenceRequest>();
-            foreach (var ec in accreditation.EvidenceCodes)
-            {
-                listOfEvidenceRequests.Add(new EvidenceRequest()
-                {
-                    EvidenceCodeName = ec.EvidenceCodeName,
-                    Parameters = ec.Parameters
-                });
-            }
-
-            return new AuthorizationRequest()
-            {
-                Requestor = accreditation.Requestor,
-                Subject = accreditation.Subject,
-                EvidenceRequests = listOfEvidenceRequests,
-                FromEvidenceHarvester = true
-            };
-        }
     }
 }

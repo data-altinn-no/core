@@ -7,6 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+#pragma warning disable CS0108, CS0114
 namespace Dan.Core.Helpers.Notification
 {
     using System;
