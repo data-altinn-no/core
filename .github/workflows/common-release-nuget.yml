@@ -1,0 +1,45 @@
+# Workflow creating a Github package
+name: Dan.Common Release Nuget
+
+on:
+  push:
+    tags:
+    - "v[0-9]+.[0-9]+.[0-9]+"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Setup build environment
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
+        include-prerelease: true
+    - name: Verify commit exists in origin/main
+      run: |
+        git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+        git branch --remote --contains | grep origin/main
+    - name: Set VERSION variable from tag
+      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+    - name: Set PROJECT variable to point to solution file
+      run: |
+        PROJECT=$(find . -name 'Dan.Common.csproj' -printf "%p" -quit)
+        echo "PROJECT=${PROJECT}" >> $GITHUB_ENV
+    - name: Build
+      run: dotnet build --configuration Release /p:Version=${VERSION} ${PROJECT}
+    - name: Test
+      run: dotnet test --configuration Release /p:Version=${VERSION} --no-build ${PROJECT}
+    - name: Pack with debug symbols
+      run: dotnet pack --configuration Release /p:Version=${VERSION} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output . ${PROJECT}
+    - name: Push to GitHub Packages
+      run: dotnet nuget push *.${VERSION}.nupkg --source https://nuget.pkg.github.com/${GITHUB_REPOSITORY%/*}/index.json --api-key ${GITHUB_TOKEN}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push to nuget.org
+      env:
+        NUGET_ORG_API_KEY: ${{secrets.NUGET_ORG_API_KEY}}
+      if: env.NUGET_ORG_API_KEY != null
+      run: dotnet nuget push *.${VERSION}.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_ORG_API_KEY }}
