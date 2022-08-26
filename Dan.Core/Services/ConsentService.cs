@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net;
 using System.Security.Claims;
-using Dan.Common.Helpers.Util;
 using Dan.Core.Models;
 
 namespace Dan.Core.Services;

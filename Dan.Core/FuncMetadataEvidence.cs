@@ -1,4 +1,3 @@
-using Dan.Common.Helpers.Util;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
 using Dan.Core.Services.Interfaces;
@@ -7,6 +6,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using Dan.Core.Attributes;
+using Dan.Core.Helpers;
 using Dan.Core.Middleware;
 
 namespace Dan.Core;

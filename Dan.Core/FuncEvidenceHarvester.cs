@@ -1,9 +1,9 @@
 using System.Net;
 using Dan.Common.Enums;
-using Dan.Common.Helpers.Util;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
+using Dan.Core.Helpers;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -62,16 +62,19 @@ namespace Dan.Core
         {
             await _requestContextService.BuildRequestContext(req);
 
-            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
+            var accreditation = await _accreditationRepository.GetAccreditationAsync(accreditationId,
+                _requestContextService.AuthenticatedOrgNumber);
             if (accreditation == null)
             {
-                throw new NonExistentAccreditationException("The supplied accreditation id was not found or authorization for it failed");
+                throw new NonExistentAccreditationException(
+                    "The supplied accreditation id was not found or authorization for it failed");
             }
 
             var authorizationRequest = GetAuthorizationRequest(accreditation);
             await _authorizationRequestValidatorService.Validate(authorizationRequest);
 
-            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
+            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, 
+                _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
 
             var response = req.CreateResponse(HttpStatusCode.OK);
             if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))
@@ -89,13 +92,19 @@ namespace Dan.Core
             {
                 using (var t = _logger.Timer("consent-log-usage"))
                 {
-                    _logger.LogInformation("Start logging consent based harvest aid={accreditaionId} evidenceCode={evidenceCode}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
+                    _logger.LogInformation(
+                        "Start logging consent based harvest aid={accreditaionId} evidenceCode={evidenceCode}",
+                        accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
                     await LogConsentBasedHarvest(evidenceCode, accreditation);
-                    _logger.LogInformation("Completed logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode} elapsedMs={elapsedMs}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName, t.ElapsedMilliseconds);
+                    _logger.LogInformation(
+                        "Completed logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode} elapsedMs={elapsedMs}",
+                        accreditation.AccreditationId, evidenceCode.EvidenceCodeName, t.ElapsedMilliseconds);
                 }
             }
+
             // Save timestamp and evidencecode name for statistics
-            (accreditation.DataRetrievals ??= new List<DataRetrieval>()).Add(new DataRetrieval() { EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now });
+            accreditation.DataRetrievals.Add(new DataRetrieval()
+                { EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now });
 
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 

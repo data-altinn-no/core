@@ -1,4 +1,4 @@
-﻿namespace Dan.Common.Helpers.Util;
+﻿namespace Dan.Core.Helpers;
 
 /// <summary>
 /// Helper class to do check if a ssn is well formed

@@ -4,16 +4,40 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Dan.Common</PackageId>
+    <Company>Digitaliseringsdirektoratet</Company>
+    <PackageTags>digdir;altinn;dan;data.altinn.no</PackageTags>
+    <Description>
+      This package includes the common models and utilities used for communicating between Dan.Core and the various Dan plugins and simplifying plugin development.
+    </Description>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/data-altinn-no/core</RepositoryUrl>
+    <Authors>Altinn</Authors>
+    <PackageProjectUrl>https://data.altinn.no</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>Copyright (c) Digitaliseringsdirektoratet 2022</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Core.NewtonsoftJson" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.8.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="6.0.7" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="6.0.7" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Polly.Caching.Distributed" Version="3.0.1" />
     <PackageReference Include="Polly.Caching.Serialization.Json" Version="3.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>

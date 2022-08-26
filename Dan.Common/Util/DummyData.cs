@@ -1,7 +1,8 @@
 ﻿using System.Globalization;
-using Newtonsoft.Json;
+using System.Security.Cryptography;
+using System.Text;
 
-namespace Dan.Common.Helpers.Util;
+namespace Dan.Common.Util;
 
 /// <summary>
 /// Utility to generate dummy data

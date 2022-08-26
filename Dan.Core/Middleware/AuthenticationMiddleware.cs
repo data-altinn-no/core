@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Dan.Common;
-using Dan.Common.Helpers.Util;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
