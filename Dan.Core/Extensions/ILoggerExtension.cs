@@ -20,18 +20,18 @@ public static class LoggerExtensions
 
     public static void DanLog(
         this ILogger logger,
-        Accreditation accredidation,
+        Accreditation accreditation,
         LogAction action,
         [CallerFilePath] string callingClass = "",
         [CallerMemberName] string callingMethod = "",
         string customData = "")
     {
-        foreach (var a in accredidation.EvidenceCodes)
+        foreach (var a in accreditation.EvidenceCodes)
         {
-            var msg = $"{action}:{Path.GetFileNameWithoutExtension(callingClass)}.{callingMethod}, accreditationid={accredidation.AccreditationId}, "
-            + $"consentreference={accredidation.ConsentReference}, externalReference={accredidation.ExternalReference}, owner={accredidation.Owner}, "
-            + $"requestor={accredidation.Requestor}, subject={accredidation.Subject}, evidenceCode={a.EvidenceCodeName}, timestamp={DateTime.UtcNow}, "
-            + $"serviceContext={accredidation.ServiceContext}, customData={customData}";
+            var msg = $"{action}:{Path.GetFileNameWithoutExtension(callingClass)}.{callingMethod}, accreditationid={accreditation.AccreditationId}, "
+            + $"consentreference={accreditation.ConsentReference}, externalReference={accreditation.ExternalReference}, owner={accreditation.Owner}, "
+            + $"requestor={accreditation.Requestor}, subject={accreditation.Subject}, evidenceCode={a.EvidenceCodeName}, timestamp={DateTime.UtcNow}, "
+            + $"serviceContext={accreditation.ServiceContext}, customData={customData}";
             _danLog(logger, msg, null);
         }
     }
