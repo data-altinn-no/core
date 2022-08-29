@@ -14,5 +14,7 @@ public enum LogAction
 
     ConsentReminderSent = 6,
 
-    OpenDataRetrieved = 7
+    OpenDataRetrieved = 7,
+
+    AccreditationDeleted = 8
 }

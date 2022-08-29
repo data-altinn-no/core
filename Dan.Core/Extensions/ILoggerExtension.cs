@@ -7,22 +7,33 @@ namespace Dan.Core.Extensions;
 
 public static class LoggerExtensions
 {
-    public static string LogString = "{action}:{callingClass}.{callingMethod}, accreditationid={accreditationId}, consentreference={consentReference}, externalReference={externalReference}, owner={owner}, requestor={requestor}, subject={subject}, evidenceCode={evidenceCodeName}, timestamp={dateTime}, serviceContext={serviceContext}, customData={customData}";
+    public static readonly Action<ILogger, string, Exception?> _danLog;
+
+    static LoggerExtensions()
+    {
+        _danLog = LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(1, nameof(DanLog)),
+            "{msg}"
+        );
+    }
 
     public static void DanLog(
         this ILogger logger,
-        Accreditation accreditation,
+        Accreditation accredidation,
         LogAction action,
         [CallerFilePath] string callingClass = "",
         [CallerMemberName] string callingMethod = "",
         string customData = "")
     {
-        foreach (var a in accreditation.EvidenceCodes)
-            logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
-                Path.GetFileNameWithoutExtension(callingClass), callingMethod, accreditation.AccreditationId,
-                accreditation.ConsentReference, accreditation.ExternalReference, accreditation.Owner,
-                accreditation.RequestorParty?.ToString(), accreditation.SubjectParty?.ToString(), a.EvidenceCodeName,
-                DateTime.UtcNow, accreditation.ServiceContext, customData);
+        foreach (var a in accredidation.EvidenceCodes)
+        {
+            var msg = $"{action}:{Path.GetFileNameWithoutExtension(callingClass)}.{callingMethod}, accreditationid={accredidation.AccreditationId}, "
+            + $"consentreference={accredidation.ConsentReference}, externalReference={accredidation.ExternalReference}, owner={accredidation.Owner}, "
+            + $"requestor={accredidation.Requestor}, subject={accredidation.Subject}, evidenceCode={a.EvidenceCodeName}, timestamp={DateTime.UtcNow}, "
+            + $"serviceContext={accredidation.ServiceContext}, customData={customData}";
+            _danLog(logger, msg, null);
+        }
     }
 
     public static void DanLog(
@@ -35,8 +46,9 @@ public static class LoggerExtensions
         [CallerMemberName] string callingMethod = "",
         string customData = "")
     {
-        logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
-            Path.GetFileNameWithoutExtension(callingClass), callingMethod, null, "", "", "", "", subject,
-            evidenceCodeName, DateTime.UtcNow, serviceContext, customData);
+            var msg = $"{action}:{Path.GetFileNameWithoutExtension(callingClass)}.{callingMethod}, accreditationid=null, "
+            + $"subject={subject}, evidenceCode={evidenceCodeName}, timestamp={DateTime.UtcNow}, "
+            + $"serviceContext={serviceContext}, customData={customData}";
+            _danLog(logger, msg, null);
     }
 }
