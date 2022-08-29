@@ -75,7 +75,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
         if (authorizationRequest.FromEvidenceHarvester)
         {
-            foreach (var requirement in requirements.Values.ToArray())
+            foreach (var requirement in requirements.Values)
             {
                 requirement.RemoveAll(x => x.RequiredOnEvidenceHarvester == false);
             }
