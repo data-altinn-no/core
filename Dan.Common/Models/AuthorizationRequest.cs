@@ -68,4 +68,10 @@ public class AuthorizationRequest
 
     [DataMember(Name = "skipAltinnNotification")]
     public bool SkipAltinnNotification { get; set; }
+
+    /// <summary>
+    /// Boolean flag that tells if the authorization request origins from the evidence harvester.
+    /// </summary>
+    [DataMember(Name = "fromEvidenceHarvester")]
+    public bool FromEvidenceHarvester = false;
 }
