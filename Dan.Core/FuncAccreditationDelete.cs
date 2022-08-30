@@ -1,7 +1,10 @@
 using System.Net;
 using Dan.Core.Services.Interfaces;
+using Dan.Common.Enums;
+using Dan.Core.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Dan.Core;
 
@@ -12,11 +15,13 @@ public class FuncAccreditationDelete
 {
     private readonly IRequestContextService _requestContextService;
     private readonly IAccreditationRepository _accreditationRepository;
+    private readonly ILogger<FuncAccreditationDelete> _logger;
 
-    public FuncAccreditationDelete(IRequestContextService requestContextService, IAccreditationRepository accreditationRepository)
+    public FuncAccreditationDelete(IRequestContextService requestContextService, IAccreditationRepository accreditationRepository, ILoggerFactory loggerFactory)
     {
         _requestContextService = requestContextService;
         _accreditationRepository = accreditationRepository;
+        _logger = loggerFactory.CreateLogger<FuncAccreditationDelete>();
     }
     /// <summary>
     /// HTTP trigger handler for deleting accreditations
@@ -39,6 +44,8 @@ public class FuncAccreditationDelete
         }
 
         await _accreditationRepository.DeleteAccreditationAsync(accreditation);
+
+        _logger.DanLog(accreditation, LogAction.AccreditationDeleted);
 
         return req.CreateResponse(HttpStatusCode.NoContent);
     }
