@@ -51,7 +51,7 @@ var host = new HostBuilder()
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();
     })
-    .ConfigureServices(services =>
+    .ConfigureServices((hostBuilderContext, services) =>
     {
 
         services.AddStackExchangeRedisCache(option =>
@@ -143,4 +143,4 @@ var host = new HostBuilder()
     })
     .Build();
 
-host.Run();
+await host.RunAsync();

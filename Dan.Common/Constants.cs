@@ -10,6 +10,10 @@ public static class Constants
     /// </summary>
     public const string EvidenceSourceMetadataFunctionName = "evidencecodes";
 
+    public const string SafeHttpClient = "SafeHttpClient";
+
+    public const string SafeHttpClientPolicy = "SafeHttpClientPolicy";
+
     public const string LANGUAGE_CODE_NORWEGIAN_NB = "no-nb";
 
     public const string LANGUAGE_CODE_NORWEGIAN_NN = "no-nn";
