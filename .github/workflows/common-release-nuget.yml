@@ -19,12 +19,14 @@ jobs:
       with:
         dotnet-version: '6.0.x'
         include-prerelease: true
-    - name: Verify commit exists in origin/main
+    - name: Set VERSION variable from latest tag
       run: |
-        git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-        git branch --remote --contains | grep origin/main
-    - name: Set VERSION variable from tag
-      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+        LATEST_TAG=$(git ls-remote --tags origin | tail -n 1 | awk '{ print $2; }')
+        if [[ "${LATEST_TAG}" == "" ]]; then echo "Unable to determine latest tag! Exiting"; exit 1; fi
+        echo "LATEST_TAG: ${LATEST_TAG}"
+        VERSION=${LATEST_TAG/refs\/tags\/v/}
+        echo "VERSION: ${VERSION}"
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
     - name: Set PROJECT variable to point to solution file
       run: |
         PROJECT=$(find . -name 'Dan.Common.csproj' -printf "%p" -quit)
