@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net;
 using System.Text;
+using Dan.Core.Helpers;
 using Dan.Core.Models;
 
 namespace Dan.Core.Services;
@@ -22,11 +23,12 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     private const string RoleMetaUrl = "{0}roledefinitions?ForceEIAuthentication&language={1}";
     private const string GetSrrUrl = "{0}Srr?ForceEIAuthentication=true&reportee={1}&serviceCode={2}&serviceEditionCode={3}";
     private const string PostSrrUrl = "{0}Srr?ForceEIAuthentication=true";
-    private const string DeleteSrrUrl = "{0}Srr/{1}?ForceEIAuthentication=true";
+    private const string PutSrrUrl = "{0}Srr/{1}?ForceEIAuthentication=true";
     private const string OrganizationsUrl = "{0}organizations/{1}?ForceEIAuthentication=true";
     private const string LanguageEn = "1033";
     private readonly string _baseUrl;
     private readonly HttpClient _client;
+    private readonly KeyedLock<string> _keyedLock = new();
 
     /// <summary>
     /// Create a new AltinnServiceOwnerHelper instance
@@ -113,8 +115,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
         }).ToList();
 
 
-        await DeleteExistingSrrRights(requestor, evidenceCodesRequiringConsentForSrr);
-        await AddSrrRights(requestor, validTo, evidenceCodesRequiringConsentForSrr);
+        await UpdateExistingSrrRights(requestor, evidenceCodesRequiringConsentForSrr, validTo);
     }
 
     /// <summary>
@@ -128,33 +129,10 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
         return JsonConvert.DeserializeObject<Organization>(result);
     }
 
-    private async Task DeleteExistingSrrRights(string requestor, IEnumerable<EvidenceCode> evidenceCodesRequiringConsent)
+    private async Task UpdateExistingSrrRights(string requestor, IEnumerable<EvidenceCode> evidenceCodesRequiringConsent, DateTime validTo)
     {
-        foreach (var ec in evidenceCodesRequiringConsent)
-        {
-            (string serviceCode, int serviceEditionCode) = GetServiceCodeAndEditionFromEvidenceCode(ec);
-            var result = await MakeRequest(string.Format(GetSrrUrl, _baseUrl, requestor, serviceCode, serviceEditionCode));
-            var rights = JsonConvert.DeserializeObject<List<SrrRight>>(result) ?? new List<SrrRight>();
-            foreach (var right in rights)
-            {
-                // Delete the existing to avoid conflicts
-                _log.LogInformation("Deleting existing SRR right for reportee={requestor} for sc={serviceCode} sec={serviceEditionCode}", requestor, serviceCode, serviceEditionCode);
+        var tasks = new List<Task>();
 
-                var request = new HttpRequestMessage(HttpMethod.Delete, string.Format(DeleteSrrUrl, _baseUrl, right.Id));
-                request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnServiceOwnerApiKey);
-                request.Headers.TryAddWithoutValidation("Accept", "application/json");
-
-                var deleteResult = await _client.SendAsync(request);
-                if (!deleteResult.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException(deleteResult.ReasonPhrase);
-                }
-            }
-        }
-    }
-
-    private async Task AddSrrRights(string requestor, DateTime validTo, IEnumerable<EvidenceCode> evidenceCodesRequiringConsent)
-    {
         var condition = new SrrRightCondition(Settings.SrrRightsCondition);
 
         foreach (var ec in evidenceCodesRequiringConsent)
@@ -170,19 +148,66 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
                 Right = "Read"
             };
 
-
-            var request = new HttpRequestMessage(HttpMethod.Post, string.Format(PostSrrUrl, _baseUrl));
-            request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnServiceOwnerApiKey);
-            request.Headers.TryAddWithoutValidation("Accept", "application/json");
-            request.Content = new StringContent(JsonConvert.SerializeObject(new List<SrrRight>() { srrRight }), Encoding.UTF8, "application/hal+json");
-
-            _log.LogInformation("Adding SRR right for reportee={requestor}, handledby={handledBy} for sc={serviceCode} sec={serviceEditionCode}", requestor, condition.HandledBy, serviceCode, serviceEditionCode);
-            var result = await _client.SendAsync(request);
-            if (!result.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException(result.ReasonPhrase);
-            }
+            tasks.Add(UpdateSrrRights(srrRight));
         }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task UpdateSrrRights(SrrRight singleRight)
+    {
+        var key = $"{singleRight.Reportee}_{singleRight.ServiceCode}_{singleRight.ServiceEditionCode}";
+
+        try
+        {
+            await _keyedLock.WaitAsync(key);
+
+            var result = await MakeRequest(string.Format(GetSrrUrl, _baseUrl, singleRight.Reportee, singleRight.ServiceCode, singleRight.ServiceEditionCode), HttpMethod.Get);
+            var rights = JsonConvert.DeserializeObject<List<SrrRight>>(result);
+
+            if (rights == null)
+            {
+                throw new ServiceNotAvailableException("Invalid return from Altinn SRR");
+            }
+
+            if (rights.Count == 0)
+            {
+                await AddSrrRight(singleRight.Reportee, singleRight);
+            }
+            else
+            {
+                foreach (var right in rights)
+                {
+                    //Set datetime further forward
+                    right.ValidTo = singleRight.ValidTo;
+                    await UpdateSrrRight(right);
+                }
+            }
+        
+        }
+        finally
+        {
+            _keyedLock.Release(key);
+        }
+    }
+
+    private async Task UpdateSrrRight(SrrRight right)
+    {
+        // Update existing to avoid conflicts
+        _log.LogInformation("Updating existing SRR right for reportee={requestor} for sc={serviceCode} sec={serviceEditionCode}",
+            right.Reportee, right.ServiceCode, right.ServiceEditionCode);
+
+        await MakeRequest(string.Format(PutSrrUrl, _baseUrl, right.Id), HttpMethod.Put, new StringContent(
+            JsonConvert.SerializeObject(right), Encoding.UTF8,
+            "application/hal+json"));
+    }
+
+    private async Task AddSrrRight(string requestor, SrrRight right)
+    {
+        var condition = new SrrRightCondition(Settings.SrrRightsCondition);
+        _log.LogInformation("Adding SRR right for reportee={requestor}, handledby={handledBy} for sc={serviceCode} sec={serviceEditionCode}", requestor, condition.HandledBy, right.ServiceCode, right.ServiceEditionCode);
+
+        await MakeRequest(string.Format(PostSrrUrl, _baseUrl), HttpMethod.Post, new StringContent(JsonConvert.SerializeObject(new List<SrrRight>() { right }), Encoding.UTF8, "application/hal+json"));
     }
 
     private (string, int) GetServiceCodeAndEditionFromEvidenceCode(EvidenceCode ec)
@@ -217,12 +242,17 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
         return resultId;
     }
 
-    private async Task<string> MakeRequest(string target)
+    private async Task<string> MakeRequest(string target, HttpMethod? method = null, HttpContent? body = null)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, target);
+        var request = new HttpRequestMessage(method ?? HttpMethod.Get, target);
         request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnServiceOwnerApiKey);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.SetAllowedErrorCodes(HttpStatusCode.BadRequest, HttpStatusCode.Forbidden);
+
+        if (body != null)
+        {
+            request.Content = body;
+        }
 
         try
         {
@@ -237,7 +267,6 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
             }
 
             throw;
-
         }
     }
 }
