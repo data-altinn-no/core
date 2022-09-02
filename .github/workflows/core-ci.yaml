@@ -1,0 +1,20 @@
+name: Dan.Core CI/CD
+on:
+ push:
+   branches: [ main ]
+   paths-ignore:
+     - '**/README.md'
+     - '**/*.yml'
+ workflow_dispatch:
+
+jobs:
+ run:
+   uses: data-altinn-no/deploy-actions/.github/workflows/dan-deploy-flow.yml@main
+   with:
+     artifact_name: 'dan-plugin-DATASOURCENAME' # Can be omitted, defaults to 'artifact'
+     function_project_path: 'src/Dan.Plugin.DATASOURCENAME'
+   secrets:
+     function_app_name: ${{ secrets.FUNCTIONAPP_NAME }}
+     publish_profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_CREDS }}
+     azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+     resource_group_prod: ${{ secrets.RESOURCE_GROUP_PROD }}
