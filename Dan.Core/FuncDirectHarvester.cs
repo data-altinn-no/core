@@ -26,7 +26,7 @@ namespace Dan.Core
             IAuthorizationRequestValidatorService authorizationRequestValidatorService,
             IRequestContextService requestContextService, 
             IEvidenceHarvesterService evidenceHarvesterService,
-            LoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory)
         {
             _authorizationRequestValidatorService = authorizationRequestValidatorService;
             _requestContextService = requestContextService;
