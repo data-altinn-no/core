@@ -13,6 +13,7 @@ jobs:
    with:
      artifact_name: 'dan-core' 
      function_project_path: 'Dan.Core'
+     run_e2e_tests: true
    secrets:
      function_app_name: ${{ secrets.FUNCTIONAPP_NAME }}
      publish_profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_CREDS }}
