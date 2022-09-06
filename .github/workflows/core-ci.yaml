@@ -19,3 +19,4 @@ jobs:
      publish_profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_CREDS }}
      azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
      resource_group_prod: ${{ secrets.RESOURCE_GROUP_PROD }}
+     kvname: ${{ secrets.KVNAME }}
