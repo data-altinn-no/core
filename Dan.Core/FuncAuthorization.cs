@@ -25,9 +25,9 @@ public class FuncAuthorization
 
     public FuncAuthorization(
         ILoggerFactory loggerFactory,
-        IHttpClientFactory httpClientFactory, 
-        IConsentService consentService, 
-        IAuthorizationRequestValidatorService authorizationRequestValidatorService, 
+        IHttpClientFactory httpClientFactory,
+        IConsentService consentService,
+        IAuthorizationRequestValidatorService authorizationRequestValidatorService,
         IRequestContextService requestContextService,
         IAccreditationRepository accreditationRepository)
     {
@@ -57,7 +57,7 @@ public class FuncAuthorization
         var authRequest = await req.ReadFromJsonAsync<AuthorizationRequest>();
 
         await _authorizationRequestValidatorService.Validate(authRequest);
-            
+
         authRequest = _authorizationRequestValidatorService.GetAuthorizationRequest()!;
         var evidenceCodes = _authorizationRequestValidatorService.GetEvidenceCodes();
         var validTo = _authorizationRequestValidatorService.GetValidTo();
@@ -95,11 +95,6 @@ public class FuncAuthorization
             }
         }
 
-        // Remove authreqs before saving accreditation
-        foreach (var es in accreditation.EvidenceCodes)
-            es.AuthorizationRequirements = new List<Requirement>();
-
-        await _accreditationRepository.CreateAccreditationAsync(accreditation);
 
         if (authRequest.EvidenceRequests.Any(x => x.RequestConsent == true))
         {
@@ -111,7 +106,15 @@ public class FuncAuthorization
                 _logger.DanLog(accreditation, LogAction.ConsentRequested);
             }
         }
-            
+
+        // Remove authreqs before saving accreditation
+        foreach (var es in accreditation.EvidenceCodes)
+        {
+            es.AuthorizationRequirements = new List<Requirement>();
+        }
+
+        await _accreditationRepository.CreateAccreditationAsync(accreditation);
+
         var response = req.CreateExternalResponse(HttpStatusCode.OK, accreditation);
         response.Headers.TryAddWithoutValidation("Location", accreditation.GetUrl());
 
