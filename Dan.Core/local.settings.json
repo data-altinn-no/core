@@ -53,6 +53,7 @@
 
     "CosmosDbDatabase": "nadobe-dev",
 
+    "ExternalApiUrl": "http://localhost:7071", 
     "AltinnOrgNumber": "991825827",
     "AltinnServiceAddress": "https://tt02.altinn.no/",
     "AltinnPortalAddress": "https://tt02.altinn.no/",

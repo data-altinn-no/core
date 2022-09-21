@@ -45,9 +45,19 @@ public static class Settings
     public static string GetEvidenceSourceUrl(string provider) => GetSetting("EvidenceSourceURLPattern").Replace("%s", provider);
 
     /// <summary>
-    /// Get the api url
+    /// Returns true if running in local development environment
     /// </summary>
-    public static string ApiUrl => "https://" + Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") + "/api";
+    public static bool IsLocalDev => Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME")?.Contains("localhost:7071", StringComparison.InvariantCultureIgnoreCase) ?? false;
+
+    /// <summary>
+    /// Get the local api url
+    /// </summary>
+    public static string ApiUrl => (IsLocalDev ? "http://" : "https://") + Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") + "/api";
+
+    /// <summary>
+    /// Gets the external (APIM) api URL
+    /// </summary>
+    public static string ExternalApiUrl => GetSetting("ExternalApiUrl");
 
     /// <summary>
     /// Connection string for CosmosDB
@@ -92,6 +102,11 @@ public static class Settings
         IsUnitTest
             ? _altinnCertificate ??= new X509Certificate2(Convert.FromBase64String(GetSetting("SelfSignedCert")))
             : _altinnCertificate ??= KeyVault.GetCertificate(KeyVaultSslCertificate).Result;
+
+    /// <summary>
+    /// Endpoint where the signing certificate used to sign the dataset JWT is available in PEM format
+    /// </summary>
+    public const string SigningCertificateEndpoint = "metadata/signingcertificate";
 
     /// <summary>
     /// API-key for consent request / token

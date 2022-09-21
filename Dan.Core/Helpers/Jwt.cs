@@ -30,7 +30,10 @@ public static class Jwt
             { Claim, GetSha256DigestAsHex(payload) },
         };
 
-        return JWT.Encode(claims, Settings.AltinnCertificate.GetRSAPrivateKey(), JwsAlgorithm.RS256);
+        return JWT.Encode(claims, Settings.AltinnCertificate.GetRSAPrivateKey(), JwsAlgorithm.RS256, new Dictionary<string, object>
+        {
+            { "x5u", Settings.ApiUrl + "/" + Settings.SigningCertificateEndpoint }
+        });
     }
 
     public static string RemoveBearer(string mpToken)
