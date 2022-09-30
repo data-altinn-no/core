@@ -4,21 +4,12 @@
 
   "IsEncrypted": false,
   "Values": {
+    // -- Infrastructure settings that should be handled by Terraform
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "AzureFunctionsJobHost__logging__logLevel__default": "Debug",
-    "AzureFunctionsJobHost__logging__logLevel__Function": "Debug",
-    "AzureFunctionsJobHost__logging__logLevel__Host.Aggregator": "Debug",
-    "AzureFunctionsJobHost__logging__logLevel__Host.Results": "Debug",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    // -- End infrastructure settings
 
-    "IsUnitTest": false,
-    "EvidenceSources": "",
-
-    "EvidenceSourceURLPattern": "http://localhost:7075/api/evidencecodes",
-    "AccreditationCreatedLocationPattern": "http://localhost:7071/api/evidence/{0}",
-
-    "Breaker_FailureCountThreshold": 100000,
-    "Breaker_RetryWaitTime_ms": 50,
+    // All settings below are to be placed in rg-nadobe-ops/
 
     // Secrets begin here. 
     // 
@@ -39,6 +30,7 @@
     "ConsentValidationSecrets": "PRIMARY_SECRET,SECONDARY_SECRET",
     // Secrets end here. All the above secrets should have a corresponding entry below with KeyVault-prefix, which Settings.cs should then use/cache instead.
 
+    // Keyvault secret names begin here
     "KeyVaultName": "kv-nadobe-test-dev",
     "KeyVaultSslCertificate": "digdir-cert",
     "KeyVaultAltinnApiKey": "tt02-digdir-apikey",
@@ -50,10 +42,26 @@
     "KeyVaultFunctionKeyValue": "function-key-value",
     "KeyVaultMaskinportenClientId": "maskinporten-clientid",
     "KeyVaultConsentValidationSecrets": "consent-validation-secrets",
+    // Keyvault secret names end here
+
+    "IsUnitTest": false,
+
+    "EvidenceSources": "",
+    "EvidenceSourceURLPattern": "http://localhost:7075/api/evidencecodes",
+
+    "AzureFunctionsJobHost__logging__logLevel__default": "Debug",
+    "AzureFunctionsJobHost__logging__logLevel__Function": "Debug",
+    "AzureFunctionsJobHost__logging__logLevel__Host.Aggregator": "Debug",
+    "AzureFunctionsJobHost__logging__logLevel__Host.Results": "Debug",
+
+    "Breaker_FailureCountThreshold": 100000,
+    "Breaker_RetryWaitTime_ms": 50,
 
     "CosmosDbDatabase": "nadobe-dev",
 
+    "ExternalApiUrl": "http://localhost:7071",
     "AltinnOrgNumber": "991825827",
+    "UseAltinnTestServers": "false", // Set to true to use Altinn WCF-services in test mode ("testløp")
     "AltinnServiceAddress": "https://tt02.altinn.no/",
     "AltinnPortalAddress": "https://tt02.altinn.no/",
     "AltinnServiceOwnerApiURI": "https://tt02.altinn.no/api/serviceowner/",
@@ -62,7 +70,6 @@
 
     "OrganizationValidationUrl": "http://data.brreg.no/enhetsregisteret/api/enheter/{0}",
     "OrganizationSubUnitValidationUrl": "http://data.brreg.no/enhetsregisteret/api/underenheter/{0}",
-
     // For local.settings.json we use the proxy. Cloud environments use the actual data.ppe.brreg.no endpoints via Terraform
     "SyntheticOrganizationValidationUrl": "https://apim-nadobe-dev.azure-api.net/v1/ppeproxy/enhetsregisteret/api/enheter/{0}",
     "SyntheticOrganizationSubUnitValidationUrl": "https://apim-nadobe-dev.azure-api.net/v1/ppeproxy/enhetsregisteret/api/underenheter/{0}",
@@ -71,7 +78,7 @@
     "ConsentLoggingURLPattern": "https://tt02.altinn.no/api/authorization/token/{0}/loguse",
     "ConsentStatusURLPattern": "https://tt02.altinn.no/api/authorization/token/{0}",
     "ConsentRedirectURLPattern": "http://localhost:7071/api/consent/{0}/?hmac={1}",
-
+    "AccreditationCreatedLocationPattern": "http://localhost:7071/api/evidence/{0}",
     "DoffinLinkTemplate": "<a href=\"https://www.doffin.no/Notice/Details/{0}\">Kunngjøring hos Doffin</a>",
     "TedLinkTemplate": "Forespørselen vedrører utlysningen <a href=\"https://ted.europa.eu/udl?uri=TED:NOTICE:{0}:TEXT:EN:HTML&src=0\">{1}</a>",
 
@@ -79,7 +86,6 @@
     "AccreditationMinimumValidDays": 2,
     "AccreditationMaximumValidDays": 1825,
 
-    "UseAltinnTestServers": "false",
     "MaskinportenUrl": "https://ver2.maskinporten.no/",
     "MaskinportenWellknownUrl": "https://ver2.maskinporten.no/.well-known/oauth-authorization-server",
     "AltinnWellknownUrl": "https://platform.tt02.altinn.no/authentication/api/v1/openid/.well-known/openid-configuration"
