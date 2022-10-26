@@ -146,7 +146,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
                 try
                 {
-                    orgNumber = SslHelper.GetValidOrgNumberFromCertificate(suppliedCertificate);
+                    orgNumber = X509CertificateHelper.GetValidOrgNumberFromCertificate(suppliedCertificate);
                 }
                 catch (Exception e)
                 {

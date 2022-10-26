@@ -6,7 +6,7 @@ namespace Dan.Core.Helpers;
 /// <summary>
 /// SSL helper methods
 /// </summary>
-public static class SslHelper
+public static class X509CertificateHelper
 {
     /// <summary>
     /// Validates a certificate for use with Altinn service owners and returns the organization number

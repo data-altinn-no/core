@@ -44,7 +44,7 @@ public class CoreKeyVault
 
         var cert = new X509Certificate2(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet);
 
-        if (SslHelper.GetValidOrgNumberFromCertificate(cert) == null)
+        if (X509CertificateHelper.GetValidOrgNumberFromCertificate(cert) == null)
         {
             throw new Exceptions.InvalidCertificateException("Unable to validate chain or not an enterprise certificate");
         }
