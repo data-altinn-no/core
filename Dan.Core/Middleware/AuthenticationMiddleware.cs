@@ -96,8 +96,6 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         var request = await context.GetHttpRequestDataAsync();
         if (request == null)
         {
-            // We only authorize HTTP requests
-            // FIXME Non-authenticated endpoints!
             await next(context);
             return;
         }
@@ -122,7 +120,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             }
             else
             {
-                throw new InvalidAccessTokenException($"Missing required scope(s)");
+                throw new AuthorizationFailedException($"Missing required scope(s)");
             }
 
             context.Items.Add(Constants.ACCESS_TOKEN, accessTokenJwt);
@@ -152,7 +150,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
                 }
                 catch (Exception e)
                 {
-                    throw new MissingAuthenticationException("Unable to parse organization number from certificate", e);
+                    throw new InvalidCertificateException("Unable to parse organization number from certificate", e);
                 }
             }
             // No token or certificate found 

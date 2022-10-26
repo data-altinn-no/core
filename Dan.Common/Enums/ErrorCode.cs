@@ -135,30 +135,10 @@ public enum ErrorCode
     /// </summary>
     ServiceContextException = 1025,
 
-
     /// <summary>
     /// Some error occured accessing the accreditation repository
     /// </summary>
     AccreditationRepositoryException = 1026,
-
-    ////
-    //// Error codes for Oxalis Ambassador (2xxx)
-    ////
-
-    /// <summary>
-    /// Invalid Evidence Request Parameter Exception
-    /// </summary>
-    DeniedConsentException = 2001,
-
-    /// <summary>
-    /// Invalid Get Evidence Request
-    /// </summary>
-    InvalidGetEvidenceRequestException = 2002,
-
-    /// <summary>
-    /// No existing accreditation
-    /// </summary>
-    AccreditationNoExistException = 2003,
 
     ////
     //// Error codes for evidence source implementations (3xxx)

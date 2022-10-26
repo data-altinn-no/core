@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
 using Dan.Common.Exceptions;
 using Dan.Common.Models;
 using Dan.Core.Config;
@@ -107,6 +108,13 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
             if (request == null) return;
 
             var response = request.CreateResponse();
+            if (statusCode == HttpStatusCode.Unauthorized) // 401 requires that we set a WWW-Authenticate header
+            {
+                var schemeAndRealm = "Bearer realm=\"data.altinn.no\"";
+                response.Headers.Add("WWW-Authenticate",
+                    nex is InvalidAccessTokenException ? schemeAndRealm + ",error=\"invalid_token\"" : schemeAndRealm);
+            }
+
             await response.WriteAsJsonAsync(errorModel, statusCode);
             context.SetInvocationResult(response);
         }

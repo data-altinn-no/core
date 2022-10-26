@@ -72,11 +72,11 @@ public static class ExceptionExtensions
             case ConsentAlreadyHandledException _:
                 return HttpStatusCode.BadRequest; // 400
             case MissingAuthenticationException _:
+            case InvalidAccessTokenException _:
+            case InvalidCertificateException _:
                 return HttpStatusCode.Unauthorized; // 401
             case RequiresConsentException _:
             case AuthorizationFailedException _:
-            case InvalidAccessTokenException _:
-            case InvalidCertificateException _:
                 return HttpStatusCode.Forbidden; // 403
             case NonExistentAccreditationException _:
             case DeletedSubjectException _:
