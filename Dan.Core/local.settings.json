@@ -4,12 +4,8 @@
 
   "IsEncrypted": false,
   "Values": {
-    // -- Infrastructure settings that should be handled by Terraform
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    // -- End infrastructure settings
-
-    // All settings below are to be placed in rg-nadobe-ops/
 
     // Secrets begin here. 
     // 

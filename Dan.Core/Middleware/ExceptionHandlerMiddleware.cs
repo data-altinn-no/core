@@ -107,7 +107,10 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
 
             if (request == null) return;
 
-            var response = request.CreateResponse();
+
+
+            var response = request.CreateResponse(statusCode);
+
             if (statusCode == HttpStatusCode.Unauthorized) // 401 requires that we set a WWW-Authenticate header
             {
                 var schemeAndRealm = "Bearer realm=\"data.altinn.no\"";
@@ -115,9 +118,30 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                     nex is InvalidAccessTokenException ? schemeAndRealm + ",error=\"invalid_token\"" : schemeAndRealm);
             }
 
+            // You need to explicitly pass the status code in WriteAsJsonAsync method.
+            // https://github.com/Azure/azure-functions-dotnet-worker/issues/776
             await response.WriteAsJsonAsync(errorModel, statusCode);
-            context.SetInvocationResult(response);
+
+            var invocationResult = context.GetInvocationResult();
+
+            var httpOutputBindingFromMultipleOutputBindings = GetHttpOutputBindingFromMultipleOutputBinding(context);
+            if (httpOutputBindingFromMultipleOutputBindings is not null)
+            {
+                httpOutputBindingFromMultipleOutputBindings.Value = response;
+            }
+            else
+            {
+                invocationResult.Value = response;
+            }
         }
     }
-    
+    private OutputBindingData<HttpResponseData>? GetHttpOutputBindingFromMultipleOutputBinding(FunctionContext context)
+    {
+        // The output binding entry name will be "$return" only when the function return type is HttpResponseData
+        var httpOutputBinding = context.GetOutputBindings<HttpResponseData>()
+            .FirstOrDefault(b => b.BindingType == "http" && b.Name != "$return");
+
+        return httpOutputBinding;
+    }
+
 }

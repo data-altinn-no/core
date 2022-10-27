@@ -3,6 +3,7 @@ using Dan.Core.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
+using Dan.Core.Attributes;
 
 namespace Dan.Core;
 
@@ -12,10 +13,6 @@ namespace Dan.Core;
 
 public class FuncMetadataStatusCodes
 {
-    public FuncMetadataStatusCodes()
-    {
-    }
-
     /// <summary>
     /// The function entry point.
     /// </summary>
@@ -29,7 +26,7 @@ public class FuncMetadataStatusCodes
     /// <returns>
     /// The <see cref="HttpResponseMessage"/>.
     /// </returns>
-    [Function("MetadataStatusCodes")]
+    [Function("MetadataStatusCodes"), NoAuthentication]
     public HttpResponseData Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "metadata/statuscodes")] HttpRequestData req)
     {
         var response = req.CreateExternalResponse(HttpStatusCode.OK, GetAll());
