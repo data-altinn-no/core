@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
 using Microsoft.Extensions.Logging.Console;
 using Newtonsoft.Json;
 using Polly;
@@ -30,8 +31,7 @@ var host = new HostBuilder()
     .ConfigureAppConfiguration((hostContext, config) =>
     {
         config
-            .AddEnvironmentVariables()
-            .AddJsonFile("worker.json");
+            .AddEnvironmentVariables();
 
         danHostingEnvironment = hostContext.HostingEnvironment;
         if (danHostingEnvironment.IsLocalDevelopment())
@@ -52,6 +52,9 @@ var host = new HostBuilder()
                 options.IncludeScopes = false;
             });
         }
+
+        builder.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Debug);
+        builder.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Error);
     })
     .ConfigureFunctionsWorkerDefaults(builder =>
     {
