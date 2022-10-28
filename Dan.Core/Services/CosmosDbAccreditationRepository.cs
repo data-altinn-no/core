@@ -23,7 +23,7 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
 
         // We assume using ReadItemAsync is faster than a query iterator when we have a partition key value.
         // When null, call QueryAccreditationsAsync which uses a GetItemQueryIterator that supports cross-partition queries
-        if (partitionKeyValue == null)
+        if (partitionKeyValue != null)
         {
             try
             {
