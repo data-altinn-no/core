@@ -26,7 +26,7 @@ namespace Dan.Core
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly ILogger<FuncConsentReceipt> _logger;
 
-        private const string AboutUrl = "https://www.altinndigital.no/produkter/data.altinn/";
+        private const string AboutUrl = "https:/docs.data.altinn.no/";
 
         /// <summary>
         /// Creates an instance of <see cref="FuncConsentReceipt"/> 
