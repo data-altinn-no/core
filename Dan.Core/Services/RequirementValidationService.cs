@@ -414,6 +414,11 @@ public class RequirementValidationService : IRequirementValidationService
     {
         var result = true;
 
+        if (authRequest.FromEvidenceHarvester)
+        {
+            return result;
+        }
+
         if (authRequest.EvidenceRequests.Find(x => x.EvidenceCodeName == evidenceCodeName)?.RequestConsent != true)
         {
             AddError(req, "This dataset requires consent; you need to supply \"requestConsent\": true", evidenceCodeName);
