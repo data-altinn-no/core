@@ -14,6 +14,9 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.Internal;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Caching;
@@ -22,6 +25,7 @@ using Polly.Caching.Serialization.Json;
 using Polly.Extensions.Http;
 using Polly.Registry;
 
+IHostEnvironment danHostingEnvironment = new HostingEnvironment();
 var host = new HostBuilder()
     .ConfigureAppConfiguration((hostContext, config) =>
     {
@@ -29,24 +33,42 @@ var host = new HostBuilder()
             .AddEnvironmentVariables()
             .AddJsonFile("worker.json");
 
-        if (hostContext.HostingEnvironment.IsDevelopment())
+        danHostingEnvironment = hostContext.HostingEnvironment;
+        if (danHostingEnvironment.IsLocalDevelopment())
         {
             config.AddUserSecrets(Assembly.GetExecutingAssembly(), true);
         }
 
         ConfigurationHelper.ConfigurationRoot = config.Build();
     })
+    .ConfigureLogging(builder =>
+    {
+        if (danHostingEnvironment.IsLocalDevelopment())
+        {
+            builder.AddSimpleConsole(options =>
+            {
+                options.ColorBehavior = LoggerColorBehavior.Enabled;
+                options.SingleLine = true;
+                options.IncludeScopes = false;
+            });
+        }
+    })
     .ConfigureFunctionsWorkerDefaults(builder =>
     {
         builder
             .UseWhen<ExceptionHandlerMiddleware>(context => !context.HasAttribute(typeof(HtmlErrorAttribute)))
             .UseWhen<HtmlExceptionHandlerMiddleware>(context => context.HasAttribute(typeof(HtmlErrorAttribute)))
-            .UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)))
+            .UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)));
 
+        if (!danHostingEnvironment.IsLocalDevelopment())
+        {
             // Using preview package Microsoft.Azure.Functions.Worker.ApplicationInsights, see https://github.com/Azure/azure-functions-dotnet-worker/pull/944
             // Requires APPLICATIONINSIGHTS_CONNECTION_STRING being set. Note that host.json logging settings will have to be replicated to worker.json
-            .AddApplicationInsights()
-            .AddApplicationInsightsLogger();
+            builder
+                .AddApplicationInsights()
+                .AddApplicationInsightsLogger();
+        }
+
     }, options =>
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();

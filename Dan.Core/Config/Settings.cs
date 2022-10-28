@@ -25,7 +25,7 @@ public static class Settings
     /// <summary>
     /// If the program is running in development environment
     /// </summary>
-    public static bool IsDevEnvironment => GetSetting("ASPNETCORE_ENVIRONMENT") == "Development";
+    public static bool IsDevEnvironment => new[] { "Development", "LocalDevelopment" }.Any(GetSetting("ASPNETCORE_ENVIRONMENT").Contains);
 
     /// <summary>
     /// If the program is running unit test
