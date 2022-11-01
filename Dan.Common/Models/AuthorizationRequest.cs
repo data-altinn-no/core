@@ -40,7 +40,7 @@ public class AuthorizationRequest
     /// List of legal basis proving legal authority for the requested evidence
     /// </summary>
     [DataMember(Name = "legalBasisList")]
-    public List<LegalBasis> LegalBasisList { get; set; } = new();
+    public List<LegalBasis>? LegalBasisList { get; set; }
 
     /// <summary>
     /// How long the accreditation should be valid. Also used for duration of consent (date part only).

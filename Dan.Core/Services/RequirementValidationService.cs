@@ -282,7 +282,7 @@ public class RequirementValidationService : IRequirementValidationService
 
     private bool ValidateLegalBasis(LegalBasisRequirement req, AuthorizationRequest? authRequest, string evidenceCodeName)
     {
-        LegalBasis? selectedlegalBasis = authRequest?.LegalBasisList.FirstOrDefault(legalBasis => legalBasis.Type.HasValue && req.ValidLegalBasisTypes.HasFlag(legalBasis.Type));
+        LegalBasis? selectedlegalBasis = authRequest?.LegalBasisList?.FirstOrDefault(legalBasis => legalBasis.Type.HasValue && req.ValidLegalBasisTypes.HasFlag(legalBasis.Type));
 
         if (selectedlegalBasis == null)
         {

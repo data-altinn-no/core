@@ -199,6 +199,11 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
 
     private void ValidateLegalBasisWellFormed()
     {
+        if (_authRequest.LegalBasisList == null)
+        {
+            return;
+        }
+
         foreach (var legalBasis in _authRequest.LegalBasisList)
         {
             if (string.IsNullOrEmpty(legalBasis.Id))
