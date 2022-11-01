@@ -178,8 +178,9 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
             {
                 foreach (var right in rights)
                 {
-                    //Set datetime further forward
+                    //Set datetime further forward, and update condition in case it is changed (or environment specific)
                     right.ValidTo = singleRight.ValidTo;
+                    right.Condition = singleRight.Condition;
                     await UpdateSrrRight(right);
                 }
             }
