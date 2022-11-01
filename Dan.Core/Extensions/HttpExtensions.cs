@@ -30,7 +30,7 @@ public static class HttpExtensions
     /// <returns>Header value</returns>
     public static string? Get(this HttpHeaders headers, string key)
     {
-        return headers.Where(x => x.Key == key).SelectMany(x => x.Value).FirstOrDefault();
+        return headers.Where(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase)).SelectMany(x => x.Value).FirstOrDefault();
     }
 
     /// <summary>
