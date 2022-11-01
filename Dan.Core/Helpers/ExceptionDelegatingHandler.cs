@@ -18,7 +18,7 @@ class ExceptionDelegatingHandler : DelegatingHandler
             return response;
         }
         
-        var message = await response.Content.ReadAsStringAsync(cancellationToken);
-        throw new HttpRequestException($"Server returned error status code: {(int)response.StatusCode}, {message}");
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new HttpRequestException($"Server returned error status code: {(int)response.StatusCode}, Body={(string.IsNullOrEmpty(body) ? "<empty>" : body)} ReasonPhrase={(string.IsNullOrEmpty(response.ReasonPhrase) ? "<empty>" : response.ReasonPhrase)}");
     }
 }
