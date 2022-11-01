@@ -17,8 +17,8 @@ class RequestContextService : IRequestContextService
     public HttpRequestData? Request { get; set; }
 
     public const string ServicecontextHeader = "X-NADOBE-SERVICECONTEXT";
-    public const string QueryParamTokenOnBehalfOf = "tokenonbehalfof";
-    public const string QueryParamReuseToken = "reusetoken";
+    public const string QueryParamTokenOnBehalfOfOwner = "tokenOnBehalfOfOwner";
+    public const string QueryParamReuseToken = "reuseToken";
     public const string RequestHeaderForwardAccessToken = "X-Forward-Access-Token";
 
     public RequestContextService(IServiceContextService serviceContextService)
@@ -59,7 +59,7 @@ class RequestContextService : IRequestContextService
         {
             OverriddenAccessToken = Request.Headers.Get(RequestHeaderForwardAccessToken),
             ReuseClientAccessToken = Request.GetBoolQueryParam(QueryParamReuseToken),
-            FetchSupplierAccessTokenOnBehalfOfOwner = Request.GetBoolQueryParam(QueryParamTokenOnBehalfOf)
+            FetchSupplierAccessTokenOnBehalfOfOwner = Request.GetBoolQueryParam(QueryParamTokenOnBehalfOfOwner)
         };
     }
 }

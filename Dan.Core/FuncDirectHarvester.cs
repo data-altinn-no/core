@@ -141,8 +141,8 @@ namespace Dan.Core
                 "subject",
                 "code",
                 "envelope",
-                EvidenceHarvesterService.QueryParamReuseToken,
-                EvidenceHarvesterService.QueryParamTokenOnBehalfOf
+                RequestContextService.QueryParamReuseToken,
+                RequestContextService.QueryParamTokenOnBehalfOfOwner
             };
         }
     }

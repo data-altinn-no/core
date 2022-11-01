@@ -20,11 +20,6 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private readonly ITokenRequesterService _tokenRequesterService;
     private readonly IRequestContextService _requestContextService;
 
-    public const string QueryParamTokenOnBehalfOf = "tokenonbehalfof";
-    public const string QueryParamReuseToken = "reusetoken";
-    public const string RequestHeaderForwardAccessToken = "X-Forward-Access-Token";
-
-
     public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService)
     {
         _log = loggerFactory.CreateLogger<EvidenceHarvesterService>();
