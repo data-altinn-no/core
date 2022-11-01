@@ -63,7 +63,7 @@ var host = new HostBuilder()
             .UseWhen<HtmlExceptionHandlerMiddleware>(context => context.HasAttribute(typeof(HtmlErrorAttribute)))
             .UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)));
 
-        builder.UseMiddleware<InvocationIdHeaderMiddleware>();
+        builder.UseMiddleware<DiagnosticsHeaderInjectionMiddleware>();
 
         if (!danHostingEnvironment.IsLocalDevelopment())
         {
