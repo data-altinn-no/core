@@ -3,6 +3,7 @@ using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
 using System.Net;
+using Microsoft.Azure.Functions.Worker;
 
 namespace Dan.Core.Extensions;
 
@@ -16,7 +17,8 @@ public static class ExceptionExtensions
     /// </summary>
     /// <returns>An ErrorModel</returns>
     /// <param name="exception">The Nadobe Exception</param>
-    public static ErrorModel GetErrorModel(this DanException exception)
+    /// <param name="context">The function execution context</param>
+    public static ErrorModel GetErrorModel(this DanException exception, FunctionContext context)
     {
         string? detailedErrorCode = null;
         if (exception.DetailErrorCode.HasValue)
@@ -31,7 +33,8 @@ public static class ExceptionExtensions
             Code = (int)exception.ExceptionErrorCode,
             Description = exception.Message,
             DetailCode = detailedErrorCode,
-            DetailDescription = exception.DetailErrorDescription
+            DetailDescription = exception.DetailErrorDescription,
+            InvocationId = context.InvocationId
         };
 
         if (Settings.IsDevEnvironment || Settings.IsUnitTest)

@@ -63,6 +63,8 @@ var host = new HostBuilder()
             .UseWhen<HtmlExceptionHandlerMiddleware>(context => context.HasAttribute(typeof(HtmlErrorAttribute)))
             .UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)));
 
+        builder.UseMiddleware<InvocationIdHeaderMiddleware>();
+
         if (!danHostingEnvironment.IsLocalDevelopment())
         {
             // Using preview package Microsoft.Azure.Functions.Worker.ApplicationInsights, see https://github.com/Azure/azure-functions-dotnet-worker/pull/944

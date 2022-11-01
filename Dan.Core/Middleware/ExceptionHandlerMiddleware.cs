@@ -82,7 +82,7 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                 logLevel = LogLevel.Error;
             }
 
-            ErrorModel errorModel = nex.GetErrorModel();
+            ErrorModel errorModel = nex.GetErrorModel(context);
             HttpStatusCode statusCode = nex.GetErrorCode();
 
             string message =
@@ -106,8 +106,6 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
             _logger.Log(logLevel, 0, exception, message, args);
 
             if (request == null) return;
-
-
 
             var response = request.CreateResponse(statusCode);
 

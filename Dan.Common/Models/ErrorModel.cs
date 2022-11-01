@@ -32,6 +32,12 @@ public class ErrorModel
     public string? DetailDescription { get; set; }
 
     /// <summary>
+    /// Invocation Id, used to find the transaction in the Application Insights
+    /// </summary>
+    [DataMember(Name = "invocationId", EmitDefaultValue = false)]
+    public string? InvocationId { get; set; }
+
+    /// <summary>
     /// Stack trace (only available in dev)
     /// </summary>
     [DataMember(Name = "stacktrace", EmitDefaultValue = false)]
