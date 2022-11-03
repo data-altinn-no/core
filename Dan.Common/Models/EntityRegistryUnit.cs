@@ -1,9 +1,7 @@
-﻿using Newtonsoft.Json;
-
-namespace Dan.Core.Models;
+﻿namespace Dan.Common.Models;
 
 // ReSharper disable once InconsistentNaming
-public class BREntityRegisterEntry
+public class EntityRegistryUnit
 {
     [JsonProperty("organisasjonsnummer")]
     public long Organisasjonsnummer { get; set; }
@@ -32,8 +30,17 @@ public class BREntityRegisterEntry
     [JsonProperty("naeringskode1")]
     public InstitusjonellSektorkode Naeringskode1 { get; set; } = new();
 
+    [JsonProperty("naeringskode2")]
+    public InstitusjonellSektorkode? Naeringskode2 { get; set; }
+
+    [JsonProperty("naeringskode3")]
+    public InstitusjonellSektorkode? Naeringskode3 { get; set; }
+
     [JsonProperty("antallAnsatte")]
     public long AntallAnsatte { get; set; }
+
+    [JsonProperty("overordnetEnhet")]
+    public string? OverordnetEnhet { get; set; }
 
     [JsonProperty("forretningsadresse")]
     public Adresse Forretningsadresse { get; set; } = new();

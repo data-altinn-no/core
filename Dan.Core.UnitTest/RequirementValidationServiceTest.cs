@@ -1,4 +1,5 @@
 ﻿using Dan.Common.Enums;
+using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
@@ -26,10 +27,10 @@ namespace Dan.Core.UnitTest
         public void TestInitialize()
         {
 
-            _mockEntityRegistryService.Setup(_ => _.GetOrganizationEntry(It.IsAny<string>()))
+            _mockEntityRegistryService.Setup(_ => _.Get(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>()))
                 .Returns(Task.FromResult(GetBrEntry()));
 
-            _mockEntityRegistryService.Setup(_ => _.IsOrganizationPublicAgency(It.IsAny<string>()))
+            _mockEntityRegistryService.Setup(_ => _.IsPublicAgency(It.IsAny<string>()))
                 .Returns(Task.FromResult(true));
 
             _mockAltinnServiceOwnerApiService.Setup(_ =>
@@ -892,18 +893,12 @@ namespace Dan.Core.UnitTest
             };
         }
 
-        private BREntityRegisterEntry GetBrEntry()
+        private SimpleEntityRegistryUnit GetBrEntry()
         {
-            return new BREntityRegisterEntry()
+            return new SimpleEntityRegistryUnit()
             {
-                Naeringskode1 = new InstitusjonellSektorkode()
-                {
-                    Kode = "1234"
-                },
-                Organisasjonsform = new Organisasjonsform()
-                {
-                    Kode = "STAT"
-                }
+                IndustrialCodes = new List<string> { "1234" },
+                OrganizationForm = "STAT"
             };
         }
     }

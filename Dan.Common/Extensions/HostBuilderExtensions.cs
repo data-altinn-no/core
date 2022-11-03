@@ -1,6 +1,7 @@
 using System.Reflection;
 using Azure.Core.Serialization;
 using Dan.Common.Interfaces;
+using Dan.Common.Services;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,6 +77,11 @@ public static class HostBuilderExtensions
                 services.AddHttpClient(Constants.SafeHttpClient,
                         client => { client.Timeout = TimeSpan.FromSeconds(httpClientTimeoutSeconds); })
                     .AddPolicyHandlerFromRegistry(Constants.SafeHttpClientPolicy);
+
+                // Add a common service to fetch information from the CCR ("Enhetsregisteret"). Using a default API-client (which just wraps a HttpClient), which
+                // calls a proxy in Core by default. Core uses the same service, but a different IEntityRegistryApiClientService which utilizes a distributed cache.
+                services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
+                services.AddSingleton<IEntityRegistryApiClientService, DefaultEntityRegistryApiClientService>();
 
                 // Try to add the first IEvidenceSourceMetadata implementation we can find in the entry assembly
                 var evidenceSourceMetadataServiceType = typeof(IEvidenceSourceMetadata);

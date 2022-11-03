@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Dan.Core.Helpers;
+namespace Dan.Common.Util;
 
 // Based on https://stackoverflow.com/questions/31138179/asynchronous-locking-based-on-a-key/65256155#65256155
 public class KeyedLock<TKey> where TKey : notnull

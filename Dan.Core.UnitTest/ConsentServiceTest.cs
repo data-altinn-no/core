@@ -3,11 +3,10 @@ using Moq;
 using System.Diagnostics.CodeAnalysis;
 using Dan.Common;
 using Dan.Common.Enums;
+using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Helpers;
-using Dan.Core.Models;
 using Dan.Core.ServiceContextTexts;
-using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -72,7 +71,7 @@ namespace Dan.Core.UnitTest
                 _mockTokenRequesterService.Setup(_ => _.GetMaskinportenToken(It.IsAny<string>(), It.IsAny<string>()))
                     .Returns(Task.FromResult("{\"access_token\":\"\"}"));
 
-                _mockEntityRegistryService.Setup(_ => _.GetOrganizationEntry(It.IsAny<string>()))
+                _mockEntityRegistryService.Setup(_ => _.Get(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>()))
                     .Returns(Task.FromResult(GetBrEntry()));
 
                 _mockAvailableEvidenceCodesService.Setup(_ => _.GetAvailableEvidenceCodes(It.IsAny<bool>()))
@@ -221,18 +220,12 @@ namespace Dan.Core.UnitTest
                 return paramList;
             }
 
-            private BREntityRegisterEntry GetBrEntry()
+            private SimpleEntityRegistryUnit GetBrEntry()
             {
-                return new BREntityRegisterEntry()
+                return new SimpleEntityRegistryUnit()
                 {
-                    Naeringskode1 = new InstitusjonellSektorkode()
-                    {
-                        Kode = "1234"
-                    },
-                    Organisasjonsform = new Organisasjonsform()
-                    {
-                        Kode = "STAT"
-                    }
+                    IndustrialCodes = new List<string> { "1234" },
+                    OrganizationForm = "STAT"
                 };
             }
 

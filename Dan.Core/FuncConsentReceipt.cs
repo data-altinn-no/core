@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Dan.Common.Enums;
+using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Attributes;
 using Dan.Core.Config;
@@ -41,6 +42,9 @@ namespace Dan.Core
             _serviceContextService = serviceContextService;
             _accreditationRepository = accreditationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
+
+            _entityRegistryService.UseCoreProxy = false;
+            _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
         }
 
         /// <summary>
@@ -167,8 +171,8 @@ namespace Dan.Core
             // TODO! Look up name of person? Party.ToString() will handle redacting.
             if (party.NorwegianOrganizationNumber == null) return party.ToString();
 
-            var result = await _entityRegistryService.GetOrganizationEntry(party.NorwegianOrganizationNumber);
-            return result?.Navn ?? party.NorwegianOrganizationNumber;
+            var result = await _entityRegistryService.Get(party.NorwegianOrganizationNumber);
+            return result?.Name ?? party.NorwegianOrganizationNumber;
         }
 
         private static bool ValidateHMac(Accreditation accreditation, string? hmac)
