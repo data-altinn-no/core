@@ -28,6 +28,16 @@ public static class Settings
     public static bool IsDevEnvironment => new[] { "Development", "LocalDevelopment" }.Any(GetSetting("ASPNETCORE_ENVIRONMENT").Contains);
 
     /// <summary>
+    /// If the program is running in staging environment
+    /// </summary>
+    public static bool IsStagingEnvironment => GetSetting("ASPNETCORE_ENVIRONMENT").Equals("Staging");
+
+    /// <summary>
+    /// If the program is running in staging environment
+    /// </summary>
+    public static bool IsProductionEnvironment => !IsStagingEnvironment && !IsDevEnvironment;
+
+    /// <summary>
     /// If the program is running unit test
     /// </summary>
     public static bool IsUnitTest => Convert.ToBoolean(GetSetting("IsUnitTest"));

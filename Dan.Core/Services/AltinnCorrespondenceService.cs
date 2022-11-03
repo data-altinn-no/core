@@ -5,6 +5,7 @@ using Dan.Core.Helpers.Correspondence;
 using Dan.Core.Helpers.Notification;
 using Dan.Core.Services.Interfaces;
 using System.ServiceModel;
+using Dan.Common.Interfaces;
 using Dan.Core.Helpers;
 using Dan.Core.Models;
 using AltinnFault = Dan.Core.Helpers.Notification.AltinnFault;
@@ -57,6 +58,9 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
     {
         _channelManagerService = channelManagerService;
         _entityRegistryService = entityRegistryService;
+
+        _entityRegistryService.UseCoreProxy = false;
+        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
 
         var correspondenceSettings = Settings.CorrespondenceSettings.Split(',');
         var correspondenceServiceCode = correspondenceSettings[0].Trim();
@@ -232,8 +236,8 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
         // TODO! Look up name of person? Party.ToString() will handle redacting.
         if (party.NorwegianOrganizationNumber == null) return party.ToString();
 
-        var result = await _entityRegistryService.GetOrganizationEntry(party.NorwegianOrganizationNumber);
-        return result?.Navn ?? party.NorwegianOrganizationNumber;
+        var result = await _entityRegistryService.Get(party.NorwegianOrganizationNumber);
+        return result?.Name ?? party.NorwegianOrganizationNumber;
     }
 
     private async Task<StandaloneNotificationBEList> CreateNotifications(Accreditation accreditation, ServiceContext serviceContext)

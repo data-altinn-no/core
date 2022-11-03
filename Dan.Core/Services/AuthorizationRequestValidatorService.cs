@@ -1,5 +1,6 @@
 ﻿using Dan.Common;
 using Dan.Common.Enums;
+using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
@@ -44,6 +45,9 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         _availableEvidenceCodesService = availableEvidenceCodesService;
         _requirementValidationService = requirementValidationService;
         _requestContextService = requestContextService;
+
+        _entityRegistryService.UseCoreProxy = false;
+        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>
@@ -290,14 +294,14 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
             throw new InvalidSubjectException("Subject was not set");
         }
 
-        var entity = await _entityRegistryService.GetOrganizationEntry(_authRequest.Subject);
+        var entity = await _entityRegistryService.Get(_authRequest.Subject, attemptSubUnitLookupIfNotFound: false);
 
         if (entity == null)
         {
             throw new InvalidSubjectException("Subject was not found in the Central Coordinating Register for Legal Entities");
         }
 
-        if (entity.Slettedato != DateTime.MinValue)
+        if (entity.IsDeleted)
         {
             throw new InvalidSubjectException("Subject is deleted from the Central Coordinating Register for Legal Entities");
         }

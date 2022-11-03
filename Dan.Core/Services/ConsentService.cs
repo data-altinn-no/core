@@ -66,6 +66,9 @@ public class ConsentService : IConsentService
         _altinnServiceOwnerApiService = altinnServiceOwnerApiService;
         _availableEvidenceCodesService = availableEvidenceCodesService;
         _requestContextService = requestContextService;
+
+        _entityRegistryService.UseCoreProxy = false;
+        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>
@@ -435,13 +438,13 @@ public class ConsentService : IConsentService
 
     private async Task<string> GetOrganizationName(string orgNr)
     {
-        var entity = await _entityRegistryService.GetOrganizationEntry(orgNr);
+        var entity = await _entityRegistryService.Get(orgNr);
         if (entity == null)
         {
             throw new InvalidSubjectException($"{orgNr} was not found in the Central Coordinating Register for Legal Entities");
         }
 
-        return entity.Navn;
+        return entity.Name;
     }
 
     private async Task<string> GetOrganizationNameFromAltinn(string subject)

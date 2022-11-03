@@ -1,6 +1,8 @@
 using System.Reflection;
 using Azure.Core.Serialization;
+using Dan.Common.Interfaces;
 using Dan.Common.Models;
+using Dan.Common.Services;
 using Dan.Core.Attributes;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
@@ -92,12 +94,13 @@ var host = new HostBuilder()
         services.AddSingleton(s => new CosmosClientBuilder(Settings.CosmosDbConnection).Build());
         services.AddSingleton<IChannelManagerService, ChannelManagerService>();
         services.AddSingleton<IAltinnCorrespondenceService, AltinnCorrespondenceService>();
-        services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
         services.AddSingleton<IAvailableEvidenceCodesService, AvailableEvidenceCodesService>();
         services.AddSingleton<IAltinnServiceOwnerApiService, AltinnServiceOwnerApiService>();
         services.AddSingleton<ITokenRequesterService, TokenRequesterService>();
         services.AddSingleton<IServiceContextService, ServiceContextService>();
         services.AddSingleton<IAccreditationRepository, CosmosDbAccreditationRepository>();
+        services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
+        services.AddSingleton<IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
 
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
@@ -111,9 +114,10 @@ var host = new HostBuilder()
         services.AddPolicyRegistry(new PolicyRegistry()
             {
                 {
-                    "ERCachePolicy", Policy.CacheAsync(
-                        distributedCache.AsAsyncCacheProvider<string>(),
-                        EntityRegistryService.DistributedCacheTtl)
+                    CachingEntityRegistryApiClientService.EntityRegistryCachePolicy, Policy.CacheAsync(
+                        distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
+                            new JsonSerializer<UpstreamEntityRegistryUnit?>(new JsonSerializerSettings())),
+                        TimeSpan.FromHours(12))
                 },
                 {
                     "EvidenceCodesCachePolicy", Policy.CacheAsync(
@@ -130,42 +134,49 @@ var host = new HostBuilder()
                         new Oauth2AccessTokenCachingStrategy())
                 },
                 {
-                    "defaultCircuitBreaker", HttpPolicyExtensions.HandleTransientHttpError().
+                    "DefaultCircuitBreaker", HttpPolicyExtensions.HandleTransientHttpError().
                         CircuitBreakerAsync(Settings.BreakerFailureCountThreshold, Settings.BreakerRetryWaitTime)
                 }
             });
 
         // Default client to use in harvesting
         services.AddHttpClient("SafeHttpClient", client =>
-        {
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-            client.BaseAddress = new Uri(Settings.ApiUrl);
-        })
-        .AddPolicyHandlerFromRegistry("defaultCircuitBreaker")
-        .AddHttpMessageHandler<ExceptionDelegatingHandler>();
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.BaseAddress = new Uri(Settings.ApiUrl);
+            })
+            .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>();
 
         // Client used for getting evidence code lists from data sources
         services.AddHttpClient("EvidenceCodesClient", client =>
-        {
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-            client.Timeout = TimeSpan.FromSeconds(10);
-        })
-        .AddHttpMessageHandler<ExceptionDelegatingHandler>();
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            })
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>();
 
         // Client with enterprise certificate authentication
         services.AddHttpClient("ECHttpClient", client =>
-        {
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-        })
-        .AddPolicyHandlerFromRegistry("defaultCircuitBreaker")
-        .AddHttpMessageHandler<ExceptionDelegatingHandler>()
-        .ConfigurePrimaryHttpMessageHandler(() =>
-        {
-            var handler = new HttpClientHandler();
-            handler.ClientCertificates.Add(Settings.AltinnCertificate);
-            return handler;
-        });
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            })
+            .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>()
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                var handler = new HttpClientHandler();
+                handler.ClientCertificates.Add(Settings.AltinnCertificate);
+                return handler;
+            });
 
+        // Client used for Entity Registry lookups
+        services.AddHttpClient("EntityRegistryClient", client =>
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(5);
+            })
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>();
 
     })
     .Build();

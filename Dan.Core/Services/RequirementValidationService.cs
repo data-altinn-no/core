@@ -7,6 +7,7 @@ using Dan.Core.Services.Interfaces;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using Dan.Common.Interfaces;
 
 namespace Dan.Core.Services;
 
@@ -39,6 +40,9 @@ public class RequirementValidationService : IRequirementValidationService
         _authRequest = new AuthorizationRequest();
         _errors = new ConcurrentBag<string>();
         _skippedEvidenceCodes = new ConcurrentDictionary<string, Requirement>();
+
+        _entityRegistryService.UseCoreProxy = false;
+        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>
@@ -574,7 +578,7 @@ public class RequirementValidationService : IRequirementValidationService
         {
             if (OrganizationNumberValidator.IsWellFormed(identifier))
             {
-                result = await _entityRegistryService.IsOrganizationPublicAgency(identifier) ? PartyTypeConstraint.PublicAgency : PartyTypeConstraint.PrivateEnterprise;
+                result = await _entityRegistryService.IsPublicAgency(identifier) ? PartyTypeConstraint.PublicAgency : PartyTypeConstraint.PrivateEnterprise;
             }
         }
         else if (identifier.Length == 11)

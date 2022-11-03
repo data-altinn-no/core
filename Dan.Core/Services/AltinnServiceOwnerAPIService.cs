@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net;
 using System.Text;
-using Dan.Core.Helpers;
+using Dan.Common.Util;
 using Dan.Core.Models;
 
 namespace Dan.Core.Services;

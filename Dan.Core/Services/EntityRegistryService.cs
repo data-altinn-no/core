@@ -1,10 +1,11 @@
-﻿using Dan.Core.Config;
+﻿/*Dan.Core.Config;
 using Dan.Core.Extensions;
 using Dan.Core.Services.Interfaces;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Registry;
 using System.Net;
+using Dan.Common.Models;
 using Dan.Core.Models;
 
 namespace Dan.Core.Services;
@@ -28,11 +29,11 @@ class EntityRegistryService : IEntityRegistryService
     }
 
     /// <inheritdoc/>
-    public async Task<BREntityRegisterEntry?> GetOrganizationEntry(string orgNumber)
+    public async Task<UpstreamEntityRegistryUnit?> GetOrganizationEntry(string orgNumber)
     {
         if (Settings.IsDevEnvironment && Settings.TestEnvironmentValidOrgs.Contains(orgNumber))
         {
-            return new BREntityRegisterEntry()
+            return new UpstreamEntityRegistryUnit()
             {
                 Organisasjonsnummer = Convert.ToInt32(orgNumber),
                 Organisasjonsform = new Organisasjonsform { Kode = "STAT" },
@@ -55,7 +56,7 @@ class EntityRegistryService : IEntityRegistryService
         return entity != null && IsPublicAgency(entity);
     }
 
-    private bool IsPublicAgency(BREntityRegisterEntry entity)
+    private bool IsPublicAgency(UpstreamEntityRegistryUnit entity)
     {
         return (!string.IsNullOrEmpty(entity.Organisasjonsform.Kode) && _validUnitTypes.Contains(entity.Organisasjonsform.Kode))
                || (!string.IsNullOrEmpty(entity.Naeringskode1.Kode) && entity.Naeringskode1.Kode.StartsWith("84"))
@@ -86,7 +87,7 @@ class EntityRegistryService : IEntityRegistryService
     }
 
     // ReSharper disable once InconsistentNaming
-    private async Task<BREntityRegisterEntry?> GetUnitFromBR(string organizationNumber, bool isMainUnit)
+    private async Task<UpstreamEntityRegistryUnit?> GetUnitFromBR(string organizationNumber, bool isMainUnit)
     {
         var validationUrl = isMainUnit
             ? GetValidationUrl(organizationNumber)
@@ -100,11 +101,11 @@ class EntityRegistryService : IEntityRegistryService
         var responseContent = await cachePolicy.ExecuteAsync(async _ => await GetResponseString(request),
             new Context(request.Key(CacheArea.Absolute)));
 
-        BREntityRegisterEntry? result;
+        UpstreamEntityRegistryUnit? result;
         if (responseContent == null) return null;
         try
         {
-            result = JsonConvert.DeserializeObject<BREntityRegisterEntry>(responseContent);
+            result = JsonConvert.DeserializeObject<UpstreamEntityRegistryUnit>(responseContent);
         }
         catch
         {
@@ -125,4 +126,4 @@ class EntityRegistryService : IEntityRegistryService
 
         return null;
     }
-}
+}*/
