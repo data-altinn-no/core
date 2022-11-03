@@ -40,14 +40,12 @@ public class EntityRegistryService : IEntityRegistryService
         _entityRegistryApiClientService = entityRegistryApiClientService;
     }
 
-    public async Task<SimpleEntityRegistryUnit?> Get(
-        string organizationNumber, 
-        bool attemptSubUnitLookupIfNotFound = true,
-        bool nestToAndReturnMainUnit = false,
-        bool subUnitOnly = false) => MapToEntityRegistryUnit(await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound, nestToAndReturnMainUnit, subUnitOnly));
+    public async Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false) 
+        => MapToEntityRegistryUnit(await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound, nestToAndReturnMainUnit, subUnitOnly));
     
 
-    public async Task<SimpleEntityRegistryUnit?> GetMainUnit(string organizationNumber) => await Get(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
+    public async Task<SimpleEntityRegistryUnit?> GetMainUnit(string organizationNumber) 
+        => await Get(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
 
     public async Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true,
         bool nestToAndReturnMainUnit = false, bool subUnitOnly = false)
