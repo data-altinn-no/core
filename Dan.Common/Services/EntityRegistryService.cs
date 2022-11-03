@@ -11,10 +11,10 @@ public class EntityRegistryService : IEntityRegistryService
     public const string CcrProxyMainUnitDatasetName = "_ccrproxymain";
     public const string CcrProxySubUnitDatasetName  = "_ccrproxysub";
 
-    private const string MainUnitLookupEndpoint         = "http://data.brreg.no/enhetsregisteret/api/enheter/{0}";
-    private const string SubUnitLookupEndpoint          = "http://data.brreg.no/enhetsregisteret/api/underenheter/{0}";
-    private const string PpeMainUnitLookupEndpoint      = "http://data.ppe.brreg.no/enhetsregisteret/api/enheter/{0}";
-    private const string PpeSubUnitLookupEndpoint       = "http://data.ppe.brreg.no/enhetsregisteret/api/underenheter/{0}";
+    private const string MainUnitLookupEndpoint         = "https://data.brreg.no/enhetsregisteret/api/enheter/{0}";
+    private const string SubUnitLookupEndpoint          = "https://data.brreg.no/enhetsregisteret/api/underenheter/{0}";
+    private const string PpeMainUnitLookupEndpoint      = "https://data.ppe.brreg.no/enhetsregisteret/api/enheter/{0}";
+    private const string PpeSubUnitLookupEndpoint       = "https://data.ppe.brreg.no/enhetsregisteret/api/underenheter/{0}";
     
     private const string ProxyMainUnitLookupEndpoint    = "https://test-api.data.altinn.no/api/opendata/" + CcrProxyMainUnitDatasetName + "/{0}";
     private const string ProxySubUnitLookupEndpoint     = "https://test-api.data.altinn.no/api/opendata/" + CcrProxySubUnitDatasetName + "/{0}";
