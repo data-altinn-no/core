@@ -26,8 +26,7 @@ public class EntityRegistryService : IEntityRegistryService
 
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
 
-    private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(1);
-
+    private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(600);
 
     private enum UnitType
     {
