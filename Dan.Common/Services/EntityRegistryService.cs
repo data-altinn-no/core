@@ -25,7 +25,7 @@ public class EntityRegistryService : IEntityRegistryService
     private static readonly string[] PublicSectorSectorCodes = { "1110", "1120", "1510", "1520", "3900", "6100", "6500" };
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
 
-    private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(5);
+    private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(600);
 
 
     private enum UnitType
