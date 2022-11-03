@@ -23,9 +23,10 @@ public class EntityRegistryService : IEntityRegistryService
 
     private static readonly string[] PublicSectorUnitTypes   = { "ADOS", "FKF", "FYLK", "KF", "KOMM", "ORGL", "STAT", "SF", "SÆR" };
     private static readonly string[] PublicSectorSectorCodes = { "1110", "1120", "1510", "1520", "3900", "6100", "6500" };
+
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
 
-    private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(600);
+    private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(1);
 
 
     private enum UnitType
@@ -39,11 +40,17 @@ public class EntityRegistryService : IEntityRegistryService
         _entityRegistryApiClientService = entityRegistryApiClientService;
     }
 
-    public async Task<EntityRegistryUnit?> Get(
+    public async Task<SimpleEntityRegistryUnit?> Get(
         string organizationNumber, 
         bool attemptSubUnitLookupIfNotFound = true,
         bool nestToAndReturnMainUnit = false,
-        bool checkIfSubUnitFirst = false)
+        bool subUnitOnly = false) => MapToEntityRegistryUnit(await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound, nestToAndReturnMainUnit, subUnitOnly));
+    
+
+    public async Task<SimpleEntityRegistryUnit?> GetMainUnit(string organizationNumber) => await Get(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
+
+    public async Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true,
+        bool nestToAndReturnMainUnit = false, bool subUnitOnly = false)
     {
 
         if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
@@ -52,19 +59,19 @@ public class EntityRegistryService : IEntityRegistryService
         }
 
         EntityRegistryUnit? unit;
-        if (checkIfSubUnitFirst)
+        if (subUnitOnly)
         {
             unit = await InternalGet(organizationNumber, UnitType.SubUnit);
             if (unit == null) return null;
 
-            if (nestToAndReturnMainUnit && unit.ParentUnit != null)
+            if (nestToAndReturnMainUnit && unit.OverordnetEnhet != null)
             {
                 var parentUnit = unit;
                 do
                 {
-                    parentUnit = await InternalGet(parentUnit.ParentUnit, UnitType.MainUnit);
-                } 
-                while (parentUnit!.ParentUnit != null);
+                    parentUnit = await InternalGet(parentUnit.OverordnetEnhet, UnitType.MainUnit);
+                }
+                while (parentUnit!.OverordnetEnhet != null);
 
                 return parentUnit;
             }
@@ -77,17 +84,17 @@ public class EntityRegistryService : IEntityRegistryService
         }
 
         return unit;
+
     }
 
-    public async Task<EntityRegistryUnit?> GetMainUnit(string organizationNumber)
-    {
-        return await Get(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
-    }
+    public async Task<EntityRegistryUnit?> GetFullMainUnit(string organizationNumber) => await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
 
-    public bool IsMainUnit(EntityRegistryUnit unit)
+    public bool IsMainUnit(SimpleEntityRegistryUnit unit)
     {
         return !IsSubUnit(unit);
     }
+
+    public bool IsMainUnit(EntityRegistryUnit unit) => IsMainUnit(MapToEntityRegistryUnit(unit)!);
 
     public async Task<bool> IsMainUnit(string organizationNumber)
     {
@@ -95,23 +102,28 @@ public class EntityRegistryService : IEntityRegistryService
         return unit != null && IsMainUnit(unit);
     }
 
-    public bool IsSubUnit(EntityRegistryUnit unit)
+    public bool IsSubUnit(SimpleEntityRegistryUnit unit)
     {
         return !string.IsNullOrEmpty(unit.ParentUnit);
     }
 
+    public bool IsSubUnit(EntityRegistryUnit unit) => IsSubUnit(MapToEntityRegistryUnit(unit)!);
+    
+
     public async Task<bool> IsSubUnit(string organizationNumber)
     {
-        var unit = await Get(organizationNumber, checkIfSubUnitFirst: true);
+        var unit = await Get(organizationNumber, subUnitOnly: true);
         return unit != null && IsSubUnit(unit);
     }
 
-    public bool IsPublicAgency(EntityRegistryUnit unit)
+    public bool IsPublicAgency(SimpleEntityRegistryUnit unit)
     {
         return PublicSectorUnitTypes.Contains(unit.OrganizationForm)
                || unit.IndustrialCodes.Any(x => x.StartsWith("84"))
                || PublicSectorSectorCodes.Contains(unit.SectorCode);
     }
+
+    public bool IsPublicAgency(EntityRegistryUnit unit) => IsPublicAgency(MapToEntityRegistryUnit(unit)!);
 
     public async Task<bool> IsPublicAgency(string organizationNumber)
     {
@@ -147,15 +159,14 @@ public class EntityRegistryService : IEntityRegistryService
 
     private async Task<EntityRegistryUnit?> GetFromClientService(Uri url)
     {
-        var upstreamEntityRegistryUnit = await _entityRegistryApiClientService.GetUpstreamEntityRegistryUnitAsync(url);
-        return MapToEntityRegistryUnit(upstreamEntityRegistryUnit);
+        return await _entityRegistryApiClientService.GetUpstreamEntityRegistryUnitAsync(url);
     }
 
-    private EntityRegistryUnit? MapToEntityRegistryUnit(UpstreamEntityRegistryUnit? upstreamEntityRegistryUnit)
+    private SimpleEntityRegistryUnit? MapToEntityRegistryUnit(EntityRegistryUnit? upstreamEntityRegistryUnit)
     {
         if (upstreamEntityRegistryUnit == null) return null;
 
-        var unit = new EntityRegistryUnit
+        var unit = new SimpleEntityRegistryUnit
         {
             OrganizationNumber = upstreamEntityRegistryUnit.Organisasjonsnummer.ToString(),
             Name = upstreamEntityRegistryUnit.Navn,

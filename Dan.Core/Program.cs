@@ -116,7 +116,7 @@ var host = new HostBuilder()
                 {
                     CachingEntityRegistryApiClientService.EntityRegistryCachePolicy, Policy.CacheAsync(
                         distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
-                            new JsonSerializer<UpstreamEntityRegistryUnit?>(new JsonSerializerSettings())),
+                            new JsonSerializer<EntityRegistryUnit?>(new JsonSerializerSettings())),
                         TimeSpan.FromHours(12))
                 },
                 {

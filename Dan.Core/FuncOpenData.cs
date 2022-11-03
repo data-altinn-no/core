@@ -79,11 +79,11 @@ namespace Dan.Core
             EntityRegistryUnit? unit;
             if (unitTypeDatasetName == EntityRegistryService.CcrProxyMainUnitDatasetName)
             {
-                unit = await _entityRegistryService.Get(organizationNumber, attemptSubUnitLookupIfNotFound: false);
+                unit = await _entityRegistryService.GetFull(organizationNumber, attemptSubUnitLookupIfNotFound: false);
             }
             else
             {
-                unit = await _entityRegistryService.Get(organizationNumber, checkIfSubUnitFirst: true);
+                unit = await _entityRegistryService.GetFull(organizationNumber, subUnitOnly: true);
             }
 
             if (unit == null)

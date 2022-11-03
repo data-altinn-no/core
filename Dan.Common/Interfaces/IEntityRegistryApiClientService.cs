@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 namespace Dan.Common.Interfaces;
 public interface IEntityRegistryApiClientService
 {
-    public Task<UpstreamEntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri);
+    public Task<EntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri);
 }

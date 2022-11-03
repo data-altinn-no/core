@@ -220,9 +220,9 @@ namespace Dan.Core.UnitTest
                 return paramList;
             }
 
-            private EntityRegistryUnit GetBrEntry()
+            private SimpleEntityRegistryUnit GetBrEntry()
             {
-                return new EntityRegistryUnit()
+                return new SimpleEntityRegistryUnit()
                 {
                     IndustrialCodes = new List<string> { "1234" },
                     OrganizationForm = "STAT"

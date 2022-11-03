@@ -21,13 +21,13 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         _policyRegistry = policyRegistry;
     }
 
-    public async Task<UpstreamEntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
+    public async Task<EntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
     {
         // Short circuit checks for organization numbers that are configured to be test numbers.
         var organizationNumber = registryApiUri.AbsolutePath.Split('/').Last();
         if (Settings.IsDevEnvironment && Settings.TestEnvironmentValidOrgs.Contains(organizationNumber))
         {
-            return new UpstreamEntityRegistryUnit()
+            return new EntityRegistryUnit()
             {
                 Organisasjonsnummer = Convert.ToInt32(organizationNumber),
                 Organisasjonsform = new Organisasjonsform { Kode = "STAT" },
@@ -42,7 +42,7 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
             // To avoid unecessary requests for the same unit, use a keyed lock to make sure we hit the cache.
             await _keyedLock.WaitAsync(cacheKey);
 
-            var cachePolicy = _policyRegistry.Get<AsyncPolicy<UpstreamEntityRegistryUnit?>>(EntityRegistryCachePolicy);
+            var cachePolicy = _policyRegistry.Get<AsyncPolicy<EntityRegistryUnit?>>(EntityRegistryCachePolicy);
             return await cachePolicy.ExecuteAsync(
                 async _ => await InternalGetUpstreamEntityRegistryUnitAsync(registryApiUri), new Context(cacheKey));
         }
@@ -57,7 +57,7 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         return "_ccr_" + registryApiUri;
     }
 
-    private async Task<UpstreamEntityRegistryUnit?> InternalGetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
+    private async Task<EntityRegistryUnit?> InternalGetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
     {
         var client = _clientFactory.CreateClient("entityRegistryClient");
         var request = new HttpRequestMessage(HttpMethod.Get, registryApiUri);
@@ -66,6 +66,6 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         var response = await client.SendAsync(request);
         if (!response.IsSuccessStatusCode) return null;
 
-        return await response.Content.ReadFromJsonAsync<UpstreamEntityRegistryUnit>();
+        return await response.Content.ReadFromJsonAsync<EntityRegistryUnit>();
     }
 }

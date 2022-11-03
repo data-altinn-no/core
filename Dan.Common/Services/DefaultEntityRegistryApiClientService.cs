@@ -11,7 +11,7 @@ public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientSer
         _clientFactory = clientFactory;
     }
 
-    public async Task<UpstreamEntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
+    public async Task<EntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
     {
         var client = _clientFactory.CreateClient("entityRegistryClient");
         var request = new HttpRequestMessage(HttpMethod.Get, registryApiUri);
@@ -20,6 +20,6 @@ public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientSer
         var response = await client.SendAsync(request);
         if (!response.IsSuccessStatusCode) return null;
 
-        return await response.Content.ReadFromJsonAsync<UpstreamEntityRegistryUnit>();
+        return await response.Content.ReadFromJsonAsync<EntityRegistryUnit>();
     }
 }
