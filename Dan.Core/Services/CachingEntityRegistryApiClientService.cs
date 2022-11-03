@@ -2,6 +2,7 @@
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Common.Util;
+using Dan.Core.Config;
 using Polly;
 using Polly.Registry;
 
@@ -22,6 +23,18 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
 
     public async Task<UpstreamEntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
     {
+        // Short circuit checks for organization numbers that are configured to be test numbers.
+        var organizationNumber = registryApiUri.AbsolutePath.Split('/').Last();
+        if (Settings.IsDevEnvironment && Settings.TestEnvironmentValidOrgs.Contains(organizationNumber))
+        {
+            return new UpstreamEntityRegistryUnit()
+            {
+                Organisasjonsnummer = Convert.ToInt32(organizationNumber),
+                Organisasjonsform = new Organisasjonsform { Kode = "STAT" },
+                Navn = "TESTEORGANISASJON",
+            };
+        }
+
         var cacheKey = GetCacheKeyFromUri(registryApiUri);
         try
         {
