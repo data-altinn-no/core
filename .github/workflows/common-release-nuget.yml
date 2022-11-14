@@ -38,7 +38,7 @@ jobs:
     - name: Pack with debug symbols
       run: dotnet pack --configuration Release /p:Version=${VERSION} -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg --output . ${PROJECT}
     - name: Push to GitHub Packages
-      run: dotnet nuget push *.${VERSION}.nupkg --source https://nuget.pkg.github.com/altinn/index.json --api-key ${GITHUB_TOKEN}
+      run: dotnet nuget push *.${VERSION}.nupkg --source https://nuget.pkg.github.com/data-altinn-no/index.json --api-key ${GITHUB_TOKEN}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Push to nuget.org
