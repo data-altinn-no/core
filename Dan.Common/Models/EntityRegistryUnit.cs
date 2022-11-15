@@ -7,16 +7,16 @@ public class EntityRegistryUnit
     public long Organisasjonsnummer { get; set; }
 
     [JsonProperty("navn")]
-    public string Navn { get; set; } = string.Empty;
+    public string Navn { get; set; } = null!;
 
     [JsonProperty("organisasjonsform")]
-    public Organisasjonsform Organisasjonsform { get; set; } = new();
+    public Organisasjonsform Organisasjonsform { get; set; } = null!;
 
     [JsonProperty("slettedato")]
     public DateTime Slettedato { get; set; }
 
     [JsonProperty("postadresse")]
-    public Adresse Postadresse { get; set; } = new();
+    public AdresseDto Postadresse { get; set; } = null!;
 
     [JsonProperty("registreringsdatoEnhetsregisteret")]
     public DateTimeOffset RegistreringsdatoEnhetsregisteret { get; set; }
@@ -25,10 +25,10 @@ public class EntityRegistryUnit
     public bool RegistrertIMvaregisteret { get; set; }
 
     [JsonProperty("frivilligMvaRegistrertBeskrivelser")]
-    public List<string> FrivilligMvaRegistrertBeskrivelser { get; set; } = new();
+    public List<string> FrivilligMvaRegistrertBeskrivelser { get; set; } = null!;
 
     [JsonProperty("naeringskode1")]
-    public InstitusjonellSektorkode Naeringskode1 { get; set; } = new();
+    public InstitusjonellSektorkode Naeringskode1 { get; set; } = null!;
 
     [JsonProperty("naeringskode2")]
     public InstitusjonellSektorkode? Naeringskode2 { get; set; }
@@ -43,13 +43,13 @@ public class EntityRegistryUnit
     public string? OverordnetEnhet { get; set; }
 
     [JsonProperty("forretningsadresse")]
-    public Adresse Forretningsadresse { get; set; } = new();
+    public AdresseDto Forretningsadresse { get; set; } = null!;
 
     [JsonProperty("stiftelsesdato")]
     public DateTimeOffset Stiftelsesdato { get; set; }
 
     [JsonProperty("institusjonellSektorkode")]
-    public InstitusjonellSektorkode InstitusjonellSektorkode { get; set; } = new();
+    public InstitusjonellSektorkode InstitusjonellSektorkode { get; set; } = null!;
 
     [JsonProperty("registrertIForetaksregisteret")]
     public bool RegistrertIForetaksregisteret { get; set; }
@@ -76,10 +76,10 @@ public class EntityRegistryUnit
     public string? Maalform { get; set; }
 
     [JsonProperty("_links")]
-    public Links Links { get; set; } = new();
+    public Links Links { get; set; } = null!;
 }
 
-public class Adresse
+public class AdresseDto
 {
     [JsonProperty("land")]
     public string? Land { get; set; }
@@ -94,7 +94,7 @@ public class Adresse
     public string? Poststed { get; set; }
 
     [JsonProperty("adresse")]
-    public List<string> AdresseAdresse { get; set; } = new();
+    public List<string> Adresse { get; set; } = null!;
 
     [JsonProperty("kommune")]
     public string? Kommune { get; set; }
@@ -115,7 +115,7 @@ public class InstitusjonellSektorkode
 public class Links
 {
     [JsonProperty("self")]
-    public Self Self { get; set; } = new();
+    public Self Self { get; set; } = null!;
 }
 
 public class Self
@@ -133,5 +133,5 @@ public class Organisasjonsform
     public string? Beskrivelse { get; set; }
 
     [JsonProperty("_links")]
-    public Links Links { get; set; } = new();
+    public Links Links { get; set; } = null!;
 }
