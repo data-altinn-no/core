@@ -20,6 +20,7 @@ public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientSer
         var response = await client.SendAsync(request);
         if (!response.IsSuccessStatusCode) return null;
 
-        return await response.Content.ReadFromJsonAsync<EntityRegistryUnit>();
+        var responseString = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<EntityRegistryUnit>(responseString);
     }
 }

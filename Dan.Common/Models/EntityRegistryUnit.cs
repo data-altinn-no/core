@@ -1,10 +1,12 @@
-﻿namespace Dan.Common.Models;
+﻿using Dan.Common.Util;
+
+namespace Dan.Common.Models;
 
 // ReSharper disable once InconsistentNaming
 public class EntityRegistryUnit
 {
     [JsonProperty("organisasjonsnummer")]
-    public long Organisasjonsnummer { get; set; }
+    public string Organisasjonsnummer { get; set; } = null!;
 
     [JsonProperty("navn")]
     public string Navn { get; set; } = null!;
@@ -12,67 +14,80 @@ public class EntityRegistryUnit
     [JsonProperty("organisasjonsform")]
     public Organisasjonsform Organisasjonsform { get; set; } = null!;
 
-    [JsonProperty("slettedato")]
-    public DateTime Slettedato { get; set; }
+    [JsonProperty("hjemmeside", NullValueHandling = NullValueHandling.Ignore)]
+    public Uri? Hjemmeside { get; set; }
 
-    [JsonProperty("postadresse")]
-    public AdresseDto Postadresse { get; set; } = null!;
+    [JsonProperty("slettedato", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]
+    public DateTimeOffset? Slettedato { get; set; }
+
+    [JsonProperty("postadresse", NullValueHandling = NullValueHandling.Ignore)]
+    public AdresseDto? Postadresse { get; set; }
 
     [JsonProperty("registreringsdatoEnhetsregisteret")]
+    [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]
     public DateTimeOffset RegistreringsdatoEnhetsregisteret { get; set; }
 
     [JsonProperty("registrertIMvaregisteret")]
     public bool RegistrertIMvaregisteret { get; set; }
 
-    [JsonProperty("frivilligMvaRegistrertBeskrivelser")]
-    public List<string> FrivilligMvaRegistrertBeskrivelser { get; set; } = null!;
+    [JsonProperty("frivilligMvaRegistrertBeskrivelser", NullValueHandling = NullValueHandling.Ignore)]
+    public List<string>? FrivilligMvaRegistrertBeskrivelser { get; set; }
 
-    [JsonProperty("naeringskode1")]
-    public InstitusjonellSektorkode Naeringskode1 { get; set; } = null!;
+    [JsonProperty("naeringskode1", NullValueHandling = NullValueHandling.Ignore)]
+    public NaeringsKodeDto? Naeringskode1 { get; set; }
 
-    [JsonProperty("naeringskode2")]
-    public InstitusjonellSektorkode? Naeringskode2 { get; set; }
+    [JsonProperty("naeringskode2", NullValueHandling = NullValueHandling.Ignore)]
+    public NaeringsKodeDto? Naeringskode2 { get; set; }
 
-    [JsonProperty("naeringskode3")]
-    public InstitusjonellSektorkode? Naeringskode3 { get; set; }
+    [JsonProperty("naeringskode3", NullValueHandling = NullValueHandling.Ignore)]
+    public NaeringsKodeDto? Naeringskode3 { get; set; }
 
     [JsonProperty("antallAnsatte")]
-    public long AntallAnsatte { get; set; }
+    public int  AntallAnsatte { get; set; }
 
-    [JsonProperty("overordnetEnhet")]
+    [JsonProperty("overordnetEnhet", NullValueHandling = NullValueHandling.Ignore)]
     public string? OverordnetEnhet { get; set; }
 
-    [JsonProperty("forretningsadresse")]
-    public AdresseDto Forretningsadresse { get; set; } = null!;
+    [JsonProperty("oppstartsdato", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]
+    public DateTimeOffset? OppstartsDato { get; set; }
 
-    [JsonProperty("stiftelsesdato")]
-    public DateTimeOffset Stiftelsesdato { get; set; }
+    [JsonProperty("forretningsadresse", NullValueHandling = NullValueHandling.Ignore)]
+    public AdresseDto? Forretningsadresse { get; set; }
 
-    [JsonProperty("institusjonellSektorkode")]
-    public InstitusjonellSektorkode InstitusjonellSektorkode { get; set; } = null!;
+    [JsonProperty("beliggenhetsadresse", NullValueHandling = NullValueHandling.Ignore)]
+    public AdresseDto? Beliggenhetsadresse { get; set; }
 
-    [JsonProperty("registrertIForetaksregisteret")]
-    public bool RegistrertIForetaksregisteret { get; set; }
+    [JsonProperty("stiftelsesdato", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]
+    public DateTimeOffset? Stiftelsesdato { get; set; }
 
-    [JsonProperty("registrertIStiftelsesregisteret")]
-    public bool RegistrertIStiftelsesregisteret { get; set; }
+    [JsonProperty("institusjonellSektorkode", NullValueHandling = NullValueHandling.Ignore)]
+    public SektorKodeDto? InstitusjonellSektorkode { get; set; }
 
-    [JsonProperty("registrertIFrivillighetsregisteret")]
-    public bool RegistrertIFrivillighetsregisteret { get; set; }
+    [JsonProperty("registrertIForetaksregisteret", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? RegistrertIForetaksregisteret { get; set; }
 
-    [JsonProperty("sisteInnsendteAarsregnskap")]
-    public long SisteInnsendteAarsregnskap { get; set; }
+    [JsonProperty("registrertIStiftelsesregisteret", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? RegistrertIStiftelsesregisteret { get; set; }
 
-    [JsonProperty("konkurs")]
-    public bool Konkurs { get; set; }
+    [JsonProperty("registrertIFrivillighetsregisteret", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? RegistrertIFrivillighetsregisteret { get; set; }
 
-    [JsonProperty("underAvvikling")]
-    public bool UnderAvvikling { get; set; }
+    [JsonProperty("sisteInnsendteAarsregnskap", NullValueHandling = NullValueHandling.Ignore)]
+    public string? SisteInnsendteAarsregnskap { get; set; }
 
-    [JsonProperty("underTvangsavviklingEllerTvangsopplosning")]
-    public bool UnderTvangsavviklingEllerTvangsopplosning { get; set; }
+    [JsonProperty("konkurs", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Konkurs { get; set; }
 
-    [JsonProperty("maalform")]
+    [JsonProperty("underAvvikling", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? UnderAvvikling { get; set; }
+
+    [JsonProperty("underTvangsavviklingEllerTvangsopplosning", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? UnderTvangsavviklingEllerTvangsopplosning { get; set; }
+
+    [JsonProperty("maalform", NullValueHandling = NullValueHandling.Ignore)]
     public string? Maalform { get; set; }
 
     [JsonProperty("_links")]
@@ -82,46 +97,61 @@ public class EntityRegistryUnit
 public class AdresseDto
 {
     [JsonProperty("land")]
-    public string? Land { get; set; }
+    public string Land { get; set; } = null!;
 
     [JsonProperty("landkode")]
-    public string? Landkode { get; set; }
+    public string Landkode { get; set; } = null!;
 
-    [JsonProperty("postnummer")]
-    public long Postnummer { get; set; }
+    [JsonProperty("postnummer", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Postnummer { get; set; }
 
     [JsonProperty("poststed")]
-    public string? Poststed { get; set; }
+    public string Poststed { get; set; } = null!;
 
     [JsonProperty("adresse")]
     public List<string> Adresse { get; set; } = null!;
 
-    [JsonProperty("kommune")]
+    [JsonProperty("kommune", NullValueHandling = NullValueHandling.Ignore)]
     public string? Kommune { get; set; }
 
-    [JsonProperty("kommunenummer")]
+    [JsonProperty("kommunenummer", NullValueHandling = NullValueHandling.Ignore)]
     public string? Kommunenummer { get; set; }
 }
 
-public class InstitusjonellSektorkode
+public class NaeringsKodeDto
+{
+    [JsonProperty("beskrivelse")]
+    public string Beskrivelse { get; set; } = null!;
+
+    [JsonProperty("kode")]
+    public string Kode { get; set; } = null!;
+
+    [JsonProperty("hjelpeenhetskode", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? Hjelpenhetskode { get; set; }
+}
+
+public class SektorKodeDto
 {
     [JsonProperty("kode")]
-    public string? Kode { get; set; }
+    public string Kode { get; set; } = null!;
 
     [JsonProperty("beskrivelse")]
-    public string? Beskrivelse { get; set; }
+    public string Beskrivelse { get; set; } = null!;
 }
 
 public class Links
 {
     [JsonProperty("self")]
-    public Self Self { get; set; } = null!;
+    public Link Self { get; set; } = null!;
+
+    [JsonProperty("overordnetEnhet", NullValueHandling = NullValueHandling.Ignore)]
+    public Link? OverordnetEnhet { get; set; }
 }
 
-public class Self
+public class Link
 {
     [JsonProperty("href")]
-    public Uri Href { get; set; } = new("about:blank");
+    public Uri Href { get; set; } = null!;
 }
 
 public class Organisasjonsform

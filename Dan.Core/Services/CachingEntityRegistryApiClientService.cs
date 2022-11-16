@@ -3,6 +3,7 @@ using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Common.Util;
 using Dan.Core.Config;
+using Newtonsoft.Json;
 using Polly;
 using Polly.Registry;
 
@@ -29,7 +30,7 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         {
             return new EntityRegistryUnit()
             {
-                Organisasjonsnummer = Convert.ToInt32(organizationNumber),
+                Organisasjonsnummer = organizationNumber,
                 Organisasjonsform = new Organisasjonsform { Kode = "STAT" },
                 Navn = "TESTEORGANISASJON",
             };
@@ -66,6 +67,7 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         var response = await client.SendAsync(request);
         if (!response.IsSuccessStatusCode) return null;
 
-        return await response.Content.ReadFromJsonAsync<EntityRegistryUnit>();
+        var responseString = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<EntityRegistryUnit>(responseString);
     }
 }
