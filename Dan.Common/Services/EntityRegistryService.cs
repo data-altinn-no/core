@@ -116,7 +116,7 @@ public class EntityRegistryService : IEntityRegistryService
     public bool IsPublicAgency(SimpleEntityRegistryUnit unit)
     {
         return PublicSectorUnitTypes.Contains(unit.OrganizationForm)
-               || unit.IndustrialCodes.Any(x => x.StartsWith("84"))
+               || unit.IndustrialCodes != null && unit.IndustrialCodes.Any(x => x.StartsWith("84"))
                || PublicSectorSectorCodes.Contains(unit.SectorCode);
     }
 
@@ -165,17 +165,17 @@ public class EntityRegistryService : IEntityRegistryService
 
         var unit = new SimpleEntityRegistryUnit
         {
-            OrganizationNumber = upstreamEntityRegistryUnit.Organisasjonsnummer.ToString(),
+            OrganizationNumber = upstreamEntityRegistryUnit.Organisasjonsnummer,
             Name = upstreamEntityRegistryUnit.Navn,
-            OrganizationForm = upstreamEntityRegistryUnit.Organisasjonsform.Kode ?? "UNKNOWN",
+            OrganizationForm = upstreamEntityRegistryUnit.Organisasjonsform.Kode,
             ParentUnit = upstreamEntityRegistryUnit.OverordnetEnhet,
-            SectorCode = upstreamEntityRegistryUnit.InstitusjonellSektorkode.Kode ?? "UNKNOWN",
-            IndustrialCodes = new List<string> { upstreamEntityRegistryUnit.Naeringskode1.Kode ?? "UNKNOWN" },
-            IsDeleted = upstreamEntityRegistryUnit.Slettedato != DateTime.MinValue
+            SectorCode = upstreamEntityRegistryUnit.InstitusjonellSektorkode?.Kode,
+            IsDeleted = upstreamEntityRegistryUnit.Slettedato is not null
         };
 
-        if (upstreamEntityRegistryUnit.Naeringskode2 != null) unit.IndustrialCodes.Add(upstreamEntityRegistryUnit.Naeringskode2.Kode ?? "UNKNOWN");
-        if (upstreamEntityRegistryUnit.Naeringskode3 != null) unit.IndustrialCodes.Add(upstreamEntityRegistryUnit.Naeringskode3.Kode ?? "UNKNOWN");
+        if (upstreamEntityRegistryUnit.Naeringskode1 != null) unit.IndustrialCodes = new List<string> { upstreamEntityRegistryUnit.Naeringskode1.Kode };
+        if (upstreamEntityRegistryUnit.Naeringskode2 != null) unit.IndustrialCodes!.Add(upstreamEntityRegistryUnit.Naeringskode2.Kode);
+        if (upstreamEntityRegistryUnit.Naeringskode3 != null) unit.IndustrialCodes!.Add(upstreamEntityRegistryUnit.Naeringskode3.Kode);
 
         return unit;
     }

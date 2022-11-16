@@ -157,10 +157,10 @@ public class Link
 public class Organisasjonsform
 {
     [JsonProperty("kode")]
-    public string? Kode { get; set; }
+    public string Kode { get; set; } = null!;
 
     [JsonProperty("beskrivelse")]
-    public string? Beskrivelse { get; set; }
+    public string Beskrivelse { get; set; } = null!;
 
     [JsonProperty("_links")]
     public Links Links { get; set; } = null!;
