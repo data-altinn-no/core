@@ -3,6 +3,7 @@ using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Common.Util;
 using Dan.Core.Config;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Registry;
@@ -12,12 +13,14 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
 {
     public const string EntityRegistryCachePolicy = "EntityRegistryCachePolicy";
 
+    private readonly ILogger<CachingEntityRegistryApiClientService> _logger;
     private readonly IHttpClientFactory _clientFactory;
     private readonly IPolicyRegistry<string> _policyRegistry;
     private readonly KeyedLock<string> _keyedLock = new();
 
-    public CachingEntityRegistryApiClientService(IHttpClientFactory clientFactory, IPolicyRegistry<string> policyRegistry)
+    public CachingEntityRegistryApiClientService(ILoggerFactory loggerFactory, IHttpClientFactory clientFactory, IPolicyRegistry<string> policyRegistry)
     {
+        _logger = loggerFactory.CreateLogger<CachingEntityRegistryApiClientService>();
         _clientFactory = clientFactory;
         _policyRegistry = policyRegistry;
     }
@@ -68,6 +71,14 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         if (!response.IsSuccessStatusCode) return null;
 
         var responseString = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<EntityRegistryUnit>(responseString);
+        try
+        {
+            return JsonConvert.DeserializeObject<EntityRegistryUnit>(responseString);
+        }
+        catch (Exception)
+        {
+            _logger.LogError("Failed deserializing from BR on {registryApiUri}", registryApiUri);
+            throw;
+        }
     }
 }

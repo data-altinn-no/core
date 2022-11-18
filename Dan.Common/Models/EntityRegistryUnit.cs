@@ -28,8 +28,7 @@ public class EntityRegistryUnit
     [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]
     public DateTimeOffset? RegistreringsdatoEnhetsregisteret { get; set; }
 
-    [JsonProperty("registrertIMvaregisteret", Required = Required.Always)]
-    [Required]
+    [JsonProperty("registrertIMvaregisteret", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     public bool RegistrertIMvaregisteret { get; set; }
 
     [JsonProperty("frivilligMvaRegistrertBeskrivelser", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
@@ -45,7 +44,6 @@ public class EntityRegistryUnit
     public NaeringsKodeDto? Naeringskode3 { get; set; }
 
     [JsonProperty("antallAnsatte", Required = Required.Always)]
-    [Required]
     public int  AntallAnsatte { get; set; }
 
     [JsonProperty("overordnetEnhet", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]

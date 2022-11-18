@@ -28,7 +28,19 @@ public class PartyParser
         {
             var party = ParseNativeNorwegianOrgNoOrSsn(partyIdentifier);
             if (party == null)
-                error = "Supplied non-structured identifier failed to validate as a norwegian organization number or SSN";
+            {
+                string safeSubject;
+                if (partyIdentifier.Length > 20)
+                {
+                    safeSubject = partyIdentifier.Substring(0, 20) + "(...)";
+                }
+                else
+                {
+                    safeSubject = partyIdentifier;
+                }
+
+                error = "Supplied non-structured identifier (" + safeSubject + ") failed to validate as a norwegian organization number or SSN";
+            }
 
             return party;
         }

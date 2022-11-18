@@ -298,12 +298,12 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
 
         if (entity == null)
         {
-            throw new InvalidSubjectException("Subject was not found in the Central Coordinating Register for Legal Entities");
+            throw new InvalidSubjectException("Subject (" + _authRequest.Subject + ") was not found in the Central Coordinating Register for Legal Entities");
         }
 
         if (entity.IsDeleted)
         {
-            throw new InvalidSubjectException("Subject is deleted from the Central Coordinating Register for Legal Entities");
+            throw new InvalidSubjectException("Subject (" + _authRequest.Subject + ") is deleted from the Central Coordinating Register for Legal Entities");
         }
     }
 
