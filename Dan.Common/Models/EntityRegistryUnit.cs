@@ -24,9 +24,9 @@ public class EntityRegistryUnit
     [JsonProperty("postadresse", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     public AdresseDto? Postadresse { get; set; }
 
-    [JsonProperty("registreringsdatoEnhetsregisteret", Required = Required.Always)]
+    [JsonProperty("registreringsdatoEnhetsregisteret", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]
-    public DateTimeOffset RegistreringsdatoEnhetsregisteret { get; set; }
+    public DateTimeOffset? RegistreringsdatoEnhetsregisteret { get; set; }
 
     [JsonProperty("registrertIMvaregisteret", Required = Required.Always)]
     [Required]
