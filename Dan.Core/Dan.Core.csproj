@@ -13,6 +13,12 @@
   <ItemGroup>
     <None Remove="Views\ConsentGiven.html" />
     <None Remove="Views\Error.html" />
+    <None Remove="worker-logging.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="worker-logging.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Views\ConsentGiven.html">

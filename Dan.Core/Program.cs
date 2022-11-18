@@ -33,7 +33,8 @@ var host = new HostBuilder()
     .ConfigureAppConfiguration((hostContext, config) =>
     {
         config
-            .AddEnvironmentVariables();
+            .AddEnvironmentVariables()
+            .AddJsonFile("worker-logging.json", optional: true);
 
         danHostingEnvironment = hostContext.HostingEnvironment;
         if (danHostingEnvironment.IsLocalDevelopment())
@@ -43,11 +44,11 @@ var host = new HostBuilder()
 
         ConfigurationHelper.ConfigurationRoot = config.Build();
     })
-    .ConfigureLogging(builder =>
+    .ConfigureLogging((hostingContext, logging) =>
     {
         if (danHostingEnvironment.IsLocalDevelopment())
         {
-            builder.AddSimpleConsole(options =>
+            logging.AddSimpleConsole(options =>
             {
                 options.ColorBehavior = LoggerColorBehavior.Enabled;
                 options.SingleLine = true;
@@ -55,8 +56,7 @@ var host = new HostBuilder()
             });
         }
 
-        builder.AddFilter<ApplicationInsightsLoggerProvider>("", LogLevel.Debug);
-        builder.AddFilter<ApplicationInsightsLoggerProvider>("Microsoft", LogLevel.Error);
+        logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
     })
     .ConfigureFunctionsWorkerDefaults(builder =>
     {
@@ -70,7 +70,8 @@ var host = new HostBuilder()
         if (!danHostingEnvironment.IsLocalDevelopment())
         {
             // Using preview package Microsoft.Azure.Functions.Worker.ApplicationInsights, see https://github.com/Azure/azure-functions-dotnet-worker/pull/944
-            // Requires APPLICATIONINSIGHTS_CONNECTION_STRING being set. Note that host.json logging settings will have to be replicated to worker.json
+            // Requires APPLICATIONINSIGHTS_CONNECTION_STRING being set. Note that host.json logging settings only affects the host, not the workers. 
+            // See worker-logging.json for other logging settings, and the discussion on https://github.com/Azure/azure-functions-dotnet-worker/issues/1182
             builder
                 .AddApplicationInsights()
                 .AddApplicationInsightsLogger();
@@ -82,6 +83,22 @@ var host = new HostBuilder()
     })
     .ConfigureServices((hostBuilderContext, services) =>
     {
+
+        // You will need extra configuration because above will only log per default Warning (default AI configuration) and above because of following line:
+        // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
+        // This is documented here:
+        // https://github.com/microsoft/ApplicationInsights-dotnet/issues/2610#issuecomment-1316672650
+        // So remove the default logger rule (warning and above). This will result that the default will be Information.
+        services.Configure<LoggerFilterOptions>(options =>
+        {
+            var toRemove = options.Rules.FirstOrDefault(rule => rule.ProviderName
+                == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
+
+            if (toRemove is not null)
+            {
+                options.Rules.Remove(toRemove);
+            }
+        });
 
         services.AddStackExchangeRedisCache(option =>
         {

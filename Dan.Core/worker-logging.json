@@ -1,0 +1,15 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug"
+    },
+    "ApplicationInsights": {
+      "LogLevel": {
+        "Default": "Debug"
+      },
+      "SamplingSettings": {
+        "IsEnabled": false
+      }
+    }
+  }
+}
