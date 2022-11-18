@@ -109,19 +109,17 @@ public class EvidenceStatusService : IEvidenceStatusService
     private async Task<bool> TryRehydrateEvidenceCodeAuthorizationRequirements(EvidenceCode evidenceCode)
     {
         var availableEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
-        if (evidenceCode.AuthorizationRequirements.Count == 0)
+
+        var availableEvidenceCode = availableEvidenceCodes.FirstOrDefault(x =>
+            x.EvidenceCodeName == evidenceCode.EvidenceCodeName);
+
+        if (availableEvidenceCode == null)
         {
-            var availableEvidenceCode = availableEvidenceCodes.FirstOrDefault(x =>
-                x.EvidenceCodeName == evidenceCode.EvidenceCodeName);
-
-            if (availableEvidenceCode == null)
-            {
-                // The evidence code is no longer available
-                return false;
-            }
-
-            evidenceCode.AuthorizationRequirements = availableEvidenceCode.AuthorizationRequirements;
+            // The evidence code is no longer available
+            return false;
         }
+
+        evidenceCode.AuthorizationRequirements = availableEvidenceCode.AuthorizationRequirements;
 
         evidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements.Where(
             x => x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();

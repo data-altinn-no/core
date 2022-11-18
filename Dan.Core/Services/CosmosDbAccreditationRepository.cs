@@ -109,7 +109,10 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
 
     public async Task<Accreditation> CreateAccreditationAsync(Accreditation accreditation)
     {
-        var result = await _container.CreateItemAsync(accreditation, new PartitionKey(accreditation.Owner));
+        // Remove requirements before saving, these need to be repopulated
+        var accreditationToSave = GetAccredidationWithoutRequirements(accreditation);
+
+        var result = await _container.CreateItemAsync(accreditationToSave, new PartitionKey(accreditationToSave.Owner));
         var savedAccreditation = (Accreditation)result;
 
         // TODO! This is only requires for legacy accreditations. Should be removed when all legacy accreditations have expired from the database.
@@ -120,7 +123,10 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
 
     public async Task<bool> UpdateAccreditationAsync(Accreditation accreditation)
     {
-        var result = await _container.ReplaceItemAsync(accreditation, accreditation.AccreditationId, new PartitionKey(accreditation.Owner));
+        // Remove requirements before saving, these need to be repopulated
+        var accreditationToSave = GetAccredidationWithoutRequirements(accreditation);
+
+        var result = await _container.ReplaceItemAsync(accreditationToSave, accreditationToSave.AccreditationId, new PartitionKey(accreditationToSave.Owner));
         return result.StatusCode == HttpStatusCode.OK;
     }
 
@@ -128,5 +134,16 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
     {
         var result = await _container.DeleteItemAsync<Accreditation>(accreditation.AccreditationId, new PartitionKey(accreditation.Owner));
         return result.StatusCode == HttpStatusCode.NoContent;
+    }
+
+    private Accreditation GetAccredidationWithoutRequirements(Accreditation accreditation)
+    {
+        var newAccreditation = accreditation.DeepCopy();
+        foreach (var evidenceCode in newAccreditation.EvidenceCodes)
+        {
+            evidenceCode.AuthorizationRequirements = new List<Requirement>();
+        }
+
+        return newAccreditation;
     }
 }
