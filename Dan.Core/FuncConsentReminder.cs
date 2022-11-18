@@ -3,7 +3,6 @@ using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
-using Dan.Core.Helpers;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -18,6 +17,7 @@ namespace Dan.Core
     {
         private readonly IAltinnCorrespondenceService _altinnCorrespondenceService;
         private readonly IConsentService _consentService;
+        private readonly IEvidenceStatusService _evidenceStatusService;
         private readonly IRequestContextService _requestContextService;
         private readonly IAccreditationRepository _applicationRepository;
         private readonly ILogger<FuncConsentReminder> _logger;
@@ -25,12 +25,14 @@ namespace Dan.Core
         public FuncConsentReminder(
             IAltinnCorrespondenceService altinnCorrespondenceService,
             IConsentService consentService,
+            IEvidenceStatusService evidenceStatusService,
             IRequestContextService requestContextService,
             IAccreditationRepository applicationRepository,
             ILoggerFactory loggerFactory)
         {            
             _altinnCorrespondenceService = altinnCorrespondenceService;
             _consentService = consentService;
+            _evidenceStatusService = evidenceStatusService;
             _requestContextService = requestContextService;
             _applicationRepository = applicationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReminder>();
@@ -64,7 +66,7 @@ namespace Dan.Core
                 return req.CreateResponse(HttpStatusCode.Forbidden);
             }
 
-            ValidateAccreditationForReminder(accreditationId, accreditation);
+            await ValidateAccreditationForReminder(accreditationId, accreditation);
 
             var response = await _altinnCorrespondenceService.SendNotification(accreditation, _requestContextService.ServiceContext);
             accreditation.Reminders.AddRange(response);
@@ -75,8 +77,11 @@ namespace Dan.Core
             return req.CreateExternalResponse(HttpStatusCode.OK, response);
         }
 
-        private void ValidateAccreditationForReminder(string accreditationId, Accreditation accr)
+        private async Task ValidateAccreditationForReminder(string accreditationId, Accreditation accr)
         {
+            // TODO! Refactor this so that we can rehydrate evidence code requirements directly
+            await _evidenceStatusService.GetEvidenceStatusListAsync(accr);
+
             var evidenceCodesRequiringConsent = _consentService.GetEvidenceCodesRequiringConsentForActiveContext(accr);
             if (evidenceCodesRequiringConsent.Count < 1)
                 throw new RequiresConsentException($"There are no evidence codes requiring subject action");
@@ -87,7 +92,8 @@ namespace Dan.Core
             if (accr.ValidTo < DateTime.Now)
                 throw new ExpiredConsentException("The consent for this accreditation is expired");
 
-            if (accr.Reminders.OrderByDescending(x=>x.Date).First().Date>DateTime.Now.AddDays(-7))
+            var lastReminderSent = accr.Reminders.MaxBy(x => x.Date);
+            if (lastReminderSent != null && lastReminderSent.Date > DateTime.Now.AddDays(-7))
                 throw new AuthorizationFailedException("Reminders have already been sent the the last week");
 
             if (accr.Subject == null)
