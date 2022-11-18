@@ -18,7 +18,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 using Microsoft.Extensions.Logging.Console;
 using Newtonsoft.Json;
 using Polly;
@@ -81,25 +80,8 @@ var host = new HostBuilder()
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();
     })
-    .ConfigureServices((hostBuilderContext, services) =>
+    .ConfigureServices((_, services) =>
     {
-
-        // You will need extra configuration because above will only log per default Warning (default AI configuration) and above because of following line:
-        // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
-        // This is documented here:
-        // https://github.com/microsoft/ApplicationInsights-dotnet/issues/2610#issuecomment-1316672650
-        // So remove the default logger rule (warning and above). This will result that the default will be Information.
-        services.Configure<LoggerFilterOptions>(options =>
-        {
-            var toRemove = options.Rules.FirstOrDefault(rule => rule.ProviderName
-                == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
-
-            if (toRemove is not null)
-            {
-                options.Rules.Remove(toRemove);
-            }
-        });
-
         services.AddStackExchangeRedisCache(option =>
         {
             option.Configuration = Settings.RedisCacheConnectionString;
@@ -108,7 +90,7 @@ var host = new HostBuilder()
         var sp = services.BuildServiceProvider();
         var distributedCache = sp.GetRequiredService<IDistributedCache>();
 
-        services.AddSingleton(s => new CosmosClientBuilder(Settings.CosmosDbConnection).Build());
+        services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection).Build());
         services.AddSingleton<IChannelManagerService, ChannelManagerService>();
         services.AddSingleton<IAltinnCorrespondenceService, AltinnCorrespondenceService>();
         services.AddSingleton<IAvailableEvidenceCodesService, AvailableEvidenceCodesService>();

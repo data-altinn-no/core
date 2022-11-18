@@ -1,11 +1,12 @@
 {
   "Logging": {
     "LogLevel": {
-      "Default": "Debug"
+      "Default": "Information"
     },
     "ApplicationInsights": {
       "LogLevel": {
-        "Default": "Debug"
+        "Default": "Information",
+        "Microsoft": "Error"
       },
       "SamplingSettings": {
         "IsEnabled": false
