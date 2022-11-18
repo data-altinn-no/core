@@ -29,7 +29,7 @@ public class EntityRegistryUnit
     public DateTimeOffset? RegistreringsdatoEnhetsregisteret { get; set; }
 
     [JsonProperty("registrertIMvaregisteret", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
-    public bool RegistrertIMvaregisteret { get; set; }
+    public bool? RegistrertIMvaregisteret { get; set; }
 
     [JsonProperty("frivilligMvaRegistrertBeskrivelser", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     public List<string>? FrivilligMvaRegistrertBeskrivelser { get; set; }
@@ -43,8 +43,8 @@ public class EntityRegistryUnit
     [JsonProperty("naeringskode3", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     public NaeringsKodeDto? Naeringskode3 { get; set; }
 
-    [JsonProperty("antallAnsatte", Required = Required.Always)]
-    public int  AntallAnsatte { get; set; }
+    [JsonProperty("antallAnsatte", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
+    public int? AntallAnsatte { get; set; }
 
     [JsonProperty("overordnetEnhet", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     public string? OverordnetEnhet { get; set; }
