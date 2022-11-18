@@ -4,7 +4,7 @@ Welcome to data.altinn.no (DAN)! This repository has a solution file containing 
 
 ## DAN CORE
 
-DAN Core is the main component of DAN, implementing the public API. It utilizes that Altinn REST API for Service Owners for authorization (including consent) and maps requests for evidence to the relevant evidence source (ES) implementing the codes.
+DAN Core is the main component of DAN, implementing the public API. It utilizes that Altinn REST API for Service Owners for authorization (including consent) and maps requests for data sets to the relevant plugins implementing the codes.
 
 The repository contains a .NET6 console application utilizing the isolated-process Azure Functions v4 runtime.
 
