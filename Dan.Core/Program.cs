@@ -82,6 +82,24 @@ var host = new HostBuilder()
     })
     .ConfigureServices((_, services) =>
     {
+
+        // You will need extra configuration because above will only log per default Warning (default AI configuration). As this is a provider-specific
+        // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
+        // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
+        // https://github.com/microsoft/ApplicationInsights-dotnet/issues/2610#issuecomment-1316672650
+        // https://github.com/Azure/azure-functions-dotnet-worker/issues/1182#issuecomment-1319035412
+        // So remove the default logger rule (warning and above). This will result that the default will be Information.
+        services.Configure<LoggerFilterOptions>(options =>
+        {
+            var toRemove = options.Rules.FirstOrDefault(rule => rule.ProviderName
+                == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
+
+            if (toRemove is not null)
+            {
+                options.Rules.Remove(toRemove);
+            }
+        });
+
         services.AddStackExchangeRedisCache(option =>
         {
             option.Configuration = Settings.RedisCacheConnectionString;

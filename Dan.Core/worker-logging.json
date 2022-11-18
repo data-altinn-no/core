@@ -1,13 +1,13 @@
 {
   "Logging": {
     "LogLevel": {
-      "Default": "Information"
+      "Default": "Information",
+      "Dan.Core": "Debug",
+      "Microsoft": "Warning",
+      "Function": "Warning",
+      "System.Net": "Warning"
     },
     "ApplicationInsights": {
-      "LogLevel": {
-        "Default": "Information",
-        "Microsoft": "Error"
-      },
       "SamplingSettings": {
         "IsEnabled": false
       }
