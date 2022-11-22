@@ -24,6 +24,9 @@ public class EntityRegistryService : IEntityRegistryService
     private static readonly string[] PublicSectorUnitTypes   = { "ADOS", "FKF", "FYLK", "KF", "KOMM", "ORGL", "STAT", "SF", "SÆR" };
     private static readonly string[] PublicSectorSectorCodes = { "1110", "1120", "1510", "1520", "3900", "6100", "6500" };
 
+    // A list of various organization numbers that the code heuristics fail to recognize as public sector
+    private static readonly string[] PublicSectorOrganizations = { "971032146" /*KS-KOMMUNESEKTORENS ORGANISASJON*/ };
+
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
 
     private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(600);
@@ -117,7 +120,8 @@ public class EntityRegistryService : IEntityRegistryService
     {
         return PublicSectorUnitTypes.Contains(unit.OrganizationForm)
                || unit.IndustrialCodes != null && unit.IndustrialCodes.Any(x => x.StartsWith("84"))
-               || PublicSectorSectorCodes.Contains(unit.SectorCode);
+               || PublicSectorSectorCodes.Contains(unit.SectorCode)
+               || PublicSectorOrganizations.Contains(unit.OrganizationNumber);
     }
 
     public bool IsPublicAgency(EntityRegistryUnit unit) => IsPublicAgency(MapToEntityRegistryUnit(unit)!);
