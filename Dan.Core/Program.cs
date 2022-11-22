@@ -65,6 +65,7 @@ var host = new HostBuilder()
             .UseWhen<AuthenticationMiddleware>(context => !context.HasAttribute(typeof(NoAuthenticationAttribute)));
 
         builder.UseMiddleware<DiagnosticsHeaderInjectionMiddleware>();
+        builder.UseMiddleware<FunctionContextAccessorMiddleware>();
 
         if (!danHostingEnvironment.IsLocalDevelopment())
         {
@@ -118,6 +119,7 @@ var host = new HostBuilder()
         services.AddSingleton<IAccreditationRepository, CosmosDbAccreditationRepository>();
         services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
         services.AddSingleton<IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
+        services.AddSingleton<IFunctionContextAccessor, FunctionContextAccessor>();
 
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();

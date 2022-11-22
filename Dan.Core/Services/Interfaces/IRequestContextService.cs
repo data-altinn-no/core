@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Dan.Common.Models;
 using Microsoft.Azure.Functions.Worker.Http;
 
@@ -10,6 +11,7 @@ public interface IRequestContextService
     List<string>? Scopes { get; set; }
     ServiceContext ServiceContext { get; set; }
     HttpRequestData? Request { get; set; }
-    Task BuildRequestContext(HttpRequestData request);
+    ConcurrentDictionary<string, string> CustomResponseHeaders { get; set; }
+    public Task BuildRequestContext(HttpRequestData request);
     EvidenceHarvesterOptions GetEvidenceHarvesterOptionsFromRequest();
 }
