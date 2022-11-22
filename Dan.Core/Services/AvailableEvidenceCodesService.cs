@@ -107,11 +107,19 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         }
     }
 
-    private void SetCacheDiagnosticsHeader(string value)
+    private void SetCacheDiagnosticsHeader(string value, bool overwrite = false)
     {
         var requestContextService = _functionContextAccessor.FunctionContext.InstanceServices.GetService<IRequestContextService>();
-        if (requestContextService != null)
+        if (requestContextService == null) return;
+        if (overwrite)
+        {
             requestContextService.CustomResponseHeaders[CacheResponseHeader] = value;
+        }
+        else
+        {
+            requestContextService.CustomResponseHeaders.TryAdd(CacheResponseHeader, value);
+        }
+
     }
 
     /// <summary>
@@ -159,7 +167,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromEvidenceSources()
     {
-        SetCacheDiagnosticsHeader("miss");
+        SetCacheDiagnosticsHeader("miss", overwrite: true);
         using (var _ = _logger.Timer($"availableevidence-cache-refresh"))
         {
             var sources = GetEvidenceSources();
