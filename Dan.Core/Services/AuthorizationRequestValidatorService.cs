@@ -294,7 +294,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
             throw new InvalidSubjectException("Subject was not set");
         }
 
-        var entity = await _entityRegistryService.Get(_authRequest.Subject, attemptSubUnitLookupIfNotFound: false);
+        var entity = await _entityRegistryService.Get(_authRequest.Subject);
 
         if (entity == null)
         {
