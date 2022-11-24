@@ -9,6 +9,7 @@ using Polly.Registry;
 using System.Text;
 using Dan.Core.Helpers;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dan.Core.Services;
 
@@ -26,19 +27,28 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
     private DateTime _updateMemoryCache = DateTime.MinValue;
     private readonly SemaphoreSlim _semaphoreForceRefresh = new(1, 1);
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly IFunctionContextAccessor _functionContextAccessor;
     private const int MemoryCacheTtlSeconds = 120;
 
     private const string CachingPolicy = "EvidenceCodesCachePolicy";
     private const string HttpClientName = "EvidenceCodesClient";
     private const string CacheContextKey = "AvailableEvidenceCodes";
+    private const string CacheResponseHeader = "x-cache";
 
-    public AvailableEvidenceCodesService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IPolicyRegistry<string> policyRegistry, IDistributedCache distributedCache, IServiceContextService serviceContextService)
+    public AvailableEvidenceCodesService(
+        ILoggerFactory loggerFactory,
+        IHttpClientFactory httpClientFactory,
+        IPolicyRegistry<string> policyRegistry,
+        IDistributedCache distributedCache,
+        IServiceContextService serviceContextService,
+        IFunctionContextAccessor functionContextAccessor)
     {
         _logger = loggerFactory.CreateLogger<AvailableEvidenceCodesService>();
         _httpClientFactory = httpClientFactory;
         _policyRegistry = policyRegistry;
         _distributedCache = distributedCache;
         _serviceContextService = serviceContextService;
+        _functionContextAccessor = functionContextAccessor;
     }
 
     /// <summary>
@@ -52,6 +62,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         // Cache still valid
         if (!forceRefresh && DateTime.UtcNow < _updateMemoryCache)
         {
+            SetCacheDiagnosticsHeader("hit-local");
             return FilterInactive(_memoryCache);
         }
 
@@ -79,6 +90,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             // Recheck if another thread has updated the memory cache while we were waiting for the semaphore
             if (DateTime.UtcNow < _updateMemoryCache)
             {
+                SetCacheDiagnosticsHeader("hit-local-late");
                 return FilterInactive(_memoryCache);
             }
 
@@ -95,6 +107,21 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         }
     }
 
+    private void SetCacheDiagnosticsHeader(string value, bool overwrite = false)
+    {
+        var requestContextService = _functionContextAccessor.FunctionContext.InstanceServices.GetService<IRequestContextService>();
+        if (requestContextService == null) return;
+        if (overwrite)
+        {
+            requestContextService.CustomResponseHeaders[CacheResponseHeader] = value;
+        }
+        else
+        {
+            requestContextService.CustomResponseHeaders.TryAdd(CacheResponseHeader, value);
+        }
+
+    }
+
     /// <summary>
     /// This fetches evidence codes from the sources and updates the distributed and in-memory caches. 
     /// </summary>
@@ -102,6 +129,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
     private async Task RefreshEvidenceCodesCache()
     {
         var evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
+        SetCacheDiagnosticsHeader("force-evict");
         if (evidenceCodes.Count == 0)
         {
             _logger.LogWarning("Failed to refresh evidence codes cache, received empty list");
@@ -111,7 +139,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         //  Add some metadata properties to make serialized output more parseable
         foreach (var es in evidenceCodes)
         {
-            es.AuthorizationRequirements?.ForEach(x => x.RequirementType = x.GetType().Name);
+            es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
         }
 
         await _distributedCache.SetAsync(CacheContextKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
@@ -131,6 +159,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromDistributedCache()
     {
+        SetCacheDiagnosticsHeader("hit-distributed");
         var cachePolicy = _policyRegistry.Get<AsyncPolicy<List<EvidenceCode>>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(
             async _ => await GetAvailableEvidenceCodesFromEvidenceSources(), new Context(CacheContextKey));
@@ -138,6 +167,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromEvidenceSources()
     {
+        SetCacheDiagnosticsHeader("miss", overwrite: true);
         using (var _ = _logger.Timer($"availableevidence-cache-refresh"))
         {
             var sources = GetEvidenceSources();

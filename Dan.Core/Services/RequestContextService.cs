@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
@@ -15,6 +16,7 @@ class RequestContextService : IRequestContextService
     public List<string>? Scopes { get; set; }
     public ServiceContext ServiceContext { get; set; } = new();
     public HttpRequestData? Request { get; set; }
+    public ConcurrentDictionary<string, string> CustomResponseHeaders { get; set; } = new();
 
     public const string ServicecontextHeader = "X-NADOBE-SERVICECONTEXT";
     public const string QueryParamTokenOnBehalfOfOwner = "tokenOnBehalfOfOwner";
