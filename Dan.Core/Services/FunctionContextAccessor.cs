@@ -6,9 +6,9 @@ public class FunctionContextAccessor : IFunctionContextAccessor
 {
     private static readonly AsyncLocal<FunctionContextRedirect> CurrentContext = new();
 
-    public virtual FunctionContext FunctionContext
+    public virtual FunctionContext? FunctionContext
     {
-        get => CurrentContext.Value!.HeldContext!;
+        get => CurrentContext.Value?.HeldContext;
         set
         {
             var holder = CurrentContext.Value;

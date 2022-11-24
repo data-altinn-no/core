@@ -109,7 +109,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private void SetCacheDiagnosticsHeader(string value, bool overwrite = false)
     {
-        var requestContextService = _functionContextAccessor.FunctionContext.InstanceServices.GetService<IRequestContextService>();
+        var requestContextService = _functionContextAccessor.FunctionContext?.InstanceServices.GetService<IRequestContextService>();
         if (requestContextService == null) return;
         if (overwrite)
         {

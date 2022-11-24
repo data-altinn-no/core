@@ -3,5 +3,5 @@
 namespace Dan.Core.Services.Interfaces;
 public interface IFunctionContextAccessor
 {
-    FunctionContext FunctionContext { get; set; }
+    FunctionContext? FunctionContext { get; set; }
 }
