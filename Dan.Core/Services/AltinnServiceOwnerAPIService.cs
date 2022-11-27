@@ -1,14 +1,14 @@
-﻿using Dan.Common.Models;
+﻿using AsyncKeyedLock;
+using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
+using Dan.Core.Models;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net;
 using System.Text;
-using Dan.Common.Util;
-using Dan.Core.Models;
 
 namespace Dan.Core.Services;
 
@@ -28,7 +28,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     private const string LanguageEn = "1033";
     private readonly string _baseUrl;
     private readonly HttpClient _client;
-    private readonly KeyedLock<string> _keyedLock = new();
+    private readonly AsyncKeyedLocker<string> _asyncKeyedLock = new(new AsyncKeyedLockOptions { PoolSize = 10 });
 
     /// <summary>
     /// Create a new AltinnServiceOwnerHelper instance
@@ -158,10 +158,8 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     {
         var key = $"{singleRight.Reportee}_{singleRight.ServiceCode}_{singleRight.ServiceEditionCode}";
 
-        try
+        using (await _asyncKeyedLock.LockAsync(key))
         {
-            await _keyedLock.WaitAsync(key);
-
             var result = await MakeRequest(string.Format(GetSrrUrl, _baseUrl, singleRight.Reportee, singleRight.ServiceCode, singleRight.ServiceEditionCode), HttpMethod.Get);
             var rights = JsonConvert.DeserializeObject<List<SrrRight>>(result);
 
@@ -184,11 +182,6 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
                     await UpdateSrrRight(right);
                 }
             }
-        
-        }
-        finally
-        {
-            _keyedLock.Release(key);
         }
     }
 

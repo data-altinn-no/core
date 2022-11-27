@@ -1,7 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using AsyncKeyedLock;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
-using Dan.Common.Util;
 using Dan.Core.Config;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -16,7 +15,7 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
     private readonly ILogger<CachingEntityRegistryApiClientService> _logger;
     private readonly IHttpClientFactory _clientFactory;
     private readonly IPolicyRegistry<string> _policyRegistry;
-    private readonly KeyedLock<string> _keyedLock = new();
+    private readonly AsyncKeyedLocker<string> _asyncKeyedLock = new(new AsyncKeyedLockOptions { PoolSize = 10 });
 
     public CachingEntityRegistryApiClientService(ILoggerFactory loggerFactory, IHttpClientFactory clientFactory, IPolicyRegistry<string> policyRegistry)
     {
@@ -40,19 +39,14 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
         }
 
         var cacheKey = GetCacheKeyFromUri(registryApiUri);
-        try
-        {
-            // There may be several parallel requests due to authorization requirements being validated in parallel. 
-            // To avoid unecessary requests for the same unit, use a keyed lock to make sure we hit the cache.
-            await _keyedLock.WaitAsync(cacheKey);
 
+        // There may be several parallel requests due to authorization requirements being validated in parallel. 
+        // To avoid unecessary requests for the same unit, use a keyed lock to make sure we hit the cache.
+        using (await _asyncKeyedLock.LockAsync(cacheKey))
+        {
             var cachePolicy = _policyRegistry.Get<AsyncPolicy<EntityRegistryUnit?>>(EntityRegistryCachePolicy);
             return await cachePolicy.ExecuteAsync(
                 async _ => await InternalGetUpstreamEntityRegistryUnitAsync(registryApiUri), new Context(cacheKey));
-        }
-        finally
-        {
-            _keyedLock.Release(cacheKey);
         }
     }
 
