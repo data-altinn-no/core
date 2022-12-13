@@ -2,6 +2,7 @@
 
 namespace Dan.Common.Util;
 
+[Obsolete("Please use AsyncKeyedLocker<T> instead.")]
 public class KeyedLock<TKey> where TKey : notnull
 {
     private readonly AsyncKeyedLocker<TKey> _asyncKeyedLocker;
