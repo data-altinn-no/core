@@ -9,7 +9,7 @@ public class KeyedLock<TKey> where TKey : notnull
 
     public KeyedLock(IEqualityComparer<TKey>? keyComparer = null, int poolCapacity = 10)
     {
-        _asyncKeyedLocker = (keyComparer == null) ? new(new AsyncKeyedLockOptions(poolSize: poolCapacity)) : new(new AsyncKeyedLockOptions(poolSize: poolCapacity), keyComparer);
+        _asyncKeyedLocker = (keyComparer == null) ? new(o => o.PoolSize = poolCapacity) : new(o => o.PoolSize = poolCapacity, keyComparer);
     }
 
     public async Task<bool> WaitAsync(TKey key, int millisecondsTimeout,
