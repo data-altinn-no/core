@@ -15,7 +15,7 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
     private readonly ILogger<CachingEntityRegistryApiClientService> _logger;
     private readonly IHttpClientFactory _clientFactory;
     private readonly IPolicyRegistry<string> _policyRegistry;
-    private readonly AsyncKeyedLocker<string> _asyncKeyedLock = new(new AsyncKeyedLockOptions { PoolSize = 10 });
+    private readonly AsyncKeyedLocker<string> _asyncKeyedLock = new(o => o.PoolSize = 10);
 
     public CachingEntityRegistryApiClientService(ILoggerFactory loggerFactory, IHttpClientFactory clientFactory, IPolicyRegistry<string> policyRegistry)
     {

@@ -28,7 +28,7 @@ public class AltinnServiceOwnerApiService : IAltinnServiceOwnerApiService
     private const string LanguageEn = "1033";
     private readonly string _baseUrl;
     private readonly HttpClient _client;
-    private readonly AsyncKeyedLocker<string> _asyncKeyedLock = new(new AsyncKeyedLockOptions { PoolSize = 10 });
+    private readonly AsyncKeyedLocker<string> _asyncKeyedLock = new(o => o.PoolSize = 10);
 
     /// <summary>
     /// Create a new AltinnServiceOwnerHelper instance
