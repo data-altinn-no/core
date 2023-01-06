@@ -140,6 +140,11 @@ public enum ErrorCode
     /// </summary>
     AccreditationRepositoryException = 1026,
 
+    /// <summary>
+    /// An invalid JMES Path expression was supplied
+    /// </summary>
+    InvalidJmesPathExpressionException = 1027,
+
     ////
     //// Error codes for evidence source implementations (3xxx)
     ////

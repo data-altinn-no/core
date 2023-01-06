@@ -3,6 +3,7 @@ using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
+using Dan.Core.Helpers;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
@@ -92,7 +93,7 @@ namespace Dan.Core
             var response = req.CreateResponse(HttpStatusCode.OK);
             if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))
             {
-                await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues);
+                await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues, req.GetQueryParam(JmesPathTransfomer.QueryParameter));
             }
             else
             {
@@ -141,6 +142,7 @@ namespace Dan.Core
                 "subject",
                 "code",
                 "envelope",
+                JmesPathTransfomer.QueryParameter,
                 RequestContextService.QueryParamReuseToken,
                 RequestContextService.QueryParamTokenOnBehalfOfOwner
             };

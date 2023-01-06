@@ -73,6 +73,7 @@ public static class ExceptionExtensions
             case InvalidAuthorizationRequestException _:
             case EvidenceSourcePermanentClientException _:
             case ConsentAlreadyHandledException _:
+            case InvalidJmesPathExpressionException _:
                 return HttpStatusCode.BadRequest; // 400
             case MissingAuthenticationException _:
             case InvalidAccessTokenException _:
