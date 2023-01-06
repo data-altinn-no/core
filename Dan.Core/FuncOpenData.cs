@@ -6,6 +6,7 @@ using Dan.Common.Services;
 using Dan.Core.Attributes;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
+using Dan.Core.Helpers;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -56,7 +57,7 @@ namespace Dan.Core
             var evidencecode = await ValidateDatasetName(datasetName);
             var evidence = await _evidenceHarvesterService.HarvestOpenData(evidencecode, identifier);
             var response = req.CreateResponse(HttpStatusCode.OK);
-            await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues);
+            await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues, req.GetQueryParam(JmesPathTransfomer.QueryParameter));
 
             _logger.DanLog(identifier, datasetName, "OpenData", LogAction.OpenDataRetrieved);
 
