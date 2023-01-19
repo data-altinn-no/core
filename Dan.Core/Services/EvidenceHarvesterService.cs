@@ -19,7 +19,6 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private readonly IEvidenceStatusService _evidenceStatusService;
     private readonly ITokenRequesterService _tokenRequesterService;
     private readonly IRequestContextService _requestContextService;
-    private const int DefaultHarvestTimeout = 35;
 
     public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService)
     {
@@ -66,8 +65,11 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
+
+        var timeoutSeconds = evidenceCode.Timeout ??= Settings.DefaultHarvestTaskCancellation;
+
         using var cts = new CancellationTokenSource();
-        cts.CancelAfter(TimeSpan.FromSeconds(60));
+        cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
 
         var evidenceHarvesterRequest = new EvidenceHarvesterRequest()
         {
@@ -82,10 +84,19 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
             _log.LogInformation("Start harvesting evidence values for open data evidenceCode={evidenceCodeName} and identifier {identifier}", evidenceCode.EvidenceCodeName, identifier == "" ? "(empty)" : identifier);
             request.JsonContent(evidenceHarvesterRequest);
             request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
-            var client = _httpClientFactory.CreateClient("SafeHttpClient");
-            harvestedEvidence = (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
-                request,
-                () => client.SendAsync(request, cts.Token)))!;
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient("SafeHttpClient");
+                harvestedEvidence = (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
+                    request,
+                    () => client.SendAsync(request, cts.Token)))!;
+            }
+            catch (TaskCanceledException)
+            {
+                _log.LogError("Harvesting evidence values for open data evidenceCode={evidenceCodeName} and identifier {identifier} was cancelled", evidenceCode.EvidenceCodeName, identifier == "" ? "(empty)" : identifier);
+                throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration ({timeoutSeconds} seconds)");
+            }
 
             _log.LogInformation("Completed harvesting evidence values for open data evidenceCode={evidenceCodeName} and identifier {identifier}", evidenceCode.EvidenceCodeName, identifier == "" ? "(empty)" : identifier);
         }
@@ -106,7 +117,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
 
-        var timeoutSeconds = evidenceCode.Timeout ??= 35;
+        var timeoutSeconds = evidenceCode.Timeout ??= Settings.DefaultHarvestTaskCancellation;
 
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
@@ -149,9 +160,10 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
                 request,
                 () => client.SendAsync(request, cts.Token)))!;
         }
-        catch (TaskCanceledException ex)
+        catch (TaskCanceledException)
         {
-            throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration ({timeoutSeconds} seconds)");
+            _log.LogError("Harvesting evidence values for open data evidenceCode={evidenceCodeName} and subject {subject} was cancelled", evidenceCode.EvidenceCodeName, accreditation.SubjectParty.GetAsString(true));
+            throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration of {timeoutSeconds} seconds)");
         }
     }
 
