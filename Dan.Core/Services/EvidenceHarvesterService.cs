@@ -19,6 +19,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private readonly IEvidenceStatusService _evidenceStatusService;
     private readonly ITokenRequesterService _tokenRequesterService;
     private readonly IRequestContextService _requestContextService;
+    private const int DefaultHarvestTimeout = 35;
 
     public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService)
     {
@@ -104,8 +105,11 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
+
+        var timeoutSeconds = evidenceCode.Timeout ??= 35;
+
         using var cts = new CancellationTokenSource();
-        cts.CancelAfter(TimeSpan.FromSeconds(30));
+        cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
 
         var evidenceHarvesterRequest = new EvidenceHarvesterRequest()
         {
@@ -137,10 +141,18 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         request.JsonContent(evidenceHarvesterRequest);
 
         request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
-        var client = _httpClientFactory.CreateClient("SafeHttpClient");
-        return (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
-            request,
-            () => client.SendAsync(request, cts.Token)))!;
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient("SafeHttpClient");
+            return (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
+                request,
+                () => client.SendAsync(request, cts.Token)))!;
+        }
+        catch (TaskCanceledException ex)
+        {
+            throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration ({timeoutSeconds} seconds)");
+        }
     }
 
     private async Task<string> GetAccessToken(EvidenceCode evidenceCode, Accreditation accreditation, EvidenceHarvesterOptions evidenceHarvesterOptions)
