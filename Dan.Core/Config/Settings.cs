@@ -368,6 +368,8 @@ public static class Settings
 
     public const int MaxReferenceLength = 50;
 
+    public static int DefaultHarvestTaskCancellation = 35;
+
     private static string GetSetting(string settingKey)
     {
         var value = ConfigurationHelper.ConfigurationRoot[settingKey];

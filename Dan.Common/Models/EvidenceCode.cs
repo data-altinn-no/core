@@ -131,4 +131,11 @@ public class EvidenceCode
     [DataMember(Name = "deprecationWarning")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? DeprecationWarning { get; set; }
+
+    /// <summary>
+    /// Optional setting for custom timeout (in seconds) in evidencecodes when harvesting data
+    /// </summary>
+    [DataMember(Name = "timeout")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public int? Timeout { get; set; }
 }

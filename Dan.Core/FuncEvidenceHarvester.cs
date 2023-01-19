@@ -93,7 +93,7 @@ namespace Dan.Core
                 using (var t = _logger.Timer("consent-log-usage"))
                 {
                     _logger.LogInformation(
-                        "Start logging consent based harvest aid={accreditaionId} evidenceCode={evidenceCode}",
+                        "Start logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode}",
                         accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
                     await LogConsentBasedHarvest(evidenceCode, accreditation);
                     _logger.LogInformation(
