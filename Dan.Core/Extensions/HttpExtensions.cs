@@ -212,6 +212,7 @@ public static class HttpExtensions
     {
         var response = request.CreateResponse(httpStatusCode);
         var json = JsonConvert.SerializeObject(content, new JsonSerializerSettings { ContractResolver = new HiddenPropertyContractResolver() });
+        JmesPathTransfomer.Apply(request.GetQueryParam(JmesPathTransfomer.QueryParameter), ref json);
         response.Headers.Add("Content-Type", "application/json");
         response.WriteStringAsync(json);
         return response;
@@ -254,17 +255,19 @@ public static class HttpExtensions
         return request;
     }
 
-    public static async Task SetUnenvelopedEvidenceValuesAsync(this HttpResponseData response, List<EvidenceValue> evidenceValues)
+    public static async Task SetUnenvelopedEvidenceValuesAsync(this HttpResponseData response, List<EvidenceValue> evidenceValues, string? jmesExpression = null)
     {
         if (!evidenceValues.Any())
         {
             return;
         }
 
+        string jsonResult;
         if (evidenceValues.Count > 1)
         {
             var asHashTable = ConvertToHashtable(evidenceValues);
-            var jsonResult = JsonConvert.SerializeObject(asHashTable, new JsonSerializerSettings { ContractResolver = new HiddenPropertyContractResolver() });
+            jsonResult = JsonConvert.SerializeObject(asHashTable, new JsonSerializerSettings { ContractResolver = new HiddenPropertyContractResolver() });
+            JmesPathTransfomer.Apply(jmesExpression, ref jsonResult);
             await response.WriteStringAsync(jsonResult);
             response.Headers.Add("Content-Type", "application/json");
             response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt(jsonResult));
@@ -276,9 +279,11 @@ public static class HttpExtensions
         switch (evidence.ValueType)
         {
             case EvidenceValueType.JsonSchema:
-                await response.WriteStringAsync((string?)evidence.Value ?? string.Empty);
+                jsonResult = (string?)evidence.Value ?? string.Empty;
+                JmesPathTransfomer.Apply(jmesExpression, ref jsonResult);
+                await response.WriteStringAsync(jsonResult);
                 response.Headers.Add("Content-Type", "application/json");
-                response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt((string?)evidence.Value ?? string.Empty));
+                response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt(jsonResult));
                 break;
             case EvidenceValueType.Attachment:
                 await response.WriteBytesAsync(evidence.Value == null ? Array.Empty<byte>() : Convert.FromBase64String((string)evidence.Value));
@@ -286,7 +291,8 @@ public static class HttpExtensions
                 // TODO! How to calculate digest?
                 break;
             default:
-                var jsonResult = JsonConvert.SerializeObject(evidence.Value, new JsonSerializerSettings { ContractResolver = new HiddenPropertyContractResolver() });
+                jsonResult = JsonConvert.SerializeObject(evidence.Value, new JsonSerializerSettings { ContractResolver = new HiddenPropertyContractResolver() });
+                JmesPathTransfomer.Apply(jmesExpression, ref jsonResult);
                 await response.WriteStringAsync(jsonResult);
                 response.Headers.Add("Content-Type", "application/json");
                 response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt(jsonResult));

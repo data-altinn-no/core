@@ -79,7 +79,7 @@ namespace Dan.Core
             var response = req.CreateResponse(HttpStatusCode.OK);
             if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))
             {
-                await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues);
+                await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues, req.GetQueryParam(JmesPathTransfomer.QueryParameter));
             }
             else
             {
