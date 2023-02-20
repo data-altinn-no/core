@@ -7,23 +7,22 @@ namespace Dan.Core.Extensions;
 
 public static class LoggerExtensions
 {
-    // Add "prop__" to emulate in-process behaviour. This is needed to be consistent with historic data.
-    public static string LogString = "{prop__action}:{prop__callingClass}.{prop__callingMethod}, accreditationid={prop__accreditationId}, consentreference={prop__consentReference}, externalReference={prop__externalReference}, owner={prop__owner}, requestor={prop__requestor}, subject={prop__subject}, evidenceCode={prop__evidenceCodeName}, timestamp={prop__dateTime}, serviceContext={prop__serviceContext}, customData={prop__customData}";
+    private const string LogString = "{action}:{callingClass}.{callingMethod},a={accreditationId},c={consentReference},e={externalReference},o={owner},r={requestor},s={subject},d={evidenceCodeName},t={dateTime},sc={serviceContext}";
 
     public static void DanLog(
         this ILogger logger,
         Accreditation accreditation,
         LogAction action,
+        string? dataSetName = null,
         [CallerFilePath] string callingClass = "",
-        [CallerMemberName] string callingMethod = "",
-        string customData = "")
+        [CallerMemberName] string callingMethod = "")
     {
-        foreach (var a in accreditation.EvidenceCodes)
-            logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
-                Path.GetFileNameWithoutExtension(callingClass), callingMethod, accreditation.AccreditationId,
-                accreditation.ConsentReference, accreditation.ExternalReference, accreditation.Owner,
-                accreditation.RequestorParty?.ToString(), accreditation.SubjectParty?.ToString(), a.EvidenceCodeName,
-                DateTime.UtcNow, accreditation.ServiceContext, customData);
+
+        logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
+            Path.GetFileNameWithoutExtension(callingClass), callingMethod, accreditation.AccreditationId,
+            accreditation.ConsentReference, accreditation.ExternalReference, accreditation.Owner,
+            accreditation.RequestorParty?.ToString(), accreditation.SubjectParty?.ToString(), dataSetName,
+            DateTime.UtcNow, accreditation.ServiceContext);
     }
 
     public static void DanLog(
@@ -33,11 +32,10 @@ public static class LoggerExtensions
         string serviceContext,
         LogAction action,
         [CallerFilePath] string callingClass = "",
-        [CallerMemberName] string callingMethod = "",
-        string customData = "")
+        [CallerMemberName] string callingMethod = "")
     {
         logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
             Path.GetFileNameWithoutExtension(callingClass), callingMethod, null, "", "", "", "", subject,
-            evidenceCodeName, DateTime.UtcNow, serviceContext, customData);
+            evidenceCodeName, DateTime.UtcNow, serviceContext);
     }
 }

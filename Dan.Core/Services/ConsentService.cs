@@ -31,11 +31,10 @@ public class ConsentService : IConsentService
 
     private readonly HttpClient _httpClient;
     private readonly HttpClient _noCertHttpClient;
-    private readonly ILogger<ConsentService> _log;
+    private readonly ILogger<ConsentService> _logger;
     private readonly IAltinnCorrespondenceService _correspondenceService;
     private readonly IEntityRegistryService _entityRegistryService;
     private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
-    private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly IRequestContextService _requestContextService;
 
     /// <summary>
@@ -60,11 +59,10 @@ public class ConsentService : IConsentService
         _httpClient = httpClientFactory.CreateClient("ECHttpClient");
         _noCertHttpClient = httpClientFactory.CreateClient("SafeHttpClient");
 
-        _log = loggerFactory.CreateLogger<ConsentService>();
+        _logger = loggerFactory.CreateLogger<ConsentService>();
         _correspondenceService = altinnCorrespondenceService;
         _entityRegistryService = entityRegistryService;
         _altinnServiceOwnerApiService = altinnServiceOwnerApiService;
-        _availableEvidenceCodesService = availableEvidenceCodesService;
         _requestContextService = requestContextService;
 
         _entityRegistryService.UseCoreProxy = false;
@@ -112,12 +110,20 @@ public class ConsentService : IConsentService
 
         var processedConsentRequestStrings = TextTemplateProcessor.ProcessConsentRequestMacros(_requestContextService.ServiceContext.ServiceContextTextTemplate.ConsentDelegationContexts, accreditation, requestorName, subjectName, _requestContextService.ServiceContext.Name);
         var consentRequest = await CreateConsentRequest(accreditation, evidenceCodesRequiringConsent, processedConsentRequestStrings);
+
+        _logger.DanLog(accreditation, LogAction.ConsentRequested);
+        foreach (var ec in evidenceCodesRequiringConsent)
+        {
+           _logger.DanLog(accreditation, LogAction.DatasetRequiringConsentRequested, ec.EvidenceCodeName);
+        }
+
         accreditation.AltinnConsentUrl = GetConsentRequestUrl(consentRequest);
 
         var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl);
 
         if (!skipAltinnNotification)
         {
+            _logger.DanLog(accreditation, LogAction.CorrespondenceSent);
             await SendCorrespondence(accreditation, renderedTexts);
         }
     }
@@ -139,7 +145,7 @@ public class ConsentService : IConsentService
         var evidenceCodesRequiringConsent = GetEvidenceCodesRequiringConsentForActiveContext(accreditation);
         if (evidenceCodesRequiringConsent.Count == 0)
         {
-            _log.LogError("Expected at least one evidencecode in the accreditation requiring consent in accredition {accreditationId}", accreditation.AccreditationId);
+            _logger.LogError("Expected at least one evidencecode in the accreditation requiring consent in accredition {accreditationId}", accreditation.AccreditationId);
         }
 
         if (accreditation.AuthorizationCode == null)
@@ -196,12 +202,12 @@ public class ConsentService : IConsentService
         request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnApiKey);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.SetAllowedErrorCodes(HttpStatusCode.BadRequest, HttpStatusCode.Forbidden);
-        _log.LogInformation("Getting jwt: " + url);
+        _logger.LogInformation("Getting jwt: " + url);
         try
         {
             var result = await _noCertHttpClient.SendAsync(request);
 
-            _log.LogInformation($"JWT-get {result.RequestMessage} result: {result.StatusCode} : {result.ReasonPhrase}");
+            _logger.LogInformation($"JWT-get {result.RequestMessage} result: {result.StatusCode} : {result.ReasonPhrase}");
 
             // Altinn returns JWTs as bare JSON strings (with leading and trailing double quotes) 
             var jwt = await result.Content.ReadAsStringAsync();
@@ -273,7 +279,7 @@ public class ConsentService : IConsentService
         }
         catch (Exception ex)
         {
-            _log.LogError($"Failed to check consent status for AccreditationId={accreditation.AccreditationId}, Subject={accreditation.Subject}:\n{ex}");
+            _logger.LogError($"Failed to check consent status for AccreditationId={accreditation.AccreditationId}, Subject={accreditation.Subject}:\n{ex}");
             return false;
         }
     }
@@ -378,7 +384,7 @@ public class ConsentService : IConsentService
                     }
                 }
 
-                _log.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}, RequestJson={requestJson}",
+                _logger.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}, RequestJson={requestJson}",
                     accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString, request.Content == null ? string.Empty : await request.Content.ReadAsStringAsync());
                 throw new ServiceNotAvailableException("Altinn denied the consent request. This is an internal error, please contact support");
             }
@@ -393,7 +399,7 @@ public class ConsentService : IConsentService
         }
         catch (Exception ex)
         {
-            _log.LogError("Failed to create consent request (no/invalid error model returned, no response) for AccreditationId={accreditationId}, Subject={subject}, Exception={ex}",
+            _logger.LogError("Failed to create consent request (no/invalid error model returned, no response) for AccreditationId={accreditationId}, Subject={subject}, Exception={ex}",
                 accreditation.AccreditationId, accreditation.SubjectParty, ex.Message);
 
             throw;

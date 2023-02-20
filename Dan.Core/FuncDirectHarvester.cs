@@ -100,10 +100,10 @@ namespace Dan.Core
                 await response.SetEvidenceAsync(evidence);
             }
 
-            _logger.DanLog(accreditation, LogAction.DataRetrieved);
+            _logger.DanLog(accreditation, LogAction.AuthorizationGranted);
+            _logger.DanLog(accreditation, LogAction.DatasetRetrieved, evidenceCodeName);
 
             return response;
-            
         }
 
         private static async Task<AuthorizationRequest> GetAuthorizationRequest(HttpRequestData req, string evidenceCodeName)

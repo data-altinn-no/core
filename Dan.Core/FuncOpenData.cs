@@ -59,7 +59,7 @@ namespace Dan.Core
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues, req.GetQueryParam(JmesPathTransfomer.QueryParameter));
 
-            _logger.DanLog(identifier, datasetName, "OpenData", LogAction.OpenDataRetrieved);
+            _logger.DanLog(identifier, datasetName, "OpenData", LogAction.OpenDatasetRetrieved);
 
             return response;
         }
