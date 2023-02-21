@@ -3,7 +3,7 @@ name: Build and test a PR
 on:
   pull_request:
     branches:
-    - main
+    - master
 
 env:
   DOTNET_VERSION: '6.0.x'
