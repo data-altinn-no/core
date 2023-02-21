@@ -1,4 +1,5 @@
-﻿using Dan.Common.Enums;
+﻿using System.Net;
+using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
@@ -57,6 +58,29 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         return evidence;
     }
 
+    public async Task<Stream> HarvestStream(string evidenceCodeName, Accreditation accreditation,
+        EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
+    {
+        var evidenceCode = accreditation.GetValidEvidenceCode(evidenceCodeName);
+
+        _log.LogInformation("Start get evidence status | aid={accreditationId}, evidenceCode={evidenceCodeName}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
+        var evidenceStatus = await _evidenceStatusService.GetEvidenceStatusAsync(accreditation, evidenceCode, false);
+
+        ThrowIfNotAvailableForHarvest(evidenceStatus);
+
+        Stream harvestedEvidenceStream;
+        using (var _ = _log.Timer($"{evidenceCode.EvidenceCodeName}-harvest-stream"))
+        {
+            _log.LogInformation("Start harvesting evidence as stream | aid={accreditationId}, status={evidenceStatus}, evidenceCode={evidenceCodeName}",
+                accreditation.AccreditationId, evidenceStatus.Status.Description, evidenceCode.EvidenceCodeName
+            );
+            harvestedEvidenceStream = await HarvestEvidenceStream(evidenceCode, accreditation, evidenceHarvesterOptions);
+            _log.LogInformation("Completed harvesting evidence as stream | aid={accreditationId}", accreditation.AccreditationId);
+        }
+
+        return harvestedEvidenceStream;
+    }
+
     public async Task<Evidence> HarvestOpenData(EvidenceCode evidenceCode, string identifier = "")
     {
         _log.LogDebug("Running HaaS (Harvest as a Service) for open data with dataset {evidenceCodeName} and identifier {identifier}", evidenceCode.EvidenceCodeName, identifier == "" ? "(empty)" : identifier);
@@ -110,17 +134,65 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         return evidence;
     }
 
+    private async Task<Stream> HarvestEvidenceStream(EvidenceCode evidenceCode, Accreditation accreditation,
+        EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
+    {
+        var request = await GetEvidenceHarvesterRequestMessage(accreditation, evidenceCode, evidenceHarvesterOptions);
+        var timeoutSeconds = evidenceCode.Timeout ??= Settings.DefaultHarvestTaskCancellation;
+        using var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+        request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
+        try
+        {
+            var client = _httpClientFactory.CreateClient("SafeHttpClient");
+            
+            // When attempting to stream from the evidence source, we simplify error handling
+            var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStreamAsync(cts.Token);    
+            }
+
+            throw new ServiceNotAvailableException(
+                $"Unable to stream response from source (got {response.StatusCode})");
+
+        }
+        catch (TaskCanceledException)
+        {
+            _log.LogError("Streaming evidence for evidenceCode={evidenceCodeName} and subject {subject} was cancelled", evidenceCode.EvidenceCodeName, accreditation.SubjectParty.GetAsString());
+            throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration ({timeoutSeconds} seconds)");
+        }
+    }
+    
     private async Task<List<EvidenceValue>> HarvestEvidenceValues(EvidenceCode evidenceCode, Accreditation accreditation, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
+    {
+        var request = await GetEvidenceHarvesterRequestMessage(accreditation, evidenceCode, evidenceHarvesterOptions);
+        var timeoutSeconds = evidenceCode.Timeout ??= Settings.DefaultHarvestTaskCancellation;
+
+        using var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+        request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
+        try
+        {
+            var client = _httpClientFactory.CreateClient("SafeHttpClient");
+            return (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
+                request,
+                () => client.SendAsync(request, cts.Token)))!;
+        }
+        catch (TaskCanceledException)
+        {
+            _log.LogError("Harvesting evidence values for open data evidenceCode={evidenceCodeName} and subject {subject} was cancelled", evidenceCode.EvidenceCodeName, accreditation.SubjectParty.GetAsString());
+            throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration of {timeoutSeconds} seconds)");
+        }
+    }
+
+    private async Task<HttpRequestMessage> GetEvidenceHarvesterRequestMessage(Accreditation accreditation,
+        EvidenceCode evidenceCode, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
     {
         var url = evidenceCode.GetEvidenceSourceUrl();
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
-
-        var timeoutSeconds = evidenceCode.Timeout ??= Settings.DefaultHarvestTaskCancellation;
-
-        using var cts = new CancellationTokenSource();
-        cts.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
 
         var evidenceHarvesterRequest = new EvidenceHarvesterRequest()
         {
@@ -151,20 +223,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
         request.JsonContent(evidenceHarvesterRequest);
 
-        request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
-
-        try
-        {
-            var client = _httpClientFactory.CreateClient("SafeHttpClient");
-            return (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
-                request,
-                () => client.SendAsync(request, cts.Token)))!;
-        }
-        catch (TaskCanceledException)
-        {
-            _log.LogError("Harvesting evidence values for open data evidenceCode={evidenceCodeName} and subject {subject} was cancelled", evidenceCode.EvidenceCodeName, accreditation.SubjectParty.GetAsString(true));
-            throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration of {timeoutSeconds} seconds)");
-        }
+        return request;
     }
 
     private async Task<string> GetAccessToken(EvidenceCode evidenceCode, Accreditation accreditation, EvidenceHarvesterOptions evidenceHarvesterOptions)

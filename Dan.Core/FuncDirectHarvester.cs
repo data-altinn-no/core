@@ -50,29 +50,25 @@ namespace Dan.Core
             HttpRequestData req,
             string evidenceCodeName)
         {
-
             await _requestContextService.BuildRequestContext(req);
 
             var authorizationRequest = await GetAuthorizationRequest(req, evidenceCodeName);
-
             await _authorizationRequestValidatorService.Validate(authorizationRequest);
-            var evidenceCodes = _authorizationRequestValidatorService.GetEvidenceCodes();
-            
-            if (evidenceCodes.Any(x => x.IsAsynchronous ||  (x.AuthorizationRequirements ?? new List<Requirement>()).Any(y => y is ConsentRequirement)))
+            var evidenceCodeForHarvest = _authorizationRequestValidatorService.GetEvidenceCodes().First();
+
+            if (evidenceCodeForHarvest.IsAsynchronous ||  evidenceCodeForHarvest.AuthorizationRequirements.Any(y => y is ConsentRequirement))
             {
                 throw new InvalidEvidenceRequestException("Unable to directly harvest async or consent-based evidence code");
             }
 
-            foreach (var es in evidenceCodes)
-            {
-                es.AuthorizationRequirements = new List<Requirement>();
-            }
+            evidenceCodeForHarvest.AuthorizationRequirements = new List<Requirement>();
 
+            // Create a dummy accreditation for the harvest
             var validTo = _authorizationRequestValidatorService.GetValidTo();
             var accreditation = new Accreditation
             {
                 AccreditationId = Guid.NewGuid().ToString(),
-                EvidenceCodes = evidenceCodes,
+                EvidenceCodes = new List<EvidenceCode> { evidenceCodeForHarvest },
                 Requestor = authorizationRequest.Requestor,
                 RequestorParty = authorizationRequest.RequestorParty,
                 Subject = authorizationRequest.Subject,
@@ -87,17 +83,29 @@ namespace Dan.Core
                 ServiceContext = _requestContextService.ServiceContext.Name
             };
 
-            var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
-            _logger.DanLog(accreditation, LogAction.AuthorizationGranted);
-
             var response = req.CreateResponse(HttpStatusCode.OK);
-            if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))
+            
+            if (evidenceCodeForHarvest.Values.Any(x => x.ValueType == EvidenceValueType.Binary))
             {
-                await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues, req.GetQueryParam(JmesPathTransfomer.QueryParameter));
+                // Binary content, "stream" response to client, This is not actually streaming, as 
+                // the HttpResponseData representation does not provide access to the actual HttpRequest. 
+                response.Headers.Add("Content-Type", "application/octet-stream");
+                var upstreamResponse = await _evidenceHarvesterService.HarvestStream(evidenceCodeName, accreditation,
+                    _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
+
+                await upstreamResponse.CopyToAsync(response.Body);
             }
             else
             {
-                await response.SetEvidenceAsync(evidence);
+                var evidence = await _evidenceHarvesterService.Harvest(evidenceCodeName, accreditation, _requestContextService.GetEvidenceHarvesterOptionsFromRequest());
+                if (req.HasQueryParam("envelope") && !req.GetBoolQueryParam("envelope"))
+                {
+                    await response.SetUnenvelopedEvidenceValuesAsync(evidence.EvidenceValues, req.GetQueryParam(JmesPathTransfomer.QueryParameter));
+                }
+                else
+                {
+                    await response.SetEvidenceAsync(evidence);
+                }    
             }
 
             _logger.DanLog(accreditation, LogAction.AuthorizationGranted);

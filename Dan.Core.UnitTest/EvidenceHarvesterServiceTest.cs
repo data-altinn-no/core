@@ -33,11 +33,14 @@ namespace Dan.Core.UnitTest
         private const string EVIDENCECODE_LEGALBASISORCONSENT_WITH_LEGALBASIS = "EvidenceCodeRequiringLegalBasisOrConsentWithLegalBasis";
         private const string EVIDENCECODE_ASYNC = "EvidenceCodeAsync";
         private const string EVIDENCECODE_SCOPE = "EvidenceCodeScope";
+        private const string EVIDENCECODE_STREAM = "EvidenceCodeStream";
+
+        private const string MOCK_HTTP_CLIENT_RESPONSE_BODY = "[{}]";
 
         [TestInitialize]
         public void Initialize()
         {
-            _mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(TestHelpers.GetHttpClientMock("[{}]"));
+            _mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>())).Returns(TestHelpers.GetHttpClientMock(MOCK_HTTP_CLIENT_RESPONSE_BODY));
             _mockTokenRequesterService.Setup(_ => _.GetMaskinportenToken(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.FromResult("{\"access_token\":\"\"}"));
             _mockRequestContextService.SetupProperty(_ => _.Request,
@@ -240,6 +243,30 @@ namespace Dan.Core.UnitTest
             Assert.AreEqual((int)StatusCodeId.Available, response.EvidenceStatus.Status.Code);
             Assert.IsNotNull(response.EvidenceValues);
         }
+        
+        [TestMethod]
+        public async Task Harvest_Success_Stream()
+        {
+            _mockEvidenceStatusService.Setup(_ =>
+                    _.GetEvidenceStatusAsync(It.IsAny<Accreditation>(), It.IsAny<EvidenceCode>(), It.IsAny<bool>()))
+                .Returns(
+                    Task.FromResult(new EvidenceStatus()
+                        {
+                            Status = EvidenceStatusCode.Available
+                        }
+                    )
+                );
+
+            Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1));
+
+            var evidenceHarvesterService = new EvidenceHarvesterService(_loggerFactory, _mockHttpClientFactory.Object, _mockConsentService.Object, _mockEvidenceStatusService.Object, _mockTokenRequesterService.Object, _mockRequestContextService.Object);
+            var response = await evidenceHarvesterService.HarvestStream(EVIDENCECODE_STREAM, accreditation);
+
+            var sr = new StreamReader(response);
+            var responseString = await sr.ReadToEndAsync();
+            
+            Assert.AreEqual(responseString, MOCK_HTTP_CLIENT_RESPONSE_BODY);
+        }
 
         private static Accreditation MakeAccreditation(string id, string org, DateTime? validTo = null, string authorizationCode = null, List<string> evidenceCodes = null)
         {
@@ -265,13 +292,14 @@ namespace Dan.Core.UnitTest
 
         private static List<EvidenceCode> GetEvidenceCodes(string provider = "unittest")
         {
-            return new List<EvidenceCode>()
+            return new List<EvidenceCode>
             {
-                new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_OPEN, EvidenceSource = provider, RequiredScopes = "foo" },
-                new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_LEGALBASIS, EvidenceSource = provider },
-                new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_CONSENT, EvidenceSource = provider, ServiceCode = "1", ServiceEditionCode = 1, },
-                new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_ASYNC, IsAsynchronous = true, EvidenceSource = "unittest" },
-                new EvidenceCode() { EvidenceCodeName = EVIDENCECODE_SCOPE, EvidenceSource = "unittest", RequiredScopes = "foo"},
+                new() { EvidenceCodeName = EVIDENCECODE_OPEN, EvidenceSource = provider, RequiredScopes = "foo" },
+                new() { EvidenceCodeName = EVIDENCECODE_LEGALBASIS, EvidenceSource = provider },
+                new() { EvidenceCodeName = EVIDENCECODE_CONSENT, EvidenceSource = provider, ServiceCode = "1", ServiceEditionCode = 1, },
+                new() { EvidenceCodeName = EVIDENCECODE_ASYNC, IsAsynchronous = true, EvidenceSource = "unittest" },
+                new() { EvidenceCodeName = EVIDENCECODE_SCOPE, EvidenceSource = "unittest", RequiredScopes = "foo"},
+                new() { EvidenceCodeName = EVIDENCECODE_STREAM, EvidenceSource = "unittest", Values = new List<EvidenceValue> { new() { EvidenceValueName = "streamtest", ValueType = EvidenceValueType.Binary }}},
             };
         }
 
