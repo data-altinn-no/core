@@ -30,7 +30,7 @@ public enum EvidenceValueType
     DateTime = 4,
 
     /// <summary>
-    /// Binary attachment
+    /// Binary attachment (Base64-encoded)
     /// </summary>
     [EnumMember(Value = "attachment")]
     Attachment = 5,
@@ -48,8 +48,14 @@ public enum EvidenceValueType
     Amount = 7,
 
     /// <summary>
-    /// Currency value
+    /// Arbitrary JSON
     /// </summary>
     [EnumMember(Value = "jsonSchema")]
-    JsonSchema = 8
+    JsonSchema = 8,
+
+    /// <summary>
+    /// Raw binary (only available without envelope, cannot be combined with other values)
+    /// </summary>
+    [EnumMember(Value = "binary")]
+    Binary = 9,
 }
