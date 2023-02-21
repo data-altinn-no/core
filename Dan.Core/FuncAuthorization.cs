@@ -103,7 +103,6 @@ public class FuncAuthorization
                 _logger.LogInformation("Start init consent aid={accreditationId}", accreditation.AccreditationId);
                 await _consentService.Initiate(accreditation, authRequest.SkipAltinnNotification);
                 _logger.LogInformation("Completed init consent aid={accreditationId} elapsedMs={elapsedMs}", accreditation.AccreditationId, t.ElapsedMilliseconds);
-                _logger.DanLog(accreditation, LogAction.ConsentRequested);
             }
         }
 
@@ -120,6 +119,10 @@ public class FuncAuthorization
 
         _logger.LogInformation("Completed authorization request successfully for aid={accreditationId}", accreditation.AccreditationId);
         _logger.DanLog(accreditation, LogAction.AuthorizationGranted);
+        foreach (var evidenceRequest in authRequest.EvidenceRequests)
+        {
+            _logger.DanLog(accreditation, LogAction.DatasetRequested, evidenceRequest.EvidenceCodeName);
+        }
 
         return response;
     }

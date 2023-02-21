@@ -122,7 +122,7 @@ namespace Dan.Core
 
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
-            _logger.DanLog(accreditation, LogAction.DataRetrieved);
+            _logger.DanLog(accreditation, LogAction.DatasetRetrieved, evidenceCodeName);
 
             return response;
         }

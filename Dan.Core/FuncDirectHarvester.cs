@@ -107,9 +107,9 @@ namespace Dan.Core
                     await response.SetEvidenceAsync(evidence);
                 }    
             }
-            
-            _logger.DanLog(accreditation, LogAction.AuthorizationGranted);            
-            _logger.DanLog(accreditation, LogAction.DataRetrieved);
+
+            _logger.DanLog(accreditation, LogAction.AuthorizationGranted);
+            _logger.DanLog(accreditation, LogAction.DatasetRetrieved, evidenceCodeName);
 
             return response;
         }
