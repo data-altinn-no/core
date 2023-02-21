@@ -1,0 +1,29 @@
+name: Build and test a PR
+
+on:
+  pull_request:
+    branches:
+    - main
+
+env:
+  DOTNET_VERSION: '6.0.x'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest 
+    environment: dev
+    steps:
+    - name: 'Checkout GitHub Action'
+      uses: actions/checkout@v3
+
+    - name: Setup .NET ${{ env.DOTNET_VERSION }} environment
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 'Build and test'
+      run: |
+        dotnet restore
+        dotnet build --no-restore
+        dotnet test --no-build --verbosity normal
+
