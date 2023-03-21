@@ -21,6 +21,13 @@ public class EvidenceValue : ICloneable
     public string EvidenceValueName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Arbitrary text describing the purpose and content of this specific field in the dataset
+    /// </summary>
+    [DataMember(Name = "description")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? Description { get; set; }
+
+    /// <summary>
     /// The source from which the evidence is harvested
     /// </summary>
     [Required]
