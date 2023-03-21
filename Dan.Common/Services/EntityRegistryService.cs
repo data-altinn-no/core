@@ -59,32 +59,44 @@ public class EntityRegistryService : IEntityRegistryService
         }
 
         EntityRegistryUnit? unit;
+        // We only want a subunit, so try that and return regardless
         if (subUnitOnly)
-        {
-            unit = await InternalGet(organizationNumber, UnitType.SubUnit);
-            if (unit == null) return null;
-
-            if (nestToAndReturnMainUnit && unit.OverordnetEnhet != null)
-            {
-                var parentUnit = unit;
-                do
-                {
-                    parentUnit = await InternalGet(parentUnit.OverordnetEnhet, UnitType.MainUnit);
-                }
-                while (parentUnit!.OverordnetEnhet != null);
-
-                return parentUnit;
-            }
-        }
-
-        unit = await InternalGet(organizationNumber, UnitType.MainUnit);
-        if (unit == null && attemptSubUnitLookupIfNotFound)
         {
             return await InternalGet(organizationNumber, UnitType.SubUnit);
         }
 
-        return unit;
+        // At this point we return a mainunit if we find one
+        unit = await InternalGet(organizationNumber, UnitType.MainUnit);
+        if (unit != null)
+        {
+            return unit;
+        }
+        
+        // Didn't find a main unit, check if we should check if it's a subunit
+        // or nest to topmost parent
+        if (attemptSubUnitLookupIfNotFound || nestToAndReturnMainUnit) {
+            unit = await InternalGet(organizationNumber, UnitType.SubUnit);
+        }
+        
+        // If we didn't find any subunit at this point or we're not supposed
+        // to nest, return at this point
+        if (unit == null || !nestToAndReturnMainUnit)
+        {
+            return unit;
+        }
+        
+        // We did find a subunit, and we're instructed to nest to the top mainunit
+        var parentUnit = unit;
+        do
+        {
+            // Only subunits are at the leaf node, any nested parents are MainUnits
+            // Example: https://data.brreg.no/enhetsregisteret/api/underenheter/879587662
+            parentUnit = await InternalGet(parentUnit.OverordnetEnhet!, UnitType.MainUnit);
+        }
+        while (parentUnit?.OverordnetEnhet != null);
+        unit = parentUnit;
 
+        return unit;
     }
 
     public async Task<EntityRegistryUnit?> GetFullMainUnit(string organizationNumber) => await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
