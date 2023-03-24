@@ -15,8 +15,9 @@ public static class VersionHelper
         _versionInfo = new VersionInfo
         {
             Name = assembly.GetName().Name ?? "dancore",
-            Built = GetBuildDate(assembly).ToString("u"),
-            Commit = ThisAssembly.Git.Commit
+            Built = GetBuildDate(assembly).ToString(@"yyyy-MM-dd\THH:mm:sszzz"),
+            Commit = ThisAssembly.Git.Commit,
+            CommitDate = ThisAssembly.Git.CommitDate
         };
 
         return _versionInfo;

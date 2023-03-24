@@ -18,7 +18,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Caching;
@@ -45,16 +44,7 @@ var host = new HostBuilder()
     })
     .ConfigureLogging((hostingContext, logging) =>
     {
-        if (danHostingEnvironment.IsLocalDevelopment())
-        {
-            logging.AddSimpleConsole(options =>
-            {
-                options.ColorBehavior = LoggerColorBehavior.Enabled;
-                options.SingleLine = true;
-                options.IncludeScopes = false;
-            });
-        }
-
+        // This is required for the logging-options in worker-logging.json to ble applied
         logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
     })
     .ConfigureFunctionsWorkerDefaults(builder =>
@@ -83,7 +73,6 @@ var host = new HostBuilder()
     })
     .ConfigureServices((_, services) =>
     {
-
         // You will need extra configuration because above will only log per default Warning (default AI configuration). As this is a provider-specific
         // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
         // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
