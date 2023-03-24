@@ -48,7 +48,7 @@ public class FuncMetadataEvidence
             return response;
         }
     }
-
+#if !DEBUG
     /// <summary>
     /// Runs every five minutes to trigger a forced refresh of all evidence codes. This prevents disruption of calls to the HTTP endpoint,
     /// which will not block while updating.
@@ -60,4 +60,5 @@ public class FuncMetadataEvidence
     {
         await _availableEvidenceCodesService.GetAvailableEvidenceCodes(true);
     }
+#endif
 }

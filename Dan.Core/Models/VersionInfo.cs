@@ -12,4 +12,7 @@ public class VersionInfo
 
     [JsonProperty("commit")]
     public string Commit { get; set; } = string.Empty;
+
+    [JsonProperty("commitDate")]
+    public string CommitDate { get; set; } = string.Empty;
 }
