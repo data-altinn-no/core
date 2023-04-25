@@ -44,12 +44,23 @@ public static class X509CertificateHelper
         }
 
         var subjectList = certificateSubject.Split(',');
+        bool seid20 = certificateSubject.Contains("NTRNO");
 
         foreach (var s in subjectList)
         {
             var kvp = s.Trim().Split('=');
-            if (kvp.Length != 2 || !kvp[0].Equals("SERIALNUMBER")) continue;
-            orgNumber = kvp[1].Trim();
+            if (kvp.Length != 2 || !kvp[0].Equals("SERIALNUMBER") && !kvp[1].Contains("NTRNO"))
+            {
+                continue;
+            }
+
+            if (!seid20)
+            {
+                orgNumber = kvp[1].Trim();
+            } else
+            {
+                orgNumber = kvp[1].Replace("NTRNO-", "");
+            }
             break;
         }
 
