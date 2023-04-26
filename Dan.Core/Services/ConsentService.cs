@@ -279,7 +279,7 @@ public class ConsentService : IConsentService
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Failed to check consent status for AccreditationId={accreditation.AccreditationId}, Subject={accreditation.Subject}:\n{ex}");
+            _logger.LogError($"Failed to  log consent used (Altinn) for AccreditationId={accreditation.AccreditationId}, Subject={accreditation.Subject}:\n{ex}");
             return false;
         }
     }
