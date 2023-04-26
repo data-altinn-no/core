@@ -6,7 +6,7 @@
 public static class Constants
 {
     /// <summary>
-    /// The function returning evidence code metadata
+    /// The function returning evidence code metadata 
     /// </summary>
     public const string EvidenceSourceMetadataFunctionName = "evidencecodes";
 
