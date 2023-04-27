@@ -16,8 +16,8 @@ public class EntityRegistryService : IEntityRegistryService
     private const string PpeMainUnitLookupEndpoint      = "https://data.ppe.brreg.no/enhetsregisteret/api/enheter/{0}";
     private const string PpeSubUnitLookupEndpoint       = "https://data.ppe.brreg.no/enhetsregisteret/api/underenheter/{0}";
     
-    private const string ProxyMainUnitLookupEndpoint    = "https://test-api.data.altinn.no/v1/opendata/" + CcrProxyMainUnitDatasetName + "/{0}";
-    private const string ProxySubUnitLookupEndpoint     = "https://test-api.data.altinn.no/v1/opendata/" + CcrProxySubUnitDatasetName + "/{0}";
+    private const string ProxyMainUnitLookupEndpoint    = "https://api.data.altinn.no/v1/opendata/" + CcrProxyMainUnitDatasetName + "/{0}";
+    private const string ProxySubUnitLookupEndpoint     = "https://api.data.altinn.no/v1/opendata/" + CcrProxySubUnitDatasetName + "/{0}";
     private const string PpeProxyMainUnitLookupEndpoint = "https://test-api.data.altinn.no/v1/opendata/" + CcrProxyMainUnitDatasetName + "/{0}";
     private const string PpeProxySubUnitLookupEndpoint  = "https://test-api.data.altinn.no/v1/opendata/" + CcrProxySubUnitDatasetName + "/{0}";
 
