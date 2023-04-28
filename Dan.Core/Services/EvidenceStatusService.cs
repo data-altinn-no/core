@@ -36,7 +36,7 @@ public class EvidenceStatusService : IEvidenceStatusService
 
         // Since evidencecodes in stored accreditation does not contain requirements, we need to rehydrate it from availableevidenceservice
         // This also validates that the evidence code requested is still available at the ES
-        var stillAvailable = await TryRehydrateEvidenceCodeAuthorizationRequirements(evidenceCode);
+        var stillAvailable = await TryRehydrateEvidenceCode(evidenceCode);
         if (!stillAvailable)
         {
             status = EvidenceStatusCode.Unavailable;
@@ -106,7 +106,7 @@ public class EvidenceStatusService : IEvidenceStatusService
         }
     }
 
-    private async Task<bool> TryRehydrateEvidenceCodeAuthorizationRequirements(EvidenceCode evidenceCode)
+    private async Task<bool> TryRehydrateEvidenceCode(EvidenceCode evidenceCode)
     {
         var availableEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
 
@@ -120,6 +120,10 @@ public class EvidenceStatusService : IEvidenceStatusService
         }
 
         evidenceCode.AuthorizationRequirements = availableEvidenceCode.AuthorizationRequirements;
+
+        // In case the evidence code has been move to a new source, we need to update the evidence code EvidenceSource
+        // to reflect that of the availableEvidenceCode, so that requests are routed correctly
+        evidenceCode.EvidenceSource = availableEvidenceCode.EvidenceSource;
 
         evidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements.Where(
             x => x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
