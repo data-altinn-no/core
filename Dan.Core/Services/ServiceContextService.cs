@@ -207,6 +207,22 @@ public class ServiceContextService : IServiceContextService
                     }
                 }
             },
+            new ServiceContext()
+            {
+                Name = "eDueDiligence",
+                Id = "duediligence-product",
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
+                AuthorizationRequirements = new List<Requirement>() {
+                    new MaskinportenScopeRequirement()
+                    {
+                        RequiredScopes = new List<string>() { "altinn:dataaltinnno/duediligence" }
+                    },
+                    new AccreditationPartyRequirement()
+                    {
+                        PartyRequirements = new List<AccreditationPartyRequirementType>() { AccreditationPartyRequirementType.RequestorAndOwnerAreEqual }
+                    }
+                }
+            },
         };
 
         return await Task.FromResult(serviceContexts);
