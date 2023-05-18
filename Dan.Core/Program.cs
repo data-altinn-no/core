@@ -160,7 +160,7 @@ var host = new HostBuilder()
         services.AddHttpClient("EvidenceCodesClient", client =>
             {
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
-                client.Timeout = TimeSpan.FromSeconds(10);
+                client.Timeout = TimeSpan.FromSeconds(25);
             })
             .AddHttpMessageHandler<ExceptionDelegatingHandler>();
 
