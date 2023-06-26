@@ -22,8 +22,10 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     public const string DefaultScope = "altinn:dataaltinnno";
 
     private static readonly object CmLockMaskinporten = new();
+    private static readonly object CmLockMaskinportenAux = new();
     private static readonly object CmLockAltinnPlatform = new();
     private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmMaskinporten;
+    private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmMaskinportenAux;
     private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmAltinnPlatform;
 
     /// <summary>
@@ -53,6 +55,37 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             lock (CmLockMaskinporten)
             {
                 _cmMaskinporten = value;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets maskinporten aux env ConfigManager in order to support ver2 and test for a period of time
+    /// </summary>
+    public static ConfigurationManager<OpenIdConnectConfiguration> CmMaskinportenAux
+    {
+        get
+        {
+            if (_cmMaskinportenAux != null) return _cmMaskinportenAux;
+            lock (CmLockMaskinportenAux)
+            {
+                if (_cmMaskinportenAux == null)
+                {
+                    _cmMaskinportenAux = new ConfigurationManager<OpenIdConnectConfiguration>(
+                        Settings.MaskinportenAuxWellknownUrl,
+                        new OpenIdConnectConfigurationRetriever(),
+                        new HttpClient { Timeout = TimeSpan.FromMilliseconds(10000) });
+                }
+            }
+
+            return _cmMaskinportenAux;
+        }
+
+        set
+        {
+            lock (CmLockMaskinportenAux)
+            {
+                _cmMaskinportenAux = value;
             }
         }
     }
@@ -175,6 +208,9 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         if (jwt.Issuer == Settings.MaskinportenUrl)
         {
             discoveryDocument = await CmMaskinporten.GetConfigurationAsync();
+        } else if (!string.IsNullOrEmpty(Settings.MaskinportenAuxWellknownUrl) && jwt.Issuer == Settings.MaskinportenAuxWellknownUrl)
+        {
+            discoveryDocument = await CmMaskinportenAux.GetConfigurationAsync();
         }
         else
         {
