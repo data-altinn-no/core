@@ -208,7 +208,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         if (jwt.Issuer == Settings.MaskinportenUrl)
         {
             discoveryDocument = await CmMaskinporten.GetConfigurationAsync();
-        } else if (!string.IsNullOrEmpty(Settings.MaskinportenAuxWellknownUrl) && jwt.Issuer == Settings.MaskinportenAuxWellknownUrl)
+        } else if (!string.IsNullOrEmpty(Settings.MaskinportenAuxUrl) && jwt.Issuer == Settings.MaskinportenAuxUrl)
         {
             discoveryDocument = await CmMaskinportenAux.GetConfigurationAsync();
         }
