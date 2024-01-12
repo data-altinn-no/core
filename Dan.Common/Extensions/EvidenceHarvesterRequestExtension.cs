@@ -75,7 +75,7 @@ public static class EvidenceHarvesterRequestExtension
             return false;
         }
 
-        return DateTime.TryParse((string?)parameter?.Value, out value);
+        return DateTime.TryParse(parameter?.Value.ToString(), out value);
     }
 
 
@@ -108,36 +108,5 @@ public static class EvidenceHarvesterRequestExtension
     {
         parameter = ehr.Parameters?.FirstOrDefault(x => x.EvidenceParamName == paramName);
         return parameter != null;
-    }
-
-    /// <summary>
-    /// Gets a parameter value as the requested type if set 
-    /// </summary>
-    /// <remarks>This is deprecated. Use TryGetParameter instead</remarks>
-    /// <typeparam name="T">The requested type to attempt to cast the value to</typeparam>
-    /// <param name="ehr">The evidence harvester request</param>
-    /// <param name="paramName">The parameter name</param>
-    /// <returns>The parameter value</returns>
-    public static T? GetParameterValue<T>(this EvidenceHarvesterRequest ehr, string paramName)
-    {
-        return (T?)ehr.GetParameter(paramName).Value;
-    }
-
-    /// <summary>
-    /// Gets a parameter if set
-    /// </summary>
-    /// /// <remarks>This is deprecated. Use TryGetParameter instead</remarks>
-    /// <param name="ehr">The evidence harvester request</param>
-    /// <param name="paramName">The parameter name</param>
-    /// <returns>The parameter</returns>
-    public static EvidenceParameter GetParameter(this EvidenceHarvesterRequest ehr, string paramName)
-    {
-        var param = ehr.Parameters?.FirstOrDefault(x => x.EvidenceParamName == paramName);
-        if (param == null)
-        {
-            throw new ArgumentNullException($"The parameter {paramName} was not provided");
-        }
-
-        return param;
     }
 }
