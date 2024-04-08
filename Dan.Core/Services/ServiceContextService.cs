@@ -110,15 +110,7 @@ public class ServiceContextService : IServiceContextService
                 Id = "tilsynsraad-product",
                 ValidLanguages= new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB},
                 AuthorizationRequirements = new List<Requirement>()
-                {
-
-                    new PartyTypeRequirement()
-                    {
-                        AllowedPartyTypes = new AllowedPartyTypesList()
-                        {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor, PartyTypeConstraint.PublicAgency)
-                        }
-                    },
+                { 
                     new AccreditationPartyRequirement()
                     {
                         PartyRequirements = new List<AccreditationPartyRequirementType>()
