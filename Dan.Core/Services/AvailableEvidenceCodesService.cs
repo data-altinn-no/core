@@ -10,6 +10,7 @@ using System.Text;
 using Dan.Core.Helpers;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
+using AsyncKeyedLock;
 
 namespace Dan.Core.Services;
 
@@ -25,8 +26,8 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private List<EvidenceCode> _memoryCache = new();
     private DateTime _updateMemoryCache = DateTime.MinValue;
-    private readonly SemaphoreSlim _semaphoreForceRefresh = new(1, 1);
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly AsyncNonKeyedLocker _semaphoreForceRefresh = new(1);
+    private readonly AsyncNonKeyedLocker _semaphore = new(1);
     private readonly IFunctionContextAccessor _functionContextAccessor;
     private const int MemoryCacheTtlSeconds = 120;
 
@@ -70,22 +71,15 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         {
             // Force refresh has been called. This is only performed manually or in conjuction with a deploy.
             // Use a separate semaphore to ensure only a single thread can do this at a time without blocking other requests
-            await _semaphoreForceRefresh.WaitAsync();
-            try
+            using (await _semaphoreForceRefresh.LockAsync())
             {
                 await RefreshEvidenceCodesCache();
                 return FilterInactive(_memoryCache);
             }
-            finally
-            {
-                _semaphoreForceRefresh.Release();
-            }
         }
 
         // The memory cache is expired. We do not know if Redis cache is expired, as this is handled by Polly.
-        await _semaphore.WaitAsync();
-
-        try
+        using (await _semaphore.LockAsync())
         {
             // Recheck if another thread has updated the memory cache while we were waiting for the semaphore
             if (DateTime.UtcNow < _updateMemoryCache)
@@ -99,11 +93,6 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
 
             return FilterInactive(_memoryCache);
-
-        }
-        finally
-        {
-            _semaphore.Release();
         }
     }
 
