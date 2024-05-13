@@ -231,6 +231,12 @@ public class ServiceContextService : IServiceContextService
                     }
                 }
             },
+             new ServiceContext()
+            {
+                Name = "Bits kontrollinformasjon",
+                Id = "bits-product",
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }               
+            },
         };
 
         return await Task.FromResult(serviceContexts);
