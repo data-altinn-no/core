@@ -235,7 +235,11 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Bits kontrollinformasjon",
                 Id = "bits-product",
-                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }               
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
+                AuthorizationRequirements = new List<Requirement>()
+                {
+                    new MaskinportenScopeRequirement() { RequiredScopes = new List<string> {"altinn:dataaltinnno/kontrollinformasjon"}}
+                }
             },
         };
 
