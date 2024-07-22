@@ -110,15 +110,7 @@ public class ServiceContextService : IServiceContextService
                 Id = "tilsynsraad-product",
                 ValidLanguages= new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB},
                 AuthorizationRequirements = new List<Requirement>()
-                {
-
-                    new PartyTypeRequirement()
-                    {
-                        AllowedPartyTypes = new AllowedPartyTypesList()
-                        {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor, PartyTypeConstraint.PublicAgency)
-                        }
-                    },
+                { 
                     new AccreditationPartyRequirement()
                     {
                         PartyRequirements = new List<AccreditationPartyRequirementType>()
@@ -237,6 +229,16 @@ public class ServiceContextService : IServiceContextService
                     {
                         PartyRequirements = new List<AccreditationPartyRequirementType>() { AccreditationPartyRequirementType.RequestorAndOwnerAreEqual }
                     }
+                }
+            },
+             new ServiceContext()
+            {
+                Name = "Bits kontrollinformasjon",
+                Id = "bits-product",
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
+                AuthorizationRequirements = new List<Requirement>()
+                {
+                    new MaskinportenScopeRequirement() { RequiredScopes = new List<string> {"altinn:dataaltinnno/kontrollinformasjon"}}
                 }
             },
         };
