@@ -22,10 +22,8 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     public const string DefaultScope = "altinn:dataaltinnno";
 
     private static readonly object CmLockMaskinporten = new();
-    private static readonly object CmLockMaskinportenAux = new();
     private static readonly object CmLockAltinnPlatform = new();
     private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmMaskinporten;
-    private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmMaskinportenAux;
     private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmAltinnPlatform;
 
     /// <summary>
