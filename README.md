@@ -29,7 +29,7 @@ In order to run functions locally, you will need a Azure Storage Emulator, prefe
 ### 4. CosmosDB emulator
 Download and install the CosmosDB emulator. For Windows, [click here to download](https://aka.ms/cosmosdb-emulator). See [this page](https://docs.microsoft.com/en-us/azure/cosmos-db/linux-emulator?tabs=ssl-netstd21) for information about running on Linux / MacOS.
 
-After installation you will ned to create the default database. Go to https://localhost:8081/_explorer/index.html, select Explorer, Select "New Container". Name the container "Nadobe", and the container id "Accreditations". Supply "/owner" as partition key. 
+After installation you will ned to create the default database. Go to https://localhost:8081/_explorer/index.html, select Explorer, Select "New Container". Name the database "nadobe-dev", and the container id "Accreditations". Supply "/owner" as partition key. 
 
 ### 5. Redis
 
