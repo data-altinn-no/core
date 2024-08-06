@@ -27,14 +27,7 @@ public static class HostBuilderExtensions
     public static IHostBuilder ConfigureDanPluginDefaults(this IHostBuilder builder)
     {
         builder
-            .ConfigureFunctionsWorkerDefaults(workerBuilder =>
-            {
-                workerBuilder
-                    // Using preview package Microsoft.Azure.Functions.Worker.ApplicationInsights, see https://github.com/Azure/azure-functions-dotnet-worker/pull/944
-                    // Requires APPLICATIONINSIGHTS_CONNECTION_STRING being set. Note that host.json logging settings are not loaded to worker, and requires
-                    .AddApplicationInsights()
-                    .AddApplicationInsightsLogger();
-            }, options =>
+            .ConfigureFunctionsWorkerDefaults(_ =>{}, options =>
             {
                 options.Serializer = new NewtonsoftJsonObjectSerializer(
                     // Use Newtonsoft.Json for serializing in order to support TypeNameHandling and other annotations on. This should be ported to System.Text.Json at some point.
@@ -53,6 +46,8 @@ public static class HostBuilderExtensions
             {
                 services.AddLogging();
                 services.AddHttpClient();
+                services.AddApplicationInsightsTelemetryWorkerService();
+                services.ConfigureFunctionsApplicationInsights();
 
                 // You will need extra configuration because AI will only log per default Warning (default AI configuration). As this is a provider-specific
                 // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
