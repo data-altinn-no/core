@@ -75,7 +75,7 @@ public static class EvidenceHarvesterRequestExtension
             return false;
         }
 
-        return DateTime.TryParse(parameter?.Value.ToString(), out value);
+        return DateTime.TryParse(parameter?.Value?.ToString(), out value);
     }
 
 

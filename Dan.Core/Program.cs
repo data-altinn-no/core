@@ -56,23 +56,15 @@ var host = new HostBuilder()
 
         builder.UseMiddleware<DiagnosticsHeaderInjectionMiddleware>();
         builder.UseMiddleware<FunctionContextAccessorMiddleware>();
-
-        if (!danHostingEnvironment.IsLocalDevelopment())
-        {
-            // Using preview package Microsoft.Azure.Functions.Worker.ApplicationInsights, see https://github.com/Azure/azure-functions-dotnet-worker/pull/944
-            // Requires APPLICATIONINSIGHTS_CONNECTION_STRING being set. Note that host.json logging settings only affects the host, not the workers. 
-            // See worker-logging.json for other logging settings, and the discussion on https://github.com/Azure/azure-functions-dotnet-worker/issues/1182
-            builder
-                .AddApplicationInsights()
-                .AddApplicationInsightsLogger();
-        }
-
     }, options =>
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();
     })
     .ConfigureServices((_, services) =>
     {
+        services.AddApplicationInsightsTelemetryWorkerService();
+        services.ConfigureFunctionsApplicationInsights();
+        
         // You will need extra configuration because above will only log per default Warning (default AI configuration). As this is a provider-specific
         // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
         // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
