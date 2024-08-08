@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 namespace Dan.Core.UnitTest;
 
 [TestClass]
-class GlobalTestInitializer
+public class GlobalTestInitializer
 {
     [AssemblyInitialize()]
     public static void MyTestInitialize(TestContext testContext)

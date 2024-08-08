@@ -70,14 +70,5 @@ namespace Dan.Core.UnitTest.Helpers
         public NotSameContentsException(string message, Exception innerException) : base(message, innerException)
         {
         }
-
-        /// <summary>
-        /// Not same contents exception
-        /// </summary>
-        /// <param name="info">Serialization Info</param>
-        /// <param name="context">Streaming context</param>
-        protected NotSameContentsException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }
