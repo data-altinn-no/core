@@ -241,6 +241,16 @@ public class ServiceContextService : IServiceContextService
                     new MaskinportenScopeRequirement() { RequiredScopes = new List<string> {"altinn:dataaltinnno/kontrollinformasjon"}}
                 }
             },
+			new ServiceContext
+            {
+                Name = "DAN-test",
+                Id = "dantest-product",
+                ValidLanguages = [Constants.LANGUAGE_CODE_NORWEGIAN_NB],
+                AuthorizationRequirements =
+                [
+                    new MaskinportenScopeRequirement{RequiredScopes = ["dan:test"]}
+                ]
+            }
         };
 
         return await Task.FromResult(serviceContexts);
