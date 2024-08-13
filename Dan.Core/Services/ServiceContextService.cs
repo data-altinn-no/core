@@ -63,7 +63,7 @@ public class ServiceContextService : IServiceContextService
             },
             new ServiceContext()
             {
-                Name = "Seriøsitetsinformasjon",
+                Name = "SeriÃ¸sitetsinformasjon",
                 Id = "seriositet-product",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
@@ -160,7 +160,7 @@ public class ServiceContextService : IServiceContextService
             },
             new ServiceContext()
             {
-                Name = "Økonomisk informasjon",
+                Name = "Ã˜konomisk informasjon",
                 Id = "okinfo-product",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
