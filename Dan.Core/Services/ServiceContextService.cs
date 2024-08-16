@@ -249,7 +249,8 @@ public class ServiceContextService : IServiceContextService
                 AuthorizationRequirements =
                 [
                     new MaskinportenScopeRequirement{RequiredScopes = ["dan:test"]}
-                ]
+                ],
+                ServiceContextTextTemplate = new DanTestServiceContextTextTemplate()
             }
         };
 
