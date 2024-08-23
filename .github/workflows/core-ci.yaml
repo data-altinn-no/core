@@ -1,10 +1,5 @@
-name: Dan.Core CI/CD
+name: Dan.Core CI/CD [Deprecated]
 on:
- push:
-   branches: [ master ]
-   paths-ignore:
-     - '**/README.md'
-     - '**/*.yml'
  workflow_dispatch:
 jobs:
  run:
