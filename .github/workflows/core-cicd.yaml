@@ -1,0 +1,121 @@
+name: Dan.Core CI/CD
+on:
+ push:
+   branches: [ master ]
+   paths-ignore:
+     - '**/README.md'
+     - '**/*.yml'
+ workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: 'Dotnet restore, build & test'
+        run: |
+          dotnet restore
+          dotnet build --no-restore
+          dotnet test --no-build --verbosity normal
+        working-directory: './'
+      - name: Dotnet build and publish Function App with configuration 'Release'
+        run: |
+          dotnet build --configuration 'Release'
+          dotnet publish -c 'Release' --no-restore -o './published-app'
+        working-directory: 'Dan.Core'
+      - name: Upload artifact 'dan-core'
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'dan-core'
+          path: Dan.Core/published-app
+  
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: 'dev'
+    needs: [build]
+    steps:
+      - name: 'Download artifact for dev'
+        uses: actions/download-artifact@v3
+        with:
+          name: 'dan-core'
+          path: './downloaded-app'
+      - name: 'Deploy artifact to dev'
+        uses: azure/functions-action@v1
+        with:
+          app-name: ${{secrets.FUNCTIONAPP_NAME}}
+          package: './downloaded-app'
+          publish-profile: ${{secrets.AZURE_FUNCTION_PUBLISH_CREDS}}
+
+  post-deploy-dev:
+    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@main
+    needs: [deploy-dev]
+    with:
+      environment: 'dev'
+    secrets:
+      azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+      kvname: ${{ secrets.KVNAME }}    
+
+  
+  deploy-staging:   
+    runs-on: ubuntu-latest
+    environment: 'staging'
+    needs: [deploy-dev]
+    steps:
+      - name: 'Download artifact for staging'
+        uses: actions/download-artifact@v3
+        with:
+          name: 'dan-core'
+          path: './downloaded-app'
+      - name: 'Deploy artifact to staging'
+        uses: azure/functions-action@v1
+        with:
+          app-name: ${{secrets.FUNCTIONAPP_NAME}}
+          package: './downloaded-app'
+          publish-profile: ${{secrets.AZURE_FUNCTION_PUBLISH_CREDS}}
+  
+  post-deploy-staging:
+    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@main
+    needs: [deploy-staging]
+    with:
+      environment: 'staging'
+    secrets:
+      azure_credentials: ${{ secrets.AZURE_CREDENTIALS }}
+      kvname: ${{ secrets.KVNAME }}
+ 
+      
+  swap-staging-prod:   
+    runs-on: ubuntu-latest
+    environment: 'production'
+    needs: [deploy-staging]
+    steps:
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: 'Swap staging and production'
+        run: |
+          az webapp deployment slot swap -g '${{ secrets.RESOURCE_GROUP_PROD }}' -n '${{ secrets.FUNCTIONAPP_NAME }}' --slot 'staging' --target-slot 'production'
+      - name: 'Azure logout'
+        run: |
+          az logout
+
+  redeploy-staging:
+    runs-on: ubuntu-latest
+    environment: 'staging'
+    needs: [swap-staging-prod]
+    steps:
+      - name: 'Download artifact for redeploy to staging'
+        uses: actions/download-artifact@v3
+        with:
+          name: 'dan-core'
+          path: './downloaded-app'
+      - name: 'Redeploy artifact to staging'
+        uses: azure/functions-action@v1
+        with:
+          app-name: ${{secrets.FUNCTIONAPP_NAME}}
+          package: './downloaded-app'
+          publish-profile: ${{secrets.AZURE_FUNCTION_PUBLISH_CREDS}}
+        
