@@ -27,7 +27,7 @@ jobs:
           dotnet publish -c 'Release' --no-restore -o './published-app'
         working-directory: 'Dan.Core'
       - name: Upload artifact 'dan-core'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: 'dan-core'
           path: Dan.Core/published-app
@@ -38,7 +38,7 @@ jobs:
     needs: [build]
     steps:
       - name: 'Download artifact for dev'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: 'dan-core'
           path: './downloaded-app'
@@ -65,7 +65,7 @@ jobs:
     needs: [deploy-dev]
     steps:
       - name: 'Download artifact for staging'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: 'dan-core'
           path: './downloaded-app'
@@ -108,7 +108,7 @@ jobs:
     needs: [swap-staging-prod]
     steps:
       - name: 'Download artifact for redeploy to staging'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: 'dan-core'
           path: './downloaded-app'
