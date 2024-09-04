@@ -12,6 +12,7 @@ using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
 using Dan.Core.Middleware;
 using Microsoft.Azure.Functions.Worker.Http;
+using Newtonsoft.Json.Linq;
 
 namespace Dan.Core.Extensions;
 
@@ -279,7 +280,14 @@ public static class HttpExtensions
         switch (evidence.ValueType)
         {
             case EvidenceValueType.JsonSchema:
-                jsonResult = (string?)evidence.Value ?? string.Empty;
+                if (evidence.Value is JArray or JObject)
+                {
+                    jsonResult = evidence.Value.ToString() ?? string.Empty;
+                }
+                else
+                {
+                    jsonResult = (string?)evidence.Value ?? string.Empty;
+                }
                 JmesPathTransfomer.Apply(jmesExpression, ref jsonResult);
                 await response.WriteStringAsync(jsonResult);
                 response.Headers.Add("Content-Type", "application/json");
