@@ -31,6 +31,7 @@ jobs:
         with:
           name: 'dan-core'
           path: Dan.Core/published-app
+          include-hidden-files: true
   
   deploy-dev:
     runs-on: ubuntu-latest
