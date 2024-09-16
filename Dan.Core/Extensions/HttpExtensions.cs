@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Net;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
@@ -10,6 +9,7 @@ using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
+using Dan.Core.Helpers.JsonConverters;
 using Dan.Core.Middleware;
 using Microsoft.Azure.Functions.Worker.Http;
 using Newtonsoft.Json.Linq;
@@ -266,8 +266,12 @@ public static class HttpExtensions
         string jsonResult;
         if (evidenceValues.Count > 1)
         {
-            var asHashTable = ConvertToHashtable(evidenceValues);
-            jsonResult = JsonConvert.SerializeObject(asHashTable, new JsonSerializerSettings { ContractResolver = new HiddenPropertyContractResolver() });
+            var kvpList = ConvertToKvpList(evidenceValues);
+            jsonResult = JsonConvert.SerializeObject(kvpList, new JsonSerializerSettings
+            {
+                ContractResolver = new HiddenPropertyContractResolver(),
+                Converters = [new KeyValueListAsObjectConverter<object?>()]
+            });
             JmesPathTransfomer.Apply(jmesExpression, ref jsonResult);
             await response.WriteStringAsync(jsonResult);
             response.Headers.Add("Content-Type", "application/json");
@@ -316,12 +320,10 @@ public static class HttpExtensions
         response.Headers.Add("X-Signature-JWT", Jwt.GetDigestJwt(jsonResult));
     }
 
-    private static Hashtable ConvertToHashtable(List<EvidenceValue> evidenceValues)
+    private static List<KeyValuePair<string, object?>> ConvertToKvpList(List<EvidenceValue> evidenceValues)
     {
-        var hashTable = new Hashtable();
-        foreach (var evidenceValue in evidenceValues)
-            hashTable.Add(evidenceValue.EvidenceValueName, evidenceValue.Value);
-
-        return hashTable;
+        return evidenceValues
+            .Select(evidenceValue => new KeyValuePair<string, object?>(evidenceValue.EvidenceValueName, evidenceValue.Value))
+            .ToList();
     }
 }
