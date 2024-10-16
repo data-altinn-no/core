@@ -251,6 +251,24 @@ public class ServiceContextService : IServiceContextService
                     new MaskinportenScopeRequirement{RequiredScopes = ["dan:test"]}
                 ],
                 ServiceContextTextTemplate = new DanTestServiceContextTextTemplate()
+            },
+            new ServiceContext()
+            {
+                Name = "Altinn Studio-apps",
+                Id = "altinnstudioapps-product",
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
+                AuthorizationRequirements = new List<Requirement>()
+                {
+                    new MaskinportenScopeRequirement()
+                    {
+                        RequiredScopes = new List<string>() { "dan:altinnstudioapps" }
+                    },
+                    new ProvideOwnTokenRequirement(),
+                    new AccreditationPartyRequirement()
+                    {
+                        PartyRequirements = new List<AccreditationPartyRequirementType>() { AccreditationPartyRequirementType.RequestorAndOwnerAreEqual }
+                    }
+                }
             }
         };
 
