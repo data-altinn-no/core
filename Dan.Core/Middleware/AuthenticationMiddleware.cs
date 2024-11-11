@@ -204,25 +204,22 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
     private bool ValidateScopes(ClaimsPrincipal claimsPrincipal)
     {
-        var requiredScopeList = DefaultScope.Split(',');
         var principalScopeList = claimsPrincipal.GetScopes();
         if (principalScopeList == null)
         {
             return false;
         }
 
-        foreach (var requiredScope in requiredScopeList)
+        // Replaced with StartsWith to allow new scope root and removed foreach
+        // Old: Note that this had .Contains does a substring match. This means that a requirement for
+        // eg. altinn:somescope will be satisfied by altinn:somescope/foo or any scope containing the substring
+        // "altinn:somescope". As ":" is not a valid subscope character in Maskinporten, this ought to be
+        // safe as it cannot be abused by something like "difi:altinn:somescope"
+        if (!principalScopeList.Any(x => x.StartsWith(DefaultScope) || x.StartsWith(NewScopeRoot)))
         {
-            // Replaced with StartsWith to allow new scope root
-            // Old: Note that this had .Contains does a substring match. This means that a requirement for
-            // eg. altinn:somescope will be satisfied by altinn:somescope/foo or any scope containing the substring
-            // "altinn:somescope". As ":" is not a valid subscope character in Maskinporten, this ought to be
-            // safe as it cannot be abused by something like "difi:altinn:somescope"
-            if (!principalScopeList.Any(x => x.StartsWith(requiredScope) || x.StartsWith(NewScopeRoot)))
-            {
-                return false;
-            }
+            return false;
         }
+        
 
         return true;
     }
