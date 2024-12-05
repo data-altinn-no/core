@@ -105,10 +105,11 @@ public static class EvidenceSourceHelper
     /// <param name="accreditation">The associated accreditation</param>
     /// <param name="evidenceCode">The evidence code to initialize</param>
     /// <param name="client">The HTTP client</param>
+    /// <param name="aliases">Evidence code aliases</param>
     /// <returns>Nothing, but will throw if the call fails or the evidence source reports and error</returns>
-    public static async Task InitAsynchronousEvidenceCodeRequest(Accreditation accreditation, EvidenceCode evidenceCode, HttpClient client)
+    public static async Task InitAsynchronousEvidenceCodeRequest(Accreditation accreditation, EvidenceCode evidenceCode, HttpClient client, Dictionary<string, string> aliases)
     {
-        var url = evidenceCode.GetEvidenceSourceUrl();
+        var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
 

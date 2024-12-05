@@ -20,8 +20,9 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private readonly IEvidenceStatusService _evidenceStatusService;
     private readonly ITokenRequesterService _tokenRequesterService;
     private readonly IRequestContextService _requestContextService;
+    private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
 
-    public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService)
+    public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService, IAvailableEvidenceCodesService availableEvidenceCodesService)
     {
         _log = loggerFactory.CreateLogger<EvidenceHarvesterService>();
         _httpClientFactory = httpClientFactory;
@@ -29,6 +30,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         _evidenceStatusService = evidenceStatusService;
         _tokenRequesterService = tokenRequesterService;
         _requestContextService = requestContextService;
+        _availableEvidenceCodesService = availableEvidenceCodesService;
     }
 
     public async Task<Evidence> Harvest(string evidenceCodeName, Accreditation accreditation, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
@@ -85,7 +87,8 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     {
         _log.LogDebug("Running HaaS (Harvest as a Service) for open data with dataset {evidenceCodeName} and identifier {identifier}", evidenceCode.EvidenceCodeName, identifier == "" ? "(empty)" : identifier);
         List<EvidenceValue> harvestedEvidence;
-        var url = evidenceCode.GetEvidenceSourceUrl();
+        var aliases = _availableEvidenceCodesService.GetAliases();
+        var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");
@@ -189,7 +192,8 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private async Task<HttpRequestMessage> GetEvidenceHarvesterRequestMessage(Accreditation accreditation,
         EvidenceCode evidenceCode, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
     {
-        var url = evidenceCode.GetEvidenceSourceUrl();
+        var aliases = _availableEvidenceCodesService.GetAliases();
+        var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Content-Type", "application/json");

@@ -4,6 +4,7 @@ using Dan.Common.Models;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
+using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -53,6 +54,23 @@ namespace Dan.Core.UnitTest
                     new TestAuthorizationRequirement
                     {
                         Name = "ec2_req"
+                    }
+                }
+            },
+            new EvidenceCode
+            {
+                EvidenceCodeName = "ec3",
+                BelongsToServiceContexts = new List<string> { "sc1", "sc2" },
+                DatasetAliases = new Dictionary<string, string>
+                {
+                    {"sc1", "a1"},
+                    {"sc2", "a2"}
+                },
+                AuthorizationRequirements = new List<Requirement>
+                {
+                    new TestAuthorizationRequirement
+                    {
+                        Name = "ec3_req"
                     }
                 }
             }
@@ -126,13 +144,16 @@ namespace Dan.Core.UnitTest
             var a = await acs.GetAvailableEvidenceCodes();
 
             // Assert
-            Assert.AreEqual(4, a.Count); // we have two evidence sources in config
+            Assert.AreEqual(4, a.Count);
+            
+            // ec1
             Assert.AreEqual(3, a[0].AuthorizationRequirements.Count);
             Assert.IsTrue(a[0].AuthorizationRequirements.All(x => x.GetType() == typeof(TestAuthorizationRequirement)));
             Assert.IsTrue(a[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "ec1_req"));
             Assert.IsTrue(a[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req1"));
             Assert.IsTrue(a[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req2"));
 
+            // ec2
             Assert.AreEqual(5, a[1].AuthorizationRequirements.Count);
             Assert.IsTrue(a[1].AuthorizationRequirements.All(x => x.GetType() == typeof(TestAuthorizationRequirement)));
             Assert.IsTrue(a[1].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "ec2_req"));
@@ -140,6 +161,46 @@ namespace Dan.Core.UnitTest
             Assert.IsTrue(a[1].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req2"));
             Assert.IsTrue(a[1].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc2_req1"));
             Assert.IsTrue(a[1].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc2_req2"));
+            
+            // Aliases get replaced at end of list
+            // a1
+            Assert.AreEqual(3, a[2].AuthorizationRequirements.Count);
+            Assert.IsTrue(a[2].AuthorizationRequirements.All(x => x.GetType() == typeof(TestAuthorizationRequirement)));
+            Assert.IsTrue(a[2].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "ec3_req"));
+            Assert.IsTrue(a[2].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req1"));
+            Assert.IsTrue(a[2].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req2"));
+            
+            // a2
+            Assert.AreEqual(3, a[3].AuthorizationRequirements.Count);
+            Assert.IsTrue(a[3].AuthorizationRequirements.All(x => x.GetType() == typeof(TestAuthorizationRequirement)));
+            Assert.IsTrue(a[3].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "ec3_req"));
+            Assert.IsTrue(a[3].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc2_req1"));
+            Assert.IsTrue(a[3].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc2_req2"));
+        }
+
+        [TestMethod]
+        public async Task GetAliases()
+        {
+            var acs = new AvailableEvidenceCodesService(
+                _loggerFactory,
+                _mockHttpClientFactory.Object,
+                _policyRegistry,
+                _mockDistributedCache.Object,
+                _mockServiceContextService.Object,
+                _mockFunctionContextAccessor.Object);
+
+            var expected = new Dictionary<string, string>
+            {
+                {"a1", "ec3"},
+                {"a2", "ec3"}
+            };
+
+            // Act
+            await acs.GetAvailableEvidenceCodes();
+            var actual = acs.GetAliases();
+            
+            // Assert
+            actual.Should().BeEquivalentTo(expected);
         }
     }
 

@@ -21,6 +21,7 @@ public class FuncAuthorization
     private readonly IAuthorizationRequestValidatorService _authorizationRequestValidatorService;
     private readonly IRequestContextService _requestContextService;
     private readonly IAccreditationRepository _accreditationRepository;
+    private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly ILogger<FuncAuthorization> _logger;
 
     public FuncAuthorization(
@@ -29,7 +30,8 @@ public class FuncAuthorization
         IConsentService consentService,
         IAuthorizationRequestValidatorService authorizationRequestValidatorService,
         IRequestContextService requestContextService,
-        IAccreditationRepository accreditationRepository)
+        IAccreditationRepository accreditationRepository, 
+        IAvailableEvidenceCodesService availableEvidenceCodesService)
     {
         _logger = loggerFactory.CreateLogger<FuncAuthorization>();
         _client = httpClientFactory.CreateClient("SafeHttpClient");
@@ -37,6 +39,7 @@ public class FuncAuthorization
         _authorizationRequestValidatorService = authorizationRequestValidatorService;
         _requestContextService = requestContextService;
         _accreditationRepository = accreditationRepository;
+        _availableEvidenceCodesService = availableEvidenceCodesService;
     }
 
     /// <summary>
@@ -90,7 +93,8 @@ public class FuncAuthorization
             using (var t = _logger.Timer($"{evidenceCode.EvidenceCodeName}-init"))
             {
                 _logger.LogInformation("Start init async evidenceCode={evidenceCode} aid={accreditationId}", evidenceCode.EvidenceCodeName, accreditation.AccreditationId);
-                await EvidenceSourceHelper.InitAsynchronousEvidenceCodeRequest(accreditation, evidenceCode, _client);
+                var aliases = _availableEvidenceCodesService.GetAliases();
+                await EvidenceSourceHelper.InitAsynchronousEvidenceCodeRequest(accreditation, evidenceCode, _client, aliases);
                 _logger.LogInformation("Completed init async evidenceCode={evidenceCode} aid={accreditationId} elapsedMs={elapsedMs}", evidenceCode.EvidenceCodeName, accreditation.AccreditationId, t.ElapsedMilliseconds);
             }
         }

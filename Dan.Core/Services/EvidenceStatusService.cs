@@ -146,7 +146,8 @@ public class EvidenceStatusService : IEvidenceStatusService
 
     private async Task<EvidenceStatusCode> GetAsynchronousEvidenceStatusCode(Accreditation accreditation, EvidenceCode evidenceCode)
     {
-        var url = evidenceCode.GetEvidenceSourceUrl();
+        var aliases = _availableEvidenceCodesService.GetAliases();
+        var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");

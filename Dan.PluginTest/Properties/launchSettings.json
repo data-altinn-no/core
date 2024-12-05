@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Dan.PluginTest": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7102",
+      "launchBrowser": false
+    }
+  }
+}
