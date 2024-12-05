@@ -276,7 +276,10 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
                 aliasedEvidenceCode.DatasetAliases = null;
                 aliasedEvidenceCode.AuthorizationRequirements = aliasedEvidenceCode
                     .AuthorizationRequirements
-                    .Where(a => a.AppliesToServiceContext.Contains(alias.Key)).ToList();
+                    .Where(a =>
+                        a.AppliesToServiceContext.Count == 0 ||
+                        a.AppliesToServiceContext.Contains(alias.Key))
+                    .ToList();
                 
                 splitEvidenceCodes.Add(aliasedEvidenceCode);
             }
