@@ -138,4 +138,12 @@ public class EvidenceCode
     [DataMember(Name = "timeout")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public int? Timeout { get; set; }
+    
+    /// <summary>
+    /// Optional setting for aliases. Key is service context, value is Dataset name
+    /// Allows for the same dataset to be shared between service contexts with different names.
+    /// </summary>
+    [DataMember(Name = "datasetAliases")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public Dictionary<string,string>? DatasetAliases { get; set; }
 }

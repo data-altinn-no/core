@@ -12,10 +12,12 @@ public static class EvidenceCodeExtensions
     /// Gets the full URL to the evidence code 
     /// </summary>
     /// <param name="evidenceCode">The evidence code instance</param>
+    /// <param name="aliases">Collection of evidence code aliases</param>
     /// <returns>A fully qualified URL</returns>
-    public static string GetEvidenceSourceUrl(this EvidenceCode evidenceCode)
+    public static string GetEvidenceSourceUrl(this EvidenceCode evidenceCode, Dictionary<string, string> aliases)
     {
-        return Settings.GetEvidenceSourceUrl(evidenceCode.EvidenceSource).Replace("/api/evidencecodes", $"/api/{evidenceCode.EvidenceCodeName}?code={Settings.FunctionKeyValue}");
+        var evidenceCodeName = aliases?.GetValueOrDefault(evidenceCode.EvidenceCodeName) ?? evidenceCode.EvidenceCodeName;
+        return Settings.GetEvidenceSourceUrl(evidenceCode.EvidenceSource).Replace("/api/evidencecodes", $"/api/{evidenceCodeName}?code={Settings.FunctionKeyValue}");
     }
 
     /// <summary>
