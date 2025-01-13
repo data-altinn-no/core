@@ -138,4 +138,11 @@ public class EvidenceCode
     [DataMember(Name = "timeout")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public int? Timeout { get; set; }
+    
+    /// <summary>
+    /// License of the evidence source data
+    /// </summary>
+    [DataMember(Name = "license")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? License { get; set; }
 }
