@@ -8,11 +8,14 @@ namespace Dan.Common.Models;
 [DataContract]
 public class ServiceContext
 {
-    [DataMember(Name = "Name")]
+    [DataMember(Name = "name")]
     public string Name { get; set; } = string.Empty;
 
-    [DataMember(Name = "Id")]
+    [DataMember(Name = "id")]
     public string Id { get; set; } = string.Empty;
+    
+    [DataMember(Name = "description")]
+    public string? Description { get; set; }
 
     [DataMember(Name = "validLanguages")]
     public List<string> ValidLanguages { get; set; } = new();
