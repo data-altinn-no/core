@@ -13,6 +13,9 @@ public class ServiceContext
 
     [DataMember(Name = "Id")]
     public string Id { get; set; } = string.Empty;
+    
+    [DataMember(Name = "Description")]
+    public string? Description { get; set; }
 
     [DataMember(Name = "validLanguages")]
     public List<string> ValidLanguages { get; set; } = new();
