@@ -40,7 +40,7 @@
 
     <PackageReference Include="Polly.Caching.Distributed" Version="3.0.1" />
     <PackageReference Include="Polly.Caching.Serialization.Json" Version="3.0.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.8.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.24" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
