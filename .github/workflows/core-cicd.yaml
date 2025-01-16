@@ -93,7 +93,7 @@ jobs:
     needs: [deploy-staging]
     steps:
       - name: 'Login via Azure CLI'
-        uses: azure/login@v1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: 'Swap staging and production'
