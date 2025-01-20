@@ -64,7 +64,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         if (!forceRefresh && DateTime.UtcNow < _updateMemoryCache)
         {
             SetCacheDiagnosticsHeader("hit-local");
-            return FilterInactive(_memoryCache);
+            return FilterEvidenceCodes(_memoryCache);
         }
 
         if (forceRefresh)
@@ -74,7 +74,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             using (await _semaphoreForceRefresh.LockAsync())
             {
                 await RefreshEvidenceCodesCache();
-                return FilterInactive(_memoryCache);
+                return FilterEvidenceCodes(_memoryCache);
             }
         }
 
@@ -85,15 +85,31 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             if (DateTime.UtcNow < _updateMemoryCache)
             {
                 SetCacheDiagnosticsHeader("hit-local-late");
-                return FilterInactive(_memoryCache);
+                return FilterEvidenceCodes(_memoryCache);
             }
 
             // This uses Polly to get from the distributed cache, or refresh from source if Redis cache is expired.
             _memoryCache = await GetAvailableEvidenceCodesFromDistributedCache();
             _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
 
-            return FilterInactive(_memoryCache);
+            return FilterEvidenceCodes(_memoryCache);
         }
+    }
+
+    public Dictionary<string, string> GetAliases()
+    {
+        var aliases = new Dictionary<string, string>();
+        var aliasedEvidenceCodes = _memoryCache
+            .Where(ec => ec.DatasetAliases is not null && ec.DatasetAliases.Count > 0);
+        foreach (var aliasedEvidenceCode in aliasedEvidenceCodes)
+        {
+            foreach (var alias in aliasedEvidenceCode.DatasetAliases!)
+            {
+                aliases.Add(alias.Value, aliasedEvidenceCode.EvidenceCodeName);
+            }
+        }
+
+        return aliases;
     }
 
     private void SetCacheDiagnosticsHeader(string value, bool overwrite = false)
@@ -233,9 +249,45 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         return sources;
     }
 
+    private static List<EvidenceCode> FilterEvidenceCodes(IEnumerable<EvidenceCode> evidenceCodes)
+    {
+        evidenceCodes = FilterInactive(evidenceCodes);
+        evidenceCodes = SplitAliases(evidenceCodes);
+        return evidenceCodes.ToList();
+    }
     private static List<EvidenceCode> FilterInactive(IEnumerable<EvidenceCode> evidenceCodes)
     {
         return evidenceCodes.Where(IsDatasetValid).ToList();
+    }
+
+    private static List<EvidenceCode> SplitAliases(IEnumerable<EvidenceCode> evidenceCodes)
+    {
+        var evidenceCodesList = evidenceCodes.ToList();
+        var aliasedEvidenceCodes = evidenceCodesList.Where(e => e.DatasetAliases != null && e.DatasetAliases.Count != 0).ToList();
+        var splitEvidenceCodes = new List<EvidenceCode>();
+        foreach (var evidenceCode in aliasedEvidenceCodes)
+        {
+            foreach (var alias in evidenceCode.DatasetAliases!)
+            {
+                var aliasedEvidenceCode = evidenceCode.DeepCopy();
+                aliasedEvidenceCode.ServiceContext = alias.Key;
+                aliasedEvidenceCode.BelongsToServiceContexts = [alias.Key];
+                aliasedEvidenceCode.EvidenceCodeName = alias.Value;
+                aliasedEvidenceCode.DatasetAliases = null;
+                aliasedEvidenceCode.AuthorizationRequirements = aliasedEvidenceCode
+                    .AuthorizationRequirements
+                    .Where(a =>
+                        a.AppliesToServiceContext.Count == 0 ||
+                        a.AppliesToServiceContext.Contains(alias.Key))
+                    .ToList();
+                
+                splitEvidenceCodes.Add(aliasedEvidenceCode);
+            }
+
+            evidenceCodesList.Remove(evidenceCode);
+        }
+        evidenceCodesList.AddRange(splitEvidenceCodes);
+        return evidenceCodesList;
     }
 
     private static bool IsDatasetValid(EvidenceCode dataSet)
