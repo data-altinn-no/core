@@ -20,6 +20,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     public const string AuthorizationHeader = "X-NADOBE-AUTHORIZATION";
     public const string AuthorizationHeaderLocal = "Authorization";
     public const string DefaultScope = "altinn:dataaltinnno";
+    public const string NewScopeRoot = "dan:";
 
     private static readonly object CmLockMaskinporten = new();
     private static readonly object CmLockAltinnPlatform = new();
@@ -113,7 +114,7 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
             var accessTokenJwt = headerValues.First();
             accessTokenJwt = Jwt.RemoveBearer(accessTokenJwt);
             var claimsPrincipal = await ValidateJwt(accessTokenJwt);
-            if (ValidateScopes(claimsPrincipal, DefaultScope))
+            if (ValidateScopes(claimsPrincipal))
             {
                 orgNumber = claimsPrincipal.GetOrganizationNumberClaim();
                 scopes = claimsPrincipal.GetScopes()!.ToList();
@@ -201,26 +202,24 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         }
     }
 
-    private bool ValidateScopes(ClaimsPrincipal claimsPrincipal, string requiredScopes)
+    private bool ValidateScopes(ClaimsPrincipal claimsPrincipal)
     {
-        var requiredScopeList = requiredScopes.Split(',');
         var principalScopeList = claimsPrincipal.GetScopes();
         if (principalScopeList == null)
         {
             return false;
         }
 
-        foreach (var requiredScope in requiredScopeList)
+        // Replaced with StartsWith to allow new scope root and removed foreach
+        // Old: Note that this had .Contains does a substring match. This means that a requirement for
+        // eg. altinn:somescope will be satisfied by altinn:somescope/foo or any scope containing the substring
+        // "altinn:somescope". As ":" is not a valid subscope character in Maskinporten, this ought to be
+        // safe as it cannot be abused by something like "difi:altinn:somescope"
+        if (!principalScopeList.Any(x => x.StartsWith(DefaultScope) || x.StartsWith(NewScopeRoot)))
         {
-            // Note that this use of .Contains does a substring match. This means that a requirement for
-            // eg. altinn:somescope will be satisfied by altinn:somescope/foo or any scope containing the substring
-            // "altinn:somescope". As ":" is not a valid subscope character in Maskinporten, this ought to be
-            // safe as it cannot be abused by something like "difi:altinn:somescope"
-            if (!principalScopeList.Any(x => x.Contains(requiredScope)))
-            {
-                return false;
-            }
+            return false;
         }
+        
 
         return true;
     }

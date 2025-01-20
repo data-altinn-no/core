@@ -140,6 +140,13 @@ public class EvidenceCode
     public int? Timeout { get; set; }
     
     /// <summary>
+    /// License of the evidence source data
+    /// </summary>
+    [DataMember(Name = "license")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? License { get; set; }
+    
+    /// <summary>
     /// Optional setting for aliases. Key is service context, value is Dataset name
     /// Allows for the same dataset to be shared between service contexts with different names.
     /// </summary>

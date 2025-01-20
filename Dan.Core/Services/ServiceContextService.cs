@@ -269,7 +269,12 @@ public class ServiceContextService : IServiceContextService
                         PartyRequirements = new List<AccreditationPartyRequirementType>() { AccreditationPartyRequirementType.RequestorAndOwnerAreEqual }
                     }
                 }
-            }
+            },                    
+            new ServiceContext() {
+                Name = "Digøk-friv",
+                Id = "digokfriv-product", 
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }                
+            },
         };
 
         return await Task.FromResult(serviceContexts);
