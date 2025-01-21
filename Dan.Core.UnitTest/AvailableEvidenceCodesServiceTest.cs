@@ -61,10 +61,10 @@ namespace Dan.Core.UnitTest
             {
                 EvidenceCodeName = "ec3",
                 BelongsToServiceContexts = new List<string> { "sc1", "sc2" },
-                DatasetAliases = new Dictionary<string, string>
+                DatasetAliases = new List<DatasetAlias>
                 {
-                    {"sc1", "a1"},
-                    {"sc2", "a2"}
+                    new() {ServiceContext = "sc1", DatasetAliasName = "a1"},
+                    new() {ServiceContext = "sc2", DatasetAliasName = "a2"}
                 },
                 AuthorizationRequirements = new List<Requirement>
                 {

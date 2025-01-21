@@ -36,10 +36,10 @@ public class Metadata : IEvidenceSourceMetadata
                 EvidenceCodeName = PluginConstants.DatasetOne,
                 EvidenceSource = PluginConstants.Source,
                 BelongsToServiceContexts = _serviceContexts,
-                DatasetAliases = new Dictionary<string, string>()
+                DatasetAliases = new List<DatasetAlias>()
                 {
-                    { DanTest, "AliasOne" },
-                    { AltinnStudioApps, "AliasTwo" },
+                    new (){ ServiceContext = DanTest, DatasetAliasName = "AliasOne" },
+                    new (){ ServiceContext = AltinnStudioApps, DatasetAliasName = "AliasTwo" },
                 },
                 Values =
                 [

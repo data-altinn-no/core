@@ -147,10 +147,10 @@ public class EvidenceCode
     public string? License { get; set; }
     
     /// <summary>
-    /// Optional setting for aliases. Key is service context, value is Dataset name
+    /// Optional setting for aliases
     /// Allows for the same dataset to be shared between service contexts with different names.
     /// </summary>
     [DataMember(Name = "datasetAliases")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public Dictionary<string,string>? DatasetAliases { get; set; }
+    public List<DatasetAlias>? DatasetAliases { get; set; }
 }

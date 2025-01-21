@@ -105,7 +105,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         {
             foreach (var alias in aliasedEvidenceCode.DatasetAliases!)
             {
-                aliases.Add(alias.Value, aliasedEvidenceCode.EvidenceCodeName);
+                aliases.Add(alias.DatasetAliasName, aliasedEvidenceCode.EvidenceCodeName);
             }
         }
 
@@ -270,15 +270,15 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             foreach (var alias in evidenceCode.DatasetAliases!)
             {
                 var aliasedEvidenceCode = evidenceCode.DeepCopy();
-                aliasedEvidenceCode.ServiceContext = alias.Key;
-                aliasedEvidenceCode.BelongsToServiceContexts = [alias.Key];
-                aliasedEvidenceCode.EvidenceCodeName = alias.Value;
+                aliasedEvidenceCode.ServiceContext = alias.ServiceContext;
+                aliasedEvidenceCode.BelongsToServiceContexts = [alias.ServiceContext];
+                aliasedEvidenceCode.EvidenceCodeName = alias.DatasetAliasName;
                 aliasedEvidenceCode.DatasetAliases = null;
                 aliasedEvidenceCode.AuthorizationRequirements = aliasedEvidenceCode
                     .AuthorizationRequirements
                     .Where(a =>
                         a.AppliesToServiceContext.Count == 0 ||
-                        a.AppliesToServiceContext.Contains(alias.Key))
+                        a.AppliesToServiceContext.Contains(alias.ServiceContext))
                     .ToList();
                 
                 splitEvidenceCodes.Add(aliasedEvidenceCode);
