@@ -1,5 +1,6 @@
 ﻿namespace Dan.Common;
 
+#pragma warning disable 1591
 /// <summary>
 /// Shared constants in Dan
 /// </summary>
@@ -81,3 +82,4 @@ public static class TextMacros
     public const string ConsentAndExternalReference = "#ConsentAndExternalReference#";
 
 }
+#pragma warning restore 1591

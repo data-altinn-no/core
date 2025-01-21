@@ -11,11 +11,18 @@ namespace Dan.Common.Compat;
 /// </summary>
 public class AuthorizationRequirementJsonConverter : System.Text.Json.Serialization.JsonConverter<Requirement>
 {
+    /// <summary>
+    /// Not implemented
+    /// </summary>
+    /// <exception cref="NotImplementedException"></exception>
     public override Requirement Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }
 
+    /// <summary>
+    /// Standard jsonconverter write implementation
+    /// </summary>
     public override void Write(Utf8JsonWriter writer, Requirement value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();

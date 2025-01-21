@@ -14,6 +14,9 @@ public class AccreditationPartyRequirement : Requirement
     [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
     public List<AccreditationPartyRequirementType> PartyRequirements { get; set; }
 
+    /// <summary>
+    /// Default constructor, sets PartyRequirements to a new empty list
+    /// </summary>
     public AccreditationPartyRequirement()
     {
         PartyRequirements = new List<AccreditationPartyRequirementType>();

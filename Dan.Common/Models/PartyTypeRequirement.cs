@@ -13,6 +13,9 @@ public class PartyTypeRequirement : Requirement
     [Required]
     public AllowedPartyTypesList AllowedPartyTypes { get; set; }
 
+    /// <summary>
+    /// Default constructor, sets AllowedPartyTypes to new instance
+    /// </summary>
     public PartyTypeRequirement()
     {
         AllowedPartyTypes = new AllowedPartyTypesList();

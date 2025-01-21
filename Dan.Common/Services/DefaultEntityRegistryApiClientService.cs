@@ -2,15 +2,24 @@
 using Dan.Common.Interfaces;
 
 namespace Dan.Common.Services;
+/// <summary>
+/// Default implementation of IEntityRegistryApiClientService
+/// </summary>
 public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientService
 {
     private readonly IHttpClientFactory _clientFactory;
 
+    /// <summary>
+    /// Default constructor, sets _clientfactory to provided IHttpClientFactory
+    /// </summary>
     public DefaultEntityRegistryApiClientService(IHttpClientFactory clientFactory)
     {
         _clientFactory = clientFactory;
     }
 
+    /// <summary>
+    /// Get entity registry unit
+    /// </summary>
     public async Task<EntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri)
     {
         var client = _clientFactory.CreateClient("entityRegistryClient");

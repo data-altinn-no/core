@@ -14,6 +14,9 @@ public class WhiteListRequirement : Requirement
     [Required]
     public List<KeyValuePair<AccreditationPartyTypes, string>> AllowedParties { get; set; }
 
+    /// <summary>
+    /// Default constructor, sets AllowedParties to new List
+    /// </summary>
     public WhiteListRequirement()
     {
         AllowedParties = new List<KeyValuePair<AccreditationPartyTypes, string>>();

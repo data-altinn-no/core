@@ -13,6 +13,9 @@ using Polly.Registry;
 
 namespace Dan.Common.Extensions;
 
+/// <summary>
+/// HostBuilder extensions for setting up Dan plugin default configurations
+/// </summary>
 public static class HostBuilderExtensions
 {
     /// <summary>
