@@ -25,9 +25,16 @@ public class Requirement
     [DataMember(Name = "appliesToServiceContext")]
     public List<string> AppliesToServiceContext = new();
 
+    /// <summary>
+    /// Flag if requirement is needed on evidence harvester
+    /// </summary>
     [DataMember(Name = "requiredOnEvidenceHarvester")]
     public bool RequiredOnEvidenceHarvester = true;
 
+    /// <summary>
+    /// This causes Json.NET to skip serializing AppliesToServiceContext if it's empty, as it
+    /// may be confusing that this being empty means it applies to _all_ service contexts
+    /// </summary>
     public bool ShouldSerializeAppliesToServiceContext()
     {
         // This causes Json.NET to skip serializing AppliesToServiceContext if it's empty, as it

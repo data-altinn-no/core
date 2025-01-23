@@ -5,8 +5,19 @@
 /// </summary>
 public class LocalizedString
 {
+    /// <summary>
+    /// English
+    /// </summary>
     public string? En { get; set; }
+    
+    /// <summary>
+    /// Bokmål
+    /// </summary>
     public string? NoNb { get; set; }
+    
+    /// <summary>
+    /// Nynorsk
+    /// </summary>
     public string? NoNn { get; set; }
 
 }

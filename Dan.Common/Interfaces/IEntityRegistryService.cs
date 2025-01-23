@@ -1,4 +1,8 @@
 ﻿namespace Dan.Common.Interfaces;
+
+/// <summary>
+/// Service for handling entity registry
+/// </summary>
 public interface IEntityRegistryService
 {
     /// <summary>

@@ -2,6 +2,8 @@
 
 namespace Dan.Common.Models;
 
+// Not our model, can add descriptions to fields on request
+#pragma warning disable 1591
 // ReSharper disable once InconsistentNaming
 public class EntityRegistryUnit
 {
@@ -165,3 +167,4 @@ public class Organisasjonsform
     [JsonProperty("_links", Required = Required.Always)]
     public Links Links { get; set; } = null!;
 }
+#pragma warning restore 1591

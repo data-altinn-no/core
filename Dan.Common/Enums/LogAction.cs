@@ -1,38 +1,63 @@
 ﻿namespace Dan.Common.Enums;
 
+/// <summary>
+/// Log action enum
+/// </summary>
 public enum LogAction
 {
-    // Used once per accreditation
+    /// <summary>
+    /// Used once per accreditation
+    /// </summary>
     AuthorizationGranted = 1,
 
-    // Used per consent request (one accreditation may incur several consent requests, each of which may span
-    // several datasets
+    /// <summary>
+    /// Used per consent request (one accreditation may incur several consent requests, each of which may span
+    /// several datasets
+    /// </summary>
     ConsentRequested = 2,
 
-    // As with ConsentRequested
+    /// <summary>
+    /// As with ConsentRequested
+    /// </summary>
     ConsentGiven = 3,
 
-    // As with ConsentRequested
+    /// <summary>
+    /// As with ConsentRequested
+    /// </summary>
     ConsentDenied = 4,
 
-    // Used for each harvest performed, of which there may be several per accreditation
+    /// <summary>
+    /// Used for each harvest performed, of which there may be several per accreditation
+    /// </summary>
     DatasetRetrieved = 5,
 
-    // As with ConsentRequested
+    /// <summary>
+    /// As with ConsentRequested
+    /// </summary>
     ConsentReminderSent = 6,
 
-    // Used when a open data set harvest is performed
+    /// <summary>
+    /// Used when a open data set harvest is performed
+    /// </summary>
     OpenDatasetRetrieved = 7,
 
-    // Used once per accreditation
+    /// <summary>
+    /// Used once per accreditation
+    /// </summary>
     AccreditationDeleted = 8,
 
-    // Used per data set requested for each AuthorizationGranted
+    /// <summary>
+    /// Used per data set requested for each AuthorizationGranted
+    /// </summary>
     DatasetRequested = 9,
 
-    // Used for each dataset in a consent request
+    /// <summary>
+    /// Used for each dataset in a consent request
+    /// </summary>
     DatasetRequiringConsentRequested = 10,
 
-    // Used for each correspondence sent related to consent requests (may be skipped, so counted seperately)
+    /// <summary>
+    /// Used for each correspondence sent related to consent requests (may be skipped, so counted seperately)
+    /// </summary>
     CorrespondenceSent = 11,
 }

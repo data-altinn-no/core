@@ -1,5 +1,8 @@
 ﻿namespace Dan.Common.Models;
 
+/// <summary>
+/// Settings for handing access tokens for evidence harvesting
+/// </summary>
 public class EvidenceHarvesterOptions
 {
     /// <summary>

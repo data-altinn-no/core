@@ -25,7 +25,8 @@
     <Authors>Altinn</Authors>
     <PackageProjectUrl>https://data.altinn.no</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright (c) Digitaliseringsdirektoratet 2022</Copyright>
+    <Copyright>Copyright (c) Digitaliseringsdirektoratet 2025</Copyright>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

@@ -47,6 +47,9 @@ public class Accreditation
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public EvidenceStatusCode AggregateStatus { get; set; } = EvidenceStatusCode.Unknown;
 
+    /// <summary>
+    /// Flag to show if the accreditation is made from a direct harvest request
+    /// </summary>
     [DataMember(Name = "isDirectHarvest")]
     public bool IsDirectHarvest { get; set; }
 

@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 
 namespace Dan.Common.Util;
 
+//Obsolete, not adding descriptions
+#pragma warning disable 1591
 [Obsolete("Please use AsyncKeyedLocker<T> instead.")]
 public class KeyedLock<TKey> where TKey : notnull
 {
@@ -40,3 +42,4 @@ public class KeyedLock<TKey> where TKey : notnull
     public void Wait(TKey key, CancellationToken cancellationToken = default)
         => Wait(key, Timeout.Infinite, cancellationToken);
 }
+#pragma warning restore 1591

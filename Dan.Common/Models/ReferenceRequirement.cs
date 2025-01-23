@@ -1,5 +1,8 @@
 ﻿namespace Dan.Common.Models;
 
+/// <summary>
+/// Requirement for reference
+/// </summary>
 [DataContract]
 public class ReferenceRequirement : Requirement
 {

@@ -1,5 +1,8 @@
 ﻿namespace Dan.Common.Enums;
 
+/// <summary>
+/// Enum for determining what action to take if auth request is not satisfied
+/// </summary>
 public enum FailureAction
 {
     /// <summary>

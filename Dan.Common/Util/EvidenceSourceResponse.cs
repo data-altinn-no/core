@@ -9,6 +9,9 @@ namespace Dan.Common.Util;
 public static class EvidenceSourceResponse
 {
 
+    /// <summary>
+    /// Returns an evidence value response
+    /// </summary>
     public static async Task<HttpResponseData> CreateResponse(HttpRequestData req, Func<Task<List<EvidenceValue>>> func)
     {
         try

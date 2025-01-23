@@ -60,12 +60,21 @@ public class AuthorizationRequest
     [DataMember(Name = "externalReference")]
     public string? ExternalReference { get; set; }
 
+    /// <summary>
+    /// Language code for the authorization request
+    /// </summary>
     [DataMember(Name = "languageCode")]
     public string? LanguageCode { get; set; }
 
+    /// <summary>
+    /// Redirect url for the consent receipt
+    /// </summary>
     [DataMember(Name = "consentReceiptRedirectUrl")]
     public string? ConsentReceiptRedirectUrl { get; set; }
 
+    /// <summary>
+    /// Flag to skip sending notification in Altinn
+    /// </summary>
     [DataMember(Name = "skipAltinnNotification")]
     public bool SkipAltinnNotification { get; set; }
 

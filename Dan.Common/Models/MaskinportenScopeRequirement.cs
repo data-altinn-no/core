@@ -13,6 +13,9 @@ public class MaskinportenScopeRequirement : Requirement
     [Required]
     public List<string> RequiredScopes { get; set; }
 
+    /// <summary>
+    /// Default constructor, sets RequiredScopes to new empty list
+    /// </summary>
     public MaskinportenScopeRequirement()
     {
         RequiredScopes = new List<string>();

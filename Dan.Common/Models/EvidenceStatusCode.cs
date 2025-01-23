@@ -67,14 +67,16 @@ public class EvidenceStatusCode : IEquatable<EvidenceStatusCode>
     [DataMember(Name = "retryAt")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public DateTime? RetryAt { get; set; }
-
+    
+    // Some default methods on method, shoud be self describing without descriptions what they do
+#pragma warning disable 1591    
     public bool Equals(EvidenceStatusCode? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
         return Code == other.Code;
     }
-
+    
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj)) return false;
@@ -82,7 +84,7 @@ public class EvidenceStatusCode : IEquatable<EvidenceStatusCode>
         if (obj.GetType() != GetType()) return false;
         return Equals((EvidenceStatusCode)obj);
     }
-
+    
     public override int GetHashCode()
     {
         return Code.GetHashCode();
@@ -97,4 +99,5 @@ public class EvidenceStatusCode : IEquatable<EvidenceStatusCode>
     {
         return !Equals(left, right);
     }
+#pragma warning restore 1591
 }
