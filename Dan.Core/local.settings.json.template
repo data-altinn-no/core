@@ -24,6 +24,8 @@
     "FunctionKeyValue": null,
     "MaskinportenClientId": null,
     "ConsentValidationSecrets": "PRIMARY_SECRET,SECONDARY_SECRET",
+    "ApplicationInsightsResourceId": null,
+    "ApplicationInsightsCloudRoleName": null,
     // Secrets end here. All the above secrets should have a corresponding entry below with KeyVault-prefix, which Settings.cs should then use/cache instead.
 
     // Keyvault secret names begin here
