@@ -108,6 +108,7 @@ var host = new HostBuilder()
         services.AddScoped<IRequirementValidationService, RequirementValidationService>();
         services.AddScoped<IAuthorizationRequestValidatorService, AuthorizationRequestValidatorService>();
         services.AddScoped<IRequestContextService, RequestContextService>();
+        services.AddScoped<IUsageStatisticsService, UsageStatisticsService>();
 
         services.AddTransient<ExceptionDelegatingHandler>();
 

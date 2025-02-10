@@ -369,6 +369,9 @@ public static class Settings
     public const int MaxReferenceLength = 50;
 
     public static int DefaultHarvestTaskCancellation = 35;
+    
+    public static string ApplicationInsightsResourceId => GetSetting("ApplicationInsightsResourceId");
+    public static string ApplicationInsightsCloudRoleName => GetSetting("ApplicationInsightsCloudRoleName");
 
     private static string GetSetting(string settingKey)
     {
