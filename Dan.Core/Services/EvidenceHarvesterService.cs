@@ -102,8 +102,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         {
             OrganizationNumber = identifier,
             SubjectParty = PartyParser.GetPartyFromIdentifier(identifier, out string? _),
-            EvidenceCodeName = evidenceCode.EvidenceCodeName,
-            Parameters = evidenceCode.Parameters
+            EvidenceCodeName = evidenceCode.EvidenceCodeName           
         };
 
         using (var _ = _log.Timer($"{evidenceCode.EvidenceCodeName}-harvest"))
