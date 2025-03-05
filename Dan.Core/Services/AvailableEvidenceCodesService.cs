@@ -1,4 +1,5 @@
-﻿using Dan.Common.Models;
+﻿using System.Net.Http.Headers;
+using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
 using Dan.Core.Services.Interfaces;
@@ -11,6 +12,7 @@ using Dan.Core.Helpers;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using AsyncKeyedLock;
+using Azure.Identity;
 
 namespace Dan.Core.Services;
 
@@ -205,9 +207,16 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
     private async Task<List<EvidenceCode>> GetEvidenceCodesFromSource(EvidenceSource source)
     {
         var client = _httpClientFactory.CreateClient(HttpClientName);
-
         try
         {
+            // TEMP CODE pls
+            var creds = new DefaultAzureCredential();
+            var token = await creds.GetTokenAsync(new Azure.Core.TokenRequestContext([
+                ".default"
+            ]));
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+            // VERY TEMP ABOVE make handler first pls just for testing
+            
             var request = new HttpRequestMessage(HttpMethod.Get, source.Url);
             request.Headers.Add("Accept", "application/json");
             var response = await client.SendAsync(request);
