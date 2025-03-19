@@ -1,4 +1,4 @@
-﻿using System.Net;
+﻿using Dan.Common;
 using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Config;
@@ -113,7 +113,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
             try
             {
-                var client = _httpClientFactory.CreateClient("SafeHttpClient");
+                var client = _httpClientFactory.CreateClient(Constants.PluginHttpClient);
                 harvestedEvidence = (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
                     request,
                     () => client.SendAsync(request, cts.Token)))!;
@@ -146,7 +146,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
         try
         {
-            var client = _httpClientFactory.CreateClient("SafeHttpClient");
+            var client = _httpClientFactory.CreateClient(Constants.PluginHttpClient);
             
             // When attempting to stream from the evidence source, we simplify error handling
             var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cts.Token);
@@ -176,7 +176,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         request.SetPolicyExecutionContext(new Context(request.Key(CacheArea.Absolute)));
         try
         {
-            var client = _httpClientFactory.CreateClient("SafeHttpClient");
+            var client = _httpClientFactory.CreateClient(Constants.PluginHttpClient);
             return (await EvidenceSourceHelper.DoRequest<List<EvidenceValue>>(
                 request,
                 () => client.SendAsync(request, cts.Token)))!;

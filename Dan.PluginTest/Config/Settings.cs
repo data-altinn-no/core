@@ -2,5 +2,5 @@
 
 public class Settings
 {
-    
+    public string PluginCode { get; set; }
 }

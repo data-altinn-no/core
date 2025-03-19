@@ -209,14 +209,6 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
         var client = _httpClientFactory.CreateClient(HttpClientName);
         try
         {
-            // TEMP CODE pls
-            var creds = new DefaultAzureCredential();
-            var token = await creds.GetTokenAsync(new Azure.Core.TokenRequestContext([
-                ".default"
-            ]));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
-            // VERY TEMP ABOVE make handler first pls just for testing
-            
             var request = new HttpRequestMessage(HttpMethod.Get, source.Url);
             request.Headers.Add("Accept", "application/json");
             var response = await client.SendAsync(request);

@@ -14,6 +14,8 @@ public static class Constants
     public const string SafeHttpClient = "SafeHttpClient";
 
     public const string SafeHttpClientPolicy = "SafeHttpClientPolicy";
+    
+    public const string PluginHttpClient = "PluginHttpClient";
 
     public const string LANGUAGE_CODE_NORWEGIAN_NB = "no-nb";
 

@@ -1,5 +1,7 @@
 using System.Reflection;
 using Azure.Core.Serialization;
+using Dan.Common;
+using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Common.Services;
@@ -109,8 +111,9 @@ var host = new HostBuilder()
         services.AddScoped<IAuthorizationRequestValidatorService, AuthorizationRequestValidatorService>();
         services.AddScoped<IRequestContextService, RequestContextService>();
         services.AddScoped<IUsageStatisticsService, UsageStatisticsService>();
-
+        
         services.AddTransient<ExceptionDelegatingHandler>();
+        services.AddTransient<PluginAuthorizationMessageHandler>();
 
         services.AddPolicyRegistry(new PolicyRegistry()
             {
@@ -140,14 +143,23 @@ var host = new HostBuilder()
                 }
             });
 
-        // Default client to use in harvesting
-        services.AddHttpClient("SafeHttpClient", client =>
+        // Default clients to use in harvesting
+        services.AddHttpClient(Constants.SafeHttpClient, client =>
             {
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 client.BaseAddress = new Uri(Settings.ApiUrl);
             })
             .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
             .AddHttpMessageHandler<ExceptionDelegatingHandler>();
+        
+        services.AddHttpClient(Constants.PluginHttpClient, client =>
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.BaseAddress = new Uri(Settings.ApiUrl);
+            })
+            .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>()
+            .AddHttpMessageHandler<PluginAuthorizationMessageHandler>();
 
         // Client used for getting evidence code lists from data sources
         services.AddHttpClient("EvidenceCodesClient", client =>
@@ -155,7 +167,8 @@ var host = new HostBuilder()
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 client.Timeout = TimeSpan.FromSeconds(25);
             })
-            .AddHttpMessageHandler<ExceptionDelegatingHandler>();
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>()
+            .AddHttpMessageHandler<PluginAuthorizationMessageHandler>();
 
         // Client with enterprise certificate authentication
         services.AddHttpClient("ECHttpClient", client =>

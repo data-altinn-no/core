@@ -1,5 +1,6 @@
 using System.Reflection;
 using Azure.Core.Serialization;
+using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
 using Dan.Common.Services;
 using Microsoft.Azure.Functions.Worker;
@@ -51,7 +52,7 @@ public static class HostBuilderExtensions
                 services.AddHttpClient();
                 services.AddApplicationInsightsTelemetryWorkerService();
                 services.ConfigureFunctionsApplicationInsights();
-
+                
                 // You will need extra configuration because AI will only log per default Warning (default AI configuration). As this is a provider-specific
                 // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
                 // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
@@ -98,11 +99,20 @@ public static class HostBuilderExtensions
                 services.AddHttpClient(Constants.SafeHttpClient,
                         client => { client.Timeout = TimeSpan.FromSeconds(httpClientTimeoutSeconds); })
                     .AddPolicyHandlerFromRegistry(Constants.SafeHttpClientPolicy);
+                
+                // Using safehttpclient settings, but will add auth handler for talking with plugins
+                services.AddHttpClient(Constants.PluginHttpClient,
+                        client => { client.Timeout = TimeSpan.FromSeconds(httpClientTimeoutSeconds); })
+                    .AddPolicyHandlerFromRegistry(Constants.SafeHttpClientPolicy)
+                    .AddHttpMessageHandler<PluginAuthorizationMessageHandler>();
 
                 // Add a common service to fetch information from the CCR ("Enhetsregisteret"). Using a default API-client (which just wraps a HttpClient), which
                 // calls a proxy in Core by default. Core uses the same service, but a different IEntityRegistryApiClientService which utilizes a distributed cache.
                 services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
                 services.AddSingleton<IEntityRegistryApiClientService, DefaultEntityRegistryApiClientService>();
+                
+                services.AddTransient<PluginAuthorizationMessageHandler>();
+                services.AddTransient<IDanPluginClientService, DanPluginClientService>();
 
                 // Try to add the first IEvidenceSourceMetadata implementation we can find in the entry assembly
                 var evidenceSourceMetadataServiceType = typeof(IEvidenceSourceMetadata);

@@ -144,6 +144,16 @@ public enum ErrorCode
     /// An invalid JMES Path expression was supplied
     /// </summary>
     InvalidJmesPathExpressionException = 1027,
+    
+    /// <summary>
+    /// Exception from upstream
+    /// </summary>
+    UpstreamException = 1028,
+    
+    /// <summary>
+    /// Quota exceeded
+    /// </summary>
+    QuotaExceededException = 1029,
 
     ////
     //// Error codes for evidence source implementations (3xxx)
