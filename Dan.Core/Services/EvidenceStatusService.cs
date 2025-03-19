@@ -88,7 +88,7 @@ public class EvidenceStatusService : IEvidenceStatusService
             _logger.LogInformation("Start get evidence list aid={accreditationId}", accreditation.AccreditationId);
             foreach (var code in accreditation.EvidenceCodes)
             {
-                list.Add(await GetEvidenceStatusAsync(accreditation, code, false));
+                list.Add(await GetEvidenceStatusAsync(accreditation, code, true));
             }
 
             _logger.LogInformation("Completed get evidence list aid={accreditationId} numevidence={numEvidence} evidence={evidence} elapsedMs={elapsedMs}", accreditation.AccreditationId,

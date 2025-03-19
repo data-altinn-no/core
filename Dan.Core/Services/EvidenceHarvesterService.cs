@@ -38,7 +38,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         var evidenceCode = accreditation.GetValidEvidenceCode(evidenceCodeName);
 
         _log.LogInformation("Start get evidence status | aid={accreditationId}, evidenceCode={evidenceCodeName}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
-        var evidenceStatus = await _evidenceStatusService.GetEvidenceStatusAsync(accreditation, evidenceCode, onlyLocalChecks:true);
+        var evidenceStatus = await _evidenceStatusService.GetEvidenceStatusAsync(accreditation, evidenceCode, onlyLocalChecks:false);
 
         ThrowIfNotAvailableForHarvest(evidenceStatus);
 
