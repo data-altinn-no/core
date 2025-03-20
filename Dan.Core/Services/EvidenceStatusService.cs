@@ -1,4 +1,5 @@
-﻿using Dan.Common.Enums;
+﻿using Dan.Common;
+using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Extensions;
 using Dan.Core.Helpers;
@@ -168,7 +169,7 @@ public class EvidenceStatusService : IEvidenceStatusService
         };
 
         request.JsonContent(evidenceHarvesterRequest);
-        var client = _clientFactory.CreateClient("SafeHttpClient");
+        var client = _clientFactory.CreateClient(Constants.PluginHttpClient);
 
         return (await EvidenceSourceHelper.DoRequest<EvidenceStatusCode>(
             request,

@@ -69,6 +69,20 @@ public class Metadata : IEvidenceSourceMetadata
                             .ToJson(Newtonsoft.Json.Formatting.Indented)
                     }
                 ]
+            },
+            new EvidenceCode
+            {
+                EvidenceCodeName = PluginConstants.PluginForward,
+                EvidenceSource = PluginConstants.Source,
+                ServiceContext = DanTest,
+                Values =
+                [
+                    new EvidenceValue
+                    {
+                        EvidenceValueName = "default",
+                        ValueType = EvidenceValueType.JsonSchema
+                    }
+                ]
             }
         ];
     }
