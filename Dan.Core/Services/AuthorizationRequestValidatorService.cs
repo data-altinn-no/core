@@ -73,6 +73,11 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         {
             await ValidateSubjectHasValidEntryInEntityRegister();
         }
+        
+        if (_authRequest.RequestorParty.NorwegianOrganizationNumber != null)
+        {
+            await ValidateRequestorHasValidEntryInEntityRegister();
+        }
 
         ValidateLanguageCodes();
 
@@ -304,6 +309,26 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         if (entity.IsDeleted)
         {
             throw new InvalidSubjectException("Subject (" + _authRequest.Subject + ") is deleted from the Central Coordinating Register for Legal Entities");
+        }
+    }
+    
+    private async Task ValidateRequestorHasValidEntryInEntityRegister()
+    {
+        if (_authRequest.Requestor == null)
+        {
+            throw new InvalidSubjectException("Requestor was not set");
+        }
+
+        var entity = await _entityRegistryService.Get(_authRequest.Requestor);
+
+        if (entity == null)
+        {
+            throw new InvalidSubjectException("Requestor (" + _authRequest.Requestor + ") was not found in the Central Coordinating Register for Legal Entities");
+        }
+
+        if (entity.IsDeleted)
+        {
+            throw new InvalidSubjectException("Requestor (" + _authRequest.Requestor + ") is deleted from the Central Coordinating Register for Legal Entities");
         }
     }
 
