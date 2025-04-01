@@ -110,7 +110,8 @@ public static class HostBuilderExtensions
                 // calls a proxy in Core by default. Core uses the same service, but a different IEntityRegistryApiClientService which utilizes a distributed cache.
                 services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
                 services.AddSingleton<IEntityRegistryApiClientService, DefaultEntityRegistryApiClientService>();
-                
+
+                services.AddMemoryCache();
                 services.AddTransient<PluginAuthorizationMessageHandler>();
                 services.AddTransient<IDanPluginClientService, DanPluginClientService>();
 

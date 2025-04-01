@@ -143,6 +143,8 @@ var host = new HostBuilder()
                 }
             });
 
+        // memory cache used for plugin auth handler
+        services.AddMemoryCache();
         // Default clients to use in harvesting
         services.AddHttpClient(Constants.SafeHttpClient, client =>
             {
