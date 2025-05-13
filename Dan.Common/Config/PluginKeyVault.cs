@@ -41,7 +41,7 @@ public class PluginKeyVault
     }
 
     /// <summary>
-    /// Get a certificate from the key vault
+    /// Get a X509 certificate from the key vault
     /// </summary>
     /// <param name="key">Certificate name</param>
     /// <returns>The certificate</returns>
@@ -57,15 +57,5 @@ public class PluginKeyVault
         var cert = new X509Certificate2(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet);
 
         return await Task.FromResult(cert);
-    }
-
-    /// <summary>
-    /// Get a certificate from the key vault as Base64
-    /// </summary>
-    /// <param name="key">Certificate name</param>
-    /// <returns>The certificate</returns>
-    public async Task<string?> GetCertificateAsBase64(string? key)
-    {
-        return await Get(key);
     }
 }

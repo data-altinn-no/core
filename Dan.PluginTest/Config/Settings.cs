@@ -12,7 +12,7 @@ public class Settings
     private string? _cert;
     public string? Certificate
     {
-        get => _cert ?? new PluginKeyVault(KeyVaultName).GetCertificateAsBase64(CertName).Result;
+        get => _cert ?? new PluginKeyVault(KeyVaultName).Get(CertName).Result;
         set => _cert = value;
     }
 }
