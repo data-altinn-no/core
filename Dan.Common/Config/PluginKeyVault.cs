@@ -37,7 +37,7 @@ public class PluginKeyVault
         }
         
         var secret = await SecretClient.GetSecretAsync(key);
-        return secret.Value.Value;
+        return secret?.Value?.Value;
     }
 
     /// <summary>
