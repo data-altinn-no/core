@@ -94,6 +94,30 @@ public class Plugin(
             () => FetchPluginValue(evidenceHarvesterRequest));
     }
     
+    // Used to test app settings - particularly getting settings from keyvault
+    [Function(PluginConstants.PluginSettingsTest)]
+    public async Task<HttpResponseData> PluginSettingsTest(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req,
+        FunctionContext context)
+    {
+        EvidenceHarvesterRequest? evidenceHarvesterRequest;
+        try
+        {
+            evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e,
+                "Exception while attempting to parse request into EvidenceHarvesterRequest: {exceptionType}: {exceptionMessage}",
+                e.GetType().Name, e.Message);
+            throw new EvidenceSourcePermanentClientException(PluginConstants.ErrorInvalidInput,
+                "Unable to parse request", e);
+        }
+
+        return await EvidenceSourceResponse.CreateResponse(req,
+            () => EvidenceValuesPluginSettings(evidenceHarvesterRequest));
+    }
+    
     private async Task<List<EvidenceValue>> GetEvidenceValuesDatasetOne(
         EvidenceHarvesterRequest? evidenceHarvesterRequest)
     {
@@ -134,6 +158,17 @@ public class Plugin(
         var ecb = new EvidenceBuilder(evidenceSourceMetadata, PluginConstants.DatasetOne);
         ecb.AddEvidenceValue("default", response, PluginConstants.Source);
 
+        return ecb.GetEvidenceValues();
+    }
+    
+    private async Task<List<EvidenceValue>> EvidenceValuesPluginSettings(
+        EvidenceHarvesterRequest? evidenceHarvesterRequest)
+    {
+        var ecb = new EvidenceBuilder(evidenceSourceMetadata, PluginConstants.PluginSettingsTest);
+        var certFetched = !string.IsNullOrWhiteSpace(_settings.Certificate);
+        ecb.AddEvidenceValue("certSuccessfullyFetched", certFetched, PluginConstants.Source);
+
+        await Task.CompletedTask;
         return ecb.GetEvidenceValues();
     }
 }

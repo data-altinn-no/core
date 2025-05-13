@@ -83,6 +83,20 @@ public class Metadata : IEvidenceSourceMetadata
                         ValueType = EvidenceValueType.JsonSchema
                     }
                 ]
+            },
+            new EvidenceCode
+            {
+                EvidenceCodeName = PluginConstants.PluginSettingsTest,
+                EvidenceSource = PluginConstants.Source,
+                ServiceContext = DanTest,
+                Values =
+                [
+                    new EvidenceValue
+                    {
+                        EvidenceValueName = "certSuccessfullyFetched",
+                        ValueType = EvidenceValueType.Boolean
+                    }
+                ]
             }
         ];
     }

@@ -12,4 +12,5 @@ public static class PluginConstants
     public const string DatasetTwo = "DatasetTwo";
     
     public const string PluginForward = "PluginForward";
+    public const string PluginSettingsTest = "PluginSettingsTest";
 }
