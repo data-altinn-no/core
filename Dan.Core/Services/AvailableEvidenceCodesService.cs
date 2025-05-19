@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Headers;
-using Dan.Common.Models;
+﻿using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
 using Dan.Core.Services.Interfaces;
@@ -12,47 +11,30 @@ using Dan.Core.Helpers;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using AsyncKeyedLock;
-using Azure.Identity;
 
 namespace Dan.Core.Services;
 
-public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
+public class AvailableEvidenceCodesService(
+    ILoggerFactory loggerFactory,
+    IHttpClientFactory httpClientFactory,
+    IPolicyRegistry<string> policyRegistry,
+    IServiceContextService serviceContextService,
+    IFunctionContextAccessor functionContextAccessor)
+    : IAvailableEvidenceCodesService
 {
     public static TimeSpan DistributedCacheTtl = TimeSpan.FromHours(12);
+    private readonly ILogger<IAvailableEvidenceCodesService> _logger = loggerFactory.CreateLogger<AvailableEvidenceCodesService>();
 
-    private readonly ILogger<IAvailableEvidenceCodesService> _logger;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IPolicyRegistry<string> _policyRegistry;
-    private readonly IDistributedCache _distributedCache;
-    private readonly IServiceContextService _serviceContextService;
-
-    private List<EvidenceCode> _memoryCache = new();
+    private List<EvidenceCode> _memoryCache = [];
     private DateTime _updateMemoryCache = DateTime.MinValue;
     private readonly AsyncNonKeyedLocker _semaphoreForceRefresh = new(1);
     private readonly AsyncNonKeyedLocker _semaphore = new(1);
-    private readonly IFunctionContextAccessor _functionContextAccessor;
-    private const int MemoryCacheTtlSeconds = 120;
+    private const int MemoryCacheTtlSeconds = 600;
 
     private const string CachingPolicy = "EvidenceCodesCachePolicy";
     private const string HttpClientName = "EvidenceCodesClient";
     private const string CacheContextKey = "AvailableEvidenceCodes";
     private const string CacheResponseHeader = "x-cache";
-
-    public AvailableEvidenceCodesService(
-        ILoggerFactory loggerFactory,
-        IHttpClientFactory httpClientFactory,
-        IPolicyRegistry<string> policyRegistry,
-        IDistributedCache distributedCache,
-        IServiceContextService serviceContextService,
-        IFunctionContextAccessor functionContextAccessor)
-    {
-        _logger = loggerFactory.CreateLogger<AvailableEvidenceCodesService>();
-        _httpClientFactory = httpClientFactory;
-        _policyRegistry = policyRegistry;
-        _distributedCache = distributedCache;
-        _serviceContextService = serviceContextService;
-        _functionContextAccessor = functionContextAccessor;
-    }
 
     /// <summary>
     /// Gets the list of current active evidence codes. This endpoint can be hit several times during a request. In order to reduce I/O to the distributed cache, it employs
@@ -116,7 +98,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private void SetCacheDiagnosticsHeader(string value, bool overwrite = false)
     {
-        var requestContextService = _functionContextAccessor.FunctionContext?.InstanceServices.GetService<IRequestContextService>();
+        var requestContextService = functionContextAccessor.FunctionContext?.InstanceServices.GetService<IRequestContextService>();
         if (requestContextService == null) return;
         if (overwrite)
         {
@@ -149,17 +131,6 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
             es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
         }
 
-        await _distributedCache.SetAsync(CacheContextKey, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
-            evidenceCodes,
-            new JsonSerializerSettings
-            {
-                TypeNameHandling = TypeNameHandling.All
-            })),
-            new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = DistributedCacheTtl
-            });
-
         _memoryCache = evidenceCodes;
         _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
     }
@@ -167,7 +138,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromDistributedCache()
     {
         SetCacheDiagnosticsHeader("hit-distributed");
-        var cachePolicy = _policyRegistry.Get<AsyncPolicy<List<EvidenceCode>>>(CachingPolicy);
+        var cachePolicy = policyRegistry.Get<AsyncPolicy<List<EvidenceCode>>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(
             async _ => await GetAvailableEvidenceCodesFromEvidenceSources(), new Context(CacheContextKey));
     }
@@ -188,7 +159,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private async Task AddServiceContextAuthorizationRequirements(List<EvidenceCode> evidenceCodes)
     {
-        var serviceContexts = await _serviceContextService.GetRegisteredServiceContexts();
+        var serviceContexts = await serviceContextService.GetRegisteredServiceContexts();
         foreach (var serviceContext in serviceContexts)
         {
             if (!serviceContext.AuthorizationRequirements.Any()) continue;
@@ -206,7 +177,7 @@ public class AvailableEvidenceCodesService : IAvailableEvidenceCodesService
 
     private async Task<List<EvidenceCode>> GetEvidenceCodesFromSource(EvidenceSource source)
     {
-        var client = _httpClientFactory.CreateClient(HttpClientName);
+        var client = httpClientFactory.CreateClient(HttpClientName);
         try
         {
             var request = new HttpRequestMessage(HttpMethod.Get, source.Url);
