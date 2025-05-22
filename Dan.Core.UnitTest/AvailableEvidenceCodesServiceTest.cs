@@ -25,7 +25,6 @@ namespace Dan.Core.UnitTest
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
         private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         private readonly Mock<AsyncPolicy<List<EvidenceCode>>> _mockAsyncPolicy = new Mock<AsyncPolicy<List<EvidenceCode>>>();
-        private readonly Mock<IDistributedCache> _mockDistributedCache = new Mock<IDistributedCache>();
         private readonly Mock<IServiceContextService> _mockServiceContextService = new Mock<IServiceContextService>();
         private readonly Mock<IFunctionContextAccessor> _mockFunctionContextAccessor = new Mock<IFunctionContextAccessor>();
 
@@ -136,7 +135,6 @@ namespace Dan.Core.UnitTest
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
-                _mockDistributedCache.Object,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
@@ -185,7 +183,6 @@ namespace Dan.Core.UnitTest
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
-                _mockDistributedCache.Object,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
