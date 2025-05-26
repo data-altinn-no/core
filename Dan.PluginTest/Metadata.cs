@@ -7,7 +7,7 @@ using Dan.PluginTest.Config;
 using Dan.PluginTest.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
-using NJsonSchema;
+using Newtonsoft.Json;
 
 namespace Dan.PluginTest;
 
@@ -47,9 +47,7 @@ public class Metadata : IEvidenceSourceMetadata
                     {
                         EvidenceValueName = "default",
                         ValueType = EvidenceValueType.JsonSchema,
-                        JsonSchemaDefintion = JsonSchema
-                            .FromType<DatasetResponse>()
-                            .ToJson(Newtonsoft.Json.Formatting.Indented)
+                        JsonSchemaDefintion = EvidenceValue.SchemaFromObject<DatasetResponse>()
                     }
                 ]
             },
@@ -64,9 +62,7 @@ public class Metadata : IEvidenceSourceMetadata
                     {
                         EvidenceValueName = "default",
                         ValueType = EvidenceValueType.JsonSchema,
-                        JsonSchemaDefintion = JsonSchema
-                            .FromType<DatasetResponse>()
-                            .ToJson(Newtonsoft.Json.Formatting.Indented)
+                        JsonSchemaDefintion = EvidenceValue.SchemaFromObject<DatasetResponse>(Formatting.Indented)
                     }
                 ]
             },
