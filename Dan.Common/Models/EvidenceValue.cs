@@ -1,3 +1,5 @@
+using NJsonSchema.NewtonsoftJson.Generation;
+
 namespace Dan.Common.Models;
 
 /// <summary>
@@ -67,5 +69,15 @@ public class EvidenceValue : ICloneable
     public object Clone()
     {
         return MemberwiseClone();
+    }
+
+    // Default implementation of getting a json schema valid for JsonSchemaDefinition property
+    // Opted to not made a forced built in property to make it easier to custom set the property if needed
+    /// <summary>
+    /// Get JsonSchema
+    /// </summary>
+    public static string SchemaFromObject<T>(Formatting formatting = Formatting.None)
+    {
+        return NewtonsoftJsonSchemaGenerator.FromType<T>().ToJson(formatting);
     }
 }
