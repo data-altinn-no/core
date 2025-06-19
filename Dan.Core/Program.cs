@@ -124,6 +124,12 @@ var host = new HostBuilder()
                         TimeSpan.FromHours(12))
                 },
                 {
+                    CachingEntityRegistryApiClientService.EntityRegistryListCachePolicy, Policy.CacheAsync(
+                        distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
+                            new JsonSerializer<List<EntityRegistryUnit>>(new JsonSerializerSettings())),
+                        TimeSpan.FromHours(12))
+                },
+                {
                     "EvidenceCodesCachePolicy", Policy.CacheAsync(
                         distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
                             new JsonSerializer<List<EvidenceCode>>(new JsonSerializerSettings

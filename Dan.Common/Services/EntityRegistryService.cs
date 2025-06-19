@@ -46,6 +46,7 @@ public class EntityRegistryService : IEntityRegistryService
     private static readonly string[] PublicSectorOrganizations = { "971032146" /*KS-KOMMUNESEKTORENS ORGANISASJON*/ };
 
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
+    private static readonly ConcurrentDictionary<string, (DateTime expiresAt, List<EntityRegistryUnit> list)> SubunitListCache = new();
 
     private readonly TimeSpan _cacheEntryTtl = TimeSpan.FromSeconds(600);
 
@@ -80,9 +81,8 @@ public class EntityRegistryService : IEntityRegistryService
     /// Get full entity registry unit
     /// </summary>
     public async Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true,
-        bool nestToAndReturnMainUnit = false, bool subUnitOnly = false)
+        bool nestToAndReturnMainUnit = false, bool subUnitOnly = false, bool getAllSubUnits = false)
     {
-
         if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
         {
             return null;
@@ -228,10 +228,34 @@ public class EntityRegistryService : IEntityRegistryService
 
         return entry.Item2;
     }
+    
+    // TODO: Make private and implement, just public it for testing now
+    public async Task<List<string>> GetSubunitList(string organizationNumber)
+    {
+        var cacheKey = "SubunitList_" + organizationNumber;
+        if (SubunitListCache.TryGetValue(cacheKey, out var cacheEntry) && cacheEntry.expiresAt > DateTime.UtcNow)
+        {
+            var orgNumbers = cacheEntry.list.Select(l => l.Organisasjonsnummer).ToList();
+            return orgNumbers;
+        }
+
+        var url = GetLookupUrlForSubunitsOfAUnit(organizationNumber);
+        
+        var entry = (DateTime.UtcNow.Add(_cacheEntryTtl), await GetListFromClientService(url));
+        SubunitListCache.AddOrUpdate(cacheKey, entry, (_, _) => entry);
+        
+        var orgNumberss = entry.Item2.Select(l => l.Organisasjonsnummer).ToList();
+        return orgNumberss;
+     }
 
     private async Task<EntityRegistryUnit?> GetFromClientService(Uri url)
     {
         return await _entityRegistryApiClientService.GetUpstreamEntityRegistryUnitAsync(url);
+    }
+    
+    private async Task<List<EntityRegistryUnit>> GetListFromClientService(Uri url)
+    {
+        return await _entityRegistryApiClientService.GetUpstreamEntityRegistryUnitsAsync(url);
     }
 
     private SimpleEntityRegistryUnit? MapToEntityRegistryUnit(EntityRegistryUnit? upstreamEntityRegistryUnit)
@@ -283,5 +307,22 @@ public class EntityRegistryService : IEntityRegistryService
         }
 
         return new Uri(string.Format(urlPattern, organizationNumber));
+    }
+    
+    private Uri GetLookupUrlForSubunitsOfAUnit(string organizationNumber)
+    {
+        string urlPattern;
+        if (IsSyntheticOrganizationNumber(organizationNumber))
+        {
+            urlPattern = UseCoreProxy ? PpeProxySubUnitLookupEndpoint : PpeSubUnitLookupEndpoint;
+        }
+        else
+        {
+            urlPattern = UseCoreProxy ? ProxySubUnitLookupEndpoint : SubUnitLookupEndpoint;
+        }
+        
+        var query = $"?overordnetEnhet={organizationNumber}";
+
+        return new Uri(string.Format(urlPattern, query));
     }
 }

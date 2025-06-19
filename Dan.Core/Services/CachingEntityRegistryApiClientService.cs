@@ -1,6 +1,7 @@
 ﻿using AsyncKeyedLock;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
+using Dan.Common.Services;
 using Dan.Core.Config;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ namespace Dan.Core.Services;
 public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientService
 {
     public const string EntityRegistryCachePolicy = "EntityRegistryCachePolicy";
+    public const string EntityRegistryListCachePolicy = "EntityRegistryListCachePolicy";
 
     private readonly ILogger<CachingEntityRegistryApiClientService> _logger;
     private readonly IHttpClientFactory _clientFactory;
@@ -49,6 +51,34 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
                 async _ => await InternalGetUpstreamEntityRegistryUnitAsync(registryApiUri), new Context(cacheKey));
         }
     }
+    
+    public async Task<List<EntityRegistryUnit>> GetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri)
+    {
+        // Short circuit checks for organization numbers that are configured to be test numbers.
+        var organizationNumber = registryApiUri.AbsolutePath.Split('/').Last();
+        if (Settings.IsDevEnvironment && Settings.TestEnvironmentValidOrgs.Contains(organizationNumber))
+        {
+            // TODO: Fix test return
+            throw new NotImplementedException();
+            // return new EntityRegistryUnit()
+            // {
+            //     Organisasjonsnummer = organizationNumber,
+            //     Organisasjonsform = new Organisasjonsform { Kode = "STAT" },
+            //     Navn = "TESTEORGANISASJON",
+            // };
+        }
+
+        var cacheKey = GetCacheKeyFromUri(registryApiUri);
+
+        // There may be several parallel requests due to authorization requirements being validated in parallel. 
+        // To avoid unecessary requests for the same unit, use a keyed lock to make sure we hit the cache.
+        using (await _asyncKeyedLock.LockAsync(cacheKey))
+        {
+            var cachePolicy = _policyRegistry.Get<AsyncPolicy<List<EntityRegistryUnit>>>(EntityRegistryListCachePolicy);
+            return await cachePolicy.ExecuteAsync(
+                async _ => await InternalGetUpstreamEntityRegistryUnitsAsync(registryApiUri), new Context(cacheKey));
+        }
+    }
 
     private static string GetCacheKeyFromUri(Uri registryApiUri)
     {
@@ -74,5 +104,27 @@ public class CachingEntityRegistryApiClientService : IEntityRegistryApiClientSer
             _logger.LogError("Failed deserializing from BR on {registryApiUri}", registryApiUri);
             throw;
         }
+    }
+    
+    private async Task<List<EntityRegistryUnit>> InternalGetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri)
+    {
+        var client = _clientFactory.CreateClient("entityRegistryClient");
+        var nextUri = registryApiUri;
+        var subUnits = new List<EntityRegistryUnit>();
+        do
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, nextUri);
+            request.Headers.TryAddWithoutValidation("Accept", "application/json");
+            var response = await client.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return [];
+            
+            var responseString = await response.Content.ReadAsStringAsync();
+            var subunitsPage = JsonConvert.DeserializeObject<BrregPage<Subunits>>(responseString);
+            subUnits.AddRange(subunitsPage?.Embedded.SubUnits ?? []);
+            
+            nextUri = subunitsPage?.Links?.Next?.Href is null ? null : new Uri(subunitsPage.Links.Next.Href);
+        } while (nextUri is not null);
+        
+        return subUnits;
     }
 }

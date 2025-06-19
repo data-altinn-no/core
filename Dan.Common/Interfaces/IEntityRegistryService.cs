@@ -39,8 +39,9 @@ public interface IEntityRegistryService
     /// <param name="attemptSubUnitLookupIfNotFound">Will attempt to lookup a sub unit if main unit is not found</param>
     /// <param name="nestToAndReturnMainUnit">If subunit, will nest up to uppermost parent and return that instead</param>
     /// <param name="subUnitOnly">Will skip checking for main unit, and only return a subunit if it's found</param>
+    /// <param name="getAllSubUnits">Will populate a list of the names of the unit's subunits</param>
     /// <returns>A full model from ER containing all the fields from upstream</returns>
-    Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false);
+    Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false, bool getAllSubUnits = false);
 
     /// <summary>
     /// Gets the uppermost parent for the given organization number
@@ -108,4 +109,7 @@ public interface IEntityRegistryService
     /// <param name="organizationNumber">The organizationNumber</param>
     /// <returns>True if public agency</returns>
     Task<bool> IsPublicAgency(string organizationNumber);
+    
+    // TODO: Temp, remove later
+    Task<List<string>> GetSubunitList(string organizationNumber);
 }
