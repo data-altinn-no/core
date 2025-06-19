@@ -34,7 +34,7 @@ namespace Dan.Core
             string unitOrSubunit,
             string orgNumber)
         {
-            var httpClient = httpClientFactory.CreateClient("ppeproxyccr");
+            var httpClient = httpClientFactory.CreateClient("ccrwrapper");
             var ccrResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
                 $"{Config.Settings.CcrUrl}/{unitOrSubunit}/{orgNumber}"));
 
@@ -52,7 +52,7 @@ namespace Dan.Core
             ILogger log,
             string unitOrSubunit)
         {
-            var httpClient = httpClientFactory.CreateClient("ppeproxyccr");
+            var httpClient = httpClientFactory.CreateClient("ccrwrapper");
             var ccrResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
                 $"{Config.Settings.CcrUrl}/{unitOrSubunit}"));
 
