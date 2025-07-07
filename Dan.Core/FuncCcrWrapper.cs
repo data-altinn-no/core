@@ -1,3 +1,6 @@
+using System.Net;
+using Dan.Common.Interfaces;
+using Dan.Common.Models;
 using Dan.Core.Attributes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -5,61 +8,95 @@ using Microsoft.Extensions.Logging;
 
 namespace Dan.Core
 {
-    public class FuncCcrWrapper(IHttpClientFactory httpClientFactory)
+    public class FuncCcrWrapper
     {
-        // Old? Unused?
-        [Function("FuncPpeProxyCcr"), NoAuthentication]
-        public async Task<HttpResponseData> RunAsync(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ppeproxy/enhetsregisteret/api/{unitOrSubunit}/{orgNumber}")] HttpRequestData req,
+        private readonly IEntityRegistryService entityRegistryService;
+
+        public FuncCcrWrapper(IEntityRegistryService entityRegistryService)
+        {
+            this.entityRegistryService = entityRegistryService;
+            this.entityRegistryService.UseCoreProxy = false;
+        }
+        
+        // Attempts to first find main unit on orgnumber, then subunit if no main unit found
+        [Function("FuncCcrOrgnumberLookup"), NoAuthentication]
+        public async Task<HttpResponseData> RunCcrOrgnumberLookup(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccr/{orgNumber}")] HttpRequestData req,
             ILogger log,
-            string unitOrSubunit,
             string orgNumber)
         {
-            var httpClient = httpClientFactory.CreateClient("ppeproxyccr");
-            var ccrResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
-                $"https://data.ppe.brreg.no/enhetsregisteret/api/{unitOrSubunit}/{orgNumber}"));
+            var unit = await entityRegistryService.GetFull(orgNumber, attemptSubUnitLookupIfNotFound: true);
+            
+            if (unit == null)
+            {
+                return req.CreateResponse(HttpStatusCode.NotFound);
+            }
 
-            var response = req.CreateResponse();
-            response.StatusCode = ccrResponse.StatusCode;
-            await response.WriteStringAsync(await ccrResponse.Content.ReadAsStringAsync());
-            response.Headers.Add("Content-Type", "application/json");
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(unit);
 
             return response;
         }
         
-        [Function("FuncCcrWrapperSingle"), NoAuthentication]
-        public async Task<HttpResponseData> RunCrrWrapperSingle(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccrwrapper/enhetsregisteret/api/{unitOrSubunit}/{orgNumber}")] HttpRequestData req,
+        [Function("FuncCcrSubUnits"), NoAuthentication]
+        public async Task<HttpResponseData> RunCcrSubUnits(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccr/{orgNumber}/subunits")] HttpRequestData req,
             ILogger log,
-            string unitOrSubunit,
             string orgNumber)
         {
-            var httpClient = httpClientFactory.CreateClient("ccrwrapper");
-            var ccrResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
-                $"{Config.Settings.CcrUrl}/{unitOrSubunit}/{orgNumber}"));
-
-            var response = req.CreateResponse();
-            response.StatusCode = ccrResponse.StatusCode;
-            await response.WriteStringAsync(await ccrResponse.Content.ReadAsStringAsync());
-            response.Headers.Add("Content-Type", "application/json");
+            var units = await entityRegistryService.GetSubunits(orgNumber);
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(units);
 
             return response;
         }
         
-        [Function("FuncCcrWrapperList"), NoAuthentication]
-        public async Task<HttpResponseData> RunCrrWrapperList(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccrwrapper/enhetsregisteret/api/{unitOrSubunit}")] HttpRequestData req,
+        [Function("FuncCcrMainUnit"), NoAuthentication]
+        public async Task<HttpResponseData> RunCcrMainUnit(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccr/{orgNumber}/mainunit")] HttpRequestData req,
             ILogger log,
-            string unitOrSubunit)
+            string orgNumber)
         {
-            var httpClient = httpClientFactory.CreateClient("ccrwrapper");
-            var ccrResponse = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get,
-                $"{Config.Settings.CcrUrl}/{unitOrSubunit}"));
+            var unit = await entityRegistryService.GetFullMainUnit(orgNumber);
+            
+            if (unit == null)
+            {
+                return req.CreateResponse(HttpStatusCode.NotFound);
+            }
 
-            var response = req.CreateResponse();
-            response.StatusCode = ccrResponse.StatusCode;
-            await response.WriteStringAsync(await ccrResponse.Content.ReadAsStringAsync());
-            response.Headers.Add("Content-Type", "application/json");
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(unit);
+
+            return response;
+        }
+        
+        [Function("FuncCcrIsPublic"), NoAuthentication]
+        public async Task<HttpResponseData> RunCcrIsPublic(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccr/{orgNumber}/ispublic")] HttpRequestData req,
+            ILogger log,
+            string orgNumber)
+        {
+            var isPublic = await entityRegistryService.IsPublicAgency(orgNumber);
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(isPublic);
+
+            return response;
+        }
+        
+        [Function("FuncCcrHierarchy"), NoAuthentication]
+        public async Task<HttpResponseData> RunCcrHierarchy(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "ccr/{orgNumber}/hierarchy")] HttpRequestData req,
+            ILogger log,
+            string orgNumber)
+        {
+            var hierarchy = await entityRegistryService.GetSubunitHierarchy(orgNumber);
+            if (hierarchy == null)
+            {
+                return req.CreateResponse(HttpStatusCode.NotFound);
+            }
+
+            var response = req.CreateResponse(HttpStatusCode.OK);
+            await response.WriteAsJsonAsync(hierarchy);
 
             return response;
         }

@@ -32,4 +32,22 @@ public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientSer
         var responseString = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<EntityRegistryUnit>(responseString);
     }
+    
+    /// <summary>
+    /// Get list of entity registry units
+    /// </summary>
+    public async Task<List<EntityRegistryUnit>> GetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri)
+    {
+        var client = _clientFactory.CreateClient("entityRegistryClient");
+        var request = new HttpRequestMessage(HttpMethod.Get, registryApiUri);
+        request.Headers.TryAddWithoutValidation("Accept", "application/json");
+
+        var response = await client.SendAsync(request);
+        if (!response.IsSuccessStatusCode) return [];
+
+        // TODO: Handle pagination
+        var responseString = await response.Content.ReadAsStringAsync();
+        var subunitsPage = JsonConvert.DeserializeObject<BrregPage<Subunits>>(responseString);
+        return subunitsPage?.Embedded?.SubUnits ?? [];
+    }
 }

@@ -114,6 +114,7 @@ public static class HostBuilderExtensions
                 services.AddMemoryCache();
                 services.AddTransient<PluginAuthorizationMessageHandler>();
                 services.AddTransient<IDanPluginClientService, DanPluginClientService>();
+                services.AddTransient<ICcrClientService, CcrClientService>();
 
                 // Try to add the first IEvidenceSourceMetadata implementation we can find in the entry assembly
                 var evidenceSourceMetadataServiceType = typeof(IEvidenceSourceMetadata);

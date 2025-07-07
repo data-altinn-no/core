@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace Dan.Common.UnitTest.Services;
 
 [TestClass]
@@ -5,11 +7,12 @@ namespace Dan.Common.UnitTest.Services;
 public class EntityRegistryServiceTest
 {
     private readonly Mock<IEntityRegistryApiClientService> _entityRegistryApiClientServiceMock = new();
+    private readonly Mock<ILogger<EntityRegistryService>> _logger = new();
     private readonly IEntityRegistryService _entityRegistryService;
 
     public EntityRegistryServiceTest()
     {
-        _entityRegistryService = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object);
+        _entityRegistryService = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object);
     }
 
     [TestInitialize]
@@ -53,7 +56,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMapping()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.Get("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -61,7 +64,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundReturnsSubUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.Get("92").Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
@@ -69,7 +72,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundSetToFalseReturnsNull()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.Get("92", attemptSubUnitLookupIfNotFound: false).Result;
         Assert.IsNull(r);
     }
@@ -77,7 +80,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMainUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.GetMainUnit("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -85,7 +88,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMainUnitAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.GetMainUnit("92").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -93,7 +96,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetFullMainAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.GetFullMainUnit("92").Result;
         Assert.AreEqual("91", r?.Organisasjonsnummer);
     }
@@ -101,7 +104,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsSubunit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.Get("92", subUnitOnly: true).Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
@@ -109,7 +112,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsNullIfMainUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.Get("91", subUnitOnly: true).Result;
         Assert.IsNull(r);
     }
@@ -117,7 +120,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetNestToTopmostMainUnitReturnsMainunit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.GetMainUnit("94").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -125,7 +128,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestSyntheticLookupsNotAllowedByDefault()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.GetMainUnit("31").Result;
         Assert.IsNull(r);
     }
@@ -133,7 +136,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestIsMainUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.IsMainUnit("91").Result;
         Assert.IsTrue(r);
     }
@@ -141,7 +144,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestIsMainUnitSimpleObj()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.IsMainUnit(new SimpleEntityRegistryUnit());
         Assert.IsTrue(r);
     }
@@ -149,7 +152,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestIsMainUnitFullObj()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.IsMainUnit(new EntityRegistryUnit { Organisasjonsnummer = "91", Organisasjonsform = new Organisasjonsform { Kode = "AS" } });
         Assert.IsTrue(r);
     }
@@ -157,7 +160,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestIsSubUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.IsSubUnit("92").Result;
         Assert.IsTrue(r);
     }
@@ -165,7 +168,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestIsSubUnitSimpleObj()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.IsSubUnit(new SimpleEntityRegistryUnit { ParentUnit = "x" });
         Assert.IsTrue(r);
     }
@@ -173,7 +176,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestIsSubUnitFullObj()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object, _logger.Object) { UseCoreProxy = false };
         var r = s.IsSubUnit(new EntityRegistryUnit { Organisasjonsnummer = "91", Organisasjonsform = new Organisasjonsform { Kode = "AS" }, OverordnetEnhet = "x" });
         Assert.IsTrue(r);
     }

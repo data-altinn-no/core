@@ -50,6 +50,27 @@ public interface IEntityRegistryService
     Task<EntityRegistryUnit?> GetFullMainUnit(string organizationNumber);
 
     /// <summary>
+    /// Gets sub units of the given organization number
+    /// </summary>
+    /// <param name="organizationNumber">Organization number to get sub units for</param>
+    /// <returns>List of full models from ER contain all the subunits for the organisation</returns>
+    Task<List<EntityRegistryUnit>> GetSubunits(string organizationNumber);
+
+    /// <summary>
+    /// Get full hierarchy of subunits recursively for the given organization number
+    /// </summary>
+    /// <param name="orgNumber">Organization number to get </param>
+    /// <param name="currentDepth"></param>
+    /// <param name="maxDepth"></param>
+    /// <param name="unit"></param>
+    /// <returns>Nested structure of subunit hierarchy</returns>
+    Task<EntityRegistryUnitHierarchy?> GetSubunitHierarchy(
+        string orgNumber,
+        int currentDepth = 0,
+        int maxDepth = 10,
+        EntityRegistryUnit? unit = null);
+
+    /// <summary>
     /// Returns true if the unit is a main unit
     /// </summary>
     /// <param name="unit">The unit</param>
