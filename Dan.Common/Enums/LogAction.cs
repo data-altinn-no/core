@@ -60,4 +60,9 @@ public enum LogAction
     /// Used for each correspondence sent related to consent requests (may be skipped, so counted seperately)
     /// </summary>
     CorrespondenceSent = 11,
+
+    /// <summary>
+    /// Used when an owner requests accreditations for all or one requestor
+    /// </summary>
+    AccreditationsRetrieved = 11,
 }

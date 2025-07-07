@@ -1,6 +1,7 @@
 ﻿using Dan.Common.Enums;
 using Dan.Common.Models;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Dan.Core.Extensions;
@@ -37,5 +38,18 @@ public static class LoggerExtensions
         logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
             Path.GetFileNameWithoutExtension(callingClass), callingMethod, null, "", "", "", "", subject,
             evidenceCodeName, DateTime.UtcNow, serviceContext);
+    }
+
+    public static void DanLog(
+        this ILogger logger,
+        LogAction action,
+        string owner, 
+        string requestor,
+        string serviceContext,
+        [CallerFilePath] string callingClass = "",
+        [CallerMemberName] string callingMethod = "")
+    {
+        logger.LogInformation(LogString, Enum.GetName(typeof(LogAction), action),
+            Path.GetFileNameWithoutExtension(callingClass), callingMethod, null, "", "", owner, requestor, "","", DateTime.UtcNow, serviceContext);      
     }
 }

@@ -14,6 +14,7 @@ public class ServiceContextService : IServiceContextService
             new ServiceContext() {
                 Name = "eBevis",
                 Id = "ebevis-product",
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new PartyTypeRequirement()
@@ -30,6 +31,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Drosjeloyve",
                 Id = "drosjeloyve-product",
+                Owner = "Novari IKS",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB, Constants.LANGUAGE_CODE_NORWEGIAN_NN },
                 AuthorizationRequirements = new List<Requirement>() {
                     new PartyTypeRequirement()
@@ -46,6 +48,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Tilda",
                 Id = "tilsynsdata-product",
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new MaskinportenScopeRequirement()
@@ -65,6 +68,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Seriøsitetsinformasjon",
                 Id = "seriositet-product",
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new PartyTypeRequirement()
@@ -88,6 +92,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "OED",
                 Id = "oed-product",
+                Owner = "Digitaliseringsdirektoratet",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new PartyTypeRequirement()
@@ -108,6 +113,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Advokatregisteret",
                 Id = "tilsynsraad-product",
+                Owner = "Advokattilsynet", 
                 ValidLanguages= new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB},
                 AuthorizationRequirements = new List<Requirement>()
                 { 
@@ -124,6 +130,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "DigitaleHelgeland",
                 Id = "dihe-product",
+                Owner = "Digitale Helgeland",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new PartyTypeRequirement()
@@ -149,6 +156,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "EURES",
                 Id = "eures-product",
+                Owner = "Arbeids- og velferdsetaten (Nav)",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new MaskinportenScopeRequirement()
@@ -162,6 +170,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Økonomisk informasjon",
                 Id = "okinfo-product",
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new MaskinportenScopeRequirement()
@@ -187,6 +196,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Reelle rettighetshavere",
                 Id = "reelle-product",
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new MaskinportenScopeRequirement()
@@ -203,6 +213,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "eDueDiligence",
                 Id = "duediligence-product",
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new MaskinportenScopeRequirement()
@@ -219,6 +230,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "DigitalGravferdsmelding",
                 Id = "dgm-product",
+                Owner = "Statsforvalteren i Vestfold og Telemark",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
                     new MaskinportenScopeRequirement()
@@ -235,6 +247,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Bits kontrollinformasjon",
                 Id = "bits-product",
+                Owner = "BITS AS",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>()
                 {
@@ -245,6 +258,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "DAN-test",
                 Id = "dantest-product",
+                Owner = "Digitaliseringsdirektoratet",
                 ValidLanguages = [Constants.LANGUAGE_CODE_NORWEGIAN_NB],
                 AuthorizationRequirements =
                 [
@@ -256,6 +270,7 @@ public class ServiceContextService : IServiceContextService
             {
                 Name = "Altinn Studio-apps",
                 Id = "altinnstudioapps-product",
+                Owner = "Digitaliseringsdirektoratet",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>()
                 {
@@ -273,6 +288,7 @@ public class ServiceContextService : IServiceContextService
             new ServiceContext() {
                 Name = "Digøk-friv",
                 Id = "digokfriv-product", 
+                Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }                
             },
         };
