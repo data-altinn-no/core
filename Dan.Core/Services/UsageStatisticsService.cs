@@ -4,8 +4,6 @@ using Azure.Monitor.Query;
 using Dan.Core.Config;
 using Dan.Core.Models;
 using Dan.Core.Services.Interfaces;
-using Microsoft.Extensions.Azure;
-using Microsoft.Extensions.Options;
 
 namespace Dan.Core.Services;
 
