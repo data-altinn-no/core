@@ -52,9 +52,11 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
     private static int Rand => _rand.Next(100000, 999999);
 
     private readonly IChannelManagerService _channelManagerService;
-    private readonly IEntityRegistryService _entityRegistryService;
+    private readonly Interfaces.IEntityRegistryService _entityRegistryService;
 
-    public AltinnCorrespondenceService(IChannelManagerService channelManagerService, IEntityRegistryService entityRegistryService)
+    public AltinnCorrespondenceService(
+        IChannelManagerService channelManagerService,
+        Interfaces.IEntityRegistryService entityRegistryService)
     {
         _channelManagerService = channelManagerService;
         _entityRegistryService = entityRegistryService;

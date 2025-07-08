@@ -138,7 +138,7 @@ public class Plugin(
                 "Unable to parse request", e);
         }
 
-        var unit = await ccrClientService.GetUnitHierarchy("923609016", "local");
+        var unit = await ccrClientService.IsPublic("923609016", "local");
         
         return await EvidenceSourceResponse.CreateResponse(req,
             () => GetEvidenceValuesDatasetOne(evidenceHarvesterRequest));

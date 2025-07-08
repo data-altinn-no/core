@@ -33,7 +33,7 @@ public class ConsentService : IConsentService
     private readonly HttpClient _noCertHttpClient;
     private readonly ILogger<ConsentService> _logger;
     private readonly IAltinnCorrespondenceService _correspondenceService;
-    private readonly IEntityRegistryService _entityRegistryService;
+    private readonly Interfaces.IEntityRegistryService _entityRegistryService;
     private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
     private readonly IRequestContextService _requestContextService;
 
@@ -51,7 +51,7 @@ public class ConsentService : IConsentService
         ILoggerFactory loggerFactory,
         IHttpClientFactory httpClientFactory,
         IAltinnCorrespondenceService altinnCorrespondenceService,
-        IEntityRegistryService entityRegistryService,
+        Interfaces.IEntityRegistryService entityRegistryService,
         IAltinnServiceOwnerApiService altinnServiceOwnerApiService,
         IAvailableEvidenceCodesService availableEvidenceCodesService,
         IRequestContextService requestContextService)

@@ -100,7 +100,8 @@ var host = new HostBuilder()
         services.AddSingleton<ITokenRequesterService, TokenRequesterService>();
         services.AddSingleton<IServiceContextService, ServiceContextService>();
         services.AddSingleton<IAccreditationRepository, CosmosDbAccreditationRepository>();
-        services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
+        // Using explicit namespacing until the interface is removed from common in the future
+        services.AddSingleton<Dan.Core.Services.Interfaces.IEntityRegistryService, Dan.Core.Services.EntityRegistryService>();
         services.AddSingleton<IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
         services.AddSingleton<IFunctionContextAccessor, FunctionContextAccessor>();
 

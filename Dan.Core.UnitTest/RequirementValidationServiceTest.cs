@@ -17,7 +17,7 @@ namespace Dan.Core.UnitTest
     public class RequirementValidationServiceTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
-        private readonly Mock<IEntityRegistryService> _mockEntityRegistryService = new Mock<IEntityRegistryService>();
+        private readonly Mock<Services.Interfaces.IEntityRegistryService> _mockEntityRegistryService = new Mock<Services.Interfaces.IEntityRegistryService>();
         private readonly Mock<IAltinnServiceOwnerApiService> _mockAltinnServiceOwnerApiService =
             new Mock<IAltinnServiceOwnerApiService>();
         private readonly Mock<IRequestContextService> _mockRequestContextService =

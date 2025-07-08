@@ -1,18 +1,54 @@
-﻿using System.Configuration;
-using Dan.Common.Exceptions;
+﻿using Dan.Common.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace Dan.Common.Services;
 
+/// <summary>
+/// Service to fetch entity registry units and information from Central Coordination Registry
+/// </summary>
 public interface ICcrClientService
 {
+    /// <summary>
+    /// Fetches Entity Registry Unit, looks up main unit first, attempts to look up subunit if main unit not found
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     Task<EntityRegistryUnit?> GetUnit(string organizationNumber, string env);
+    
+    /// <summary>
+    /// Fetches subunits of provided organisation
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch subunits of</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     Task<List<EntityRegistryUnit>?> GetSubunits(string organizationNumber, string env);
+    
+    /// <summary>
+    /// Fetches main unit of provided organisation
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch main unit of</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     Task<EntityRegistryUnit?> GetMainUnit(string organizationNumber, string env);
+    
+    /// <summary>
+    /// Checks if an entity registry unit is a public agency
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to check</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     Task<bool> IsPublic(string organizationNumber, string env);
+    
+    /// <summary>
+    /// Gets full unit hierarchy of organisation. Hierarchy is unit information, subunits of unit
+    /// and recursively subunits of subunits.
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch hierarchy of</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     Task<EntityRegistryUnitHierarchy?> GetUnitHierarchy(string organizationNumber, string env);
 }
 
-public class CcrClientService(IHttpClientFactory httpClientFactory) : ICcrClientService
+/// <summary>
+/// Service to fetch entity registry units and information from Central Coordination Registry
+/// </summary>
+public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrClientService> logger) : ICcrClientService
 {
     private readonly HttpClient httpClient = httpClientFactory.CreateClient(Constants.SafeHttpClient);
     private const string CcrBaseLocal = "http://localhost:7071/api/ccr";
@@ -20,30 +56,56 @@ public class CcrClientService(IHttpClientFactory httpClientFactory) : ICcrClient
     private const string CrrBaseTest = "https://test-api.data.altinn.no/v1/public/ccr";
     private const string CrrBaseProd = "https://api.data.altinn.no/v1/public/ccr";
     
+    /// <summary>
+    /// Fetches Entity Registry Unit, looks up main unit first, attempts to look up subunit if main unit not found
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<EntityRegistryUnit?> GetUnit(string organizationNumber, string env)
     {
         var url = $"{GetBaseUrl(env)}/{organizationNumber}";
         return await GetCcrResponse<EntityRegistryUnit>(url);
     }
 
+    /// <summary>
+    /// Fetches subunits of provided organisation
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch subunits of</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<List<EntityRegistryUnit>?> GetSubunits(string organizationNumber, string env)
     {
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/subunits";
         return await GetCcrResponse<List<EntityRegistryUnit>>(url);
     }
 
+    /// <summary>
+    /// Fetches main unit of provided organisation
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch main unit of</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<EntityRegistryUnit?> GetMainUnit(string organizationNumber, string env)
     {
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/mainunit";
         return await GetCcrResponse<EntityRegistryUnit>(url);
     }
 
+    /// <summary>
+    /// Checks if an entity registry unit is a public agency
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to check</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<bool> IsPublic(string organizationNumber, string env)
     {
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/ispublic";
         return await GetCcrResponse<bool>(url);
     }
 
+    /// <summary>
+    /// Gets full unit hierarchy of organisation. Hierarchy is unit information, subunits of unit
+    /// and recursively subunits of subunits.
+    /// </summary>
+    /// <param name="organizationNumber">Organisation number of unit to fetch hierarchy of</param>
+    /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<EntityRegistryUnitHierarchy?> GetUnitHierarchy(string organizationNumber, string env)
     {
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/hierarchy";
@@ -52,14 +114,31 @@ public class CcrClientService(IHttpClientFactory httpClientFactory) : ICcrClient
 
     private async Task<T?> GetCcrResponse<T>(string url)
     {
-        var response = await httpClient.GetAsync(url);
+        HttpResponseMessage response;
+        try
+        {
+            response = await httpClient.GetAsync(url);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Failed to get CCR response: {message}", e.Message);
+            throw;
+        }
         switch (response.StatusCode)
         {
             case HttpStatusCode.OK:
             {
-                var responseString = await response.Content.ReadAsStringAsync();
-                var unit = JsonConvert.DeserializeObject<T>(responseString);
-                return unit;
+                try
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    var unit = JsonConvert.DeserializeObject<T>(responseString);
+                    return unit;
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Failed to deserialize CCR response: {message}", e.Message);
+                    throw;
+                }
             }
             case HttpStatusCode.NotFound:
                 return default;

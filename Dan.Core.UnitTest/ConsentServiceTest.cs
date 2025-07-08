@@ -24,8 +24,8 @@ namespace Dan.Core.UnitTest
 
             private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
 
-            private readonly Mock<IEntityRegistryService> _mockEntityRegistryService =
-                new Mock<IEntityRegistryService>();
+            private readonly Mock<Services.Interfaces.IEntityRegistryService> _mockEntityRegistryService =
+                new Mock<Services.Interfaces.IEntityRegistryService>();
 
             private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService =
                 new Mock<IAvailableEvidenceCodesService>();

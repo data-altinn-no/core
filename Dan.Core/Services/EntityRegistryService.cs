@@ -1,16 +1,14 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using Dan.Common.Interfaces;
+using Dan.Common.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Dan.Common.Services;
-/// <summary>
-/// Default implementation of IEntityRegistryService
-/// </summary>
-[Obsolete("Use Dan.Common.Services.CcrClientService instead.")]
+namespace Dan.Core.Services;
+
 public class EntityRegistryService(
     IEntityRegistryApiClientService entityRegistryApiClientService, 
-    ILogger<EntityRegistryService> logger) : IEntityRegistryService
+    ILogger<EntityRegistryService> logger) : Dan.Core.Services.Interfaces.IEntityRegistryService
 {
     /// <summary>
     /// Flag to set if using PpeProxyMainUnitLookupEndpoint or MainUnitLookupEndpoint
