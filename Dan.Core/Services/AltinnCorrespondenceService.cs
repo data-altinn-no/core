@@ -61,7 +61,6 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
         _channelManagerService = channelManagerService;
         _entityRegistryService = entityRegistryService;
 
-        _entityRegistryService.UseCoreProxy = false;
         _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
 
         var correspondenceSettings = Settings.CorrespondenceSettings.Split(',');

@@ -46,7 +46,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         _requirementValidationService = requirementValidationService;
         _requestContextService = requestContextService;
 
-        _entityRegistryService.UseCoreProxy = false;
         _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 

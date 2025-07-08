@@ -44,7 +44,6 @@ public class RequirementValidationService : IRequirementValidationService
         _errors = new ConcurrentBag<string>();
         _skippedEvidenceCodes = new ConcurrentDictionary<string, Requirement>();
 
-        _entityRegistryService.UseCoreProxy = false;
         _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 

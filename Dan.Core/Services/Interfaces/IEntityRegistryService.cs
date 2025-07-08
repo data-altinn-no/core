@@ -8,11 +8,6 @@ namespace Dan.Core.Services.Interfaces;
 public interface IEntityRegistryService
 {
     /// <summary>
-    /// This controls whether the service should call the proxy in Dan.Core or ER directory. Should be true for plugins and false for Core.
-    /// </summary>
-    public bool UseCoreProxy { get; set; }
-
-    /// <summary>
     /// Controls whether lookups on synthetic (Tenor) organization numbers are allowed. Should be false in production.
     /// </summary>
     public bool AllowTestCcrLookup { get; set; }

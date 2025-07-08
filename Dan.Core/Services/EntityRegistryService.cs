@@ -11,11 +11,6 @@ public class EntityRegistryService(
     ILogger<EntityRegistryService> logger) : Dan.Core.Services.Interfaces.IEntityRegistryService
 {
     /// <summary>
-    /// Flag to set if using PpeProxyMainUnitLookupEndpoint or MainUnitLookupEndpoint
-    /// </summary>
-    public bool UseCoreProxy { get; set; } = true;
-    
-    /// <summary>
     /// Flag to set if allowed to look up synthetic users
     /// </summary>
     public bool AllowTestCcrLookup { get; set; } = false;
@@ -35,11 +30,6 @@ public class EntityRegistryService(
     private const string PpeMainUnitLookupEndpoint      = "https://data.ppe.brreg.no/enhetsregisteret/api/enheter/{0}";
     private const string PpeSubUnitLookupEndpoint       = "https://data.ppe.brreg.no/enhetsregisteret/api/underenheter/{0}";
     
-    private const string ProxyMainUnitLookupEndpoint    = "https://api.data.altinn.no/v1/opendata/" + CcrProxyMainUnitDatasetName + "/{0}";
-    private const string ProxySubUnitLookupEndpoint     = "https://api.data.altinn.no/v1/opendata/" + CcrProxySubUnitDatasetName + "/{0}";
-    private const string PpeProxyMainUnitLookupEndpoint = "https://test-api.data.altinn.no/v1/opendata/" + CcrProxyMainUnitDatasetName + "/{0}";
-    private const string PpeProxySubUnitLookupEndpoint  = "https://test-api.data.altinn.no/v1/opendata/" + CcrProxySubUnitDatasetName + "/{0}";
-
     private static readonly string[] PublicSectorUnitTypes   = ["ADOS", "FKF", "FYLK", "KF", "KOMM", "ORGL", "STAT", "SF", "SÆR"];
     private static readonly string[] PublicSectorSectorCodes = ["1110", "1120", "1510", "1520", "3900", "6100", "6500"];
 
@@ -330,11 +320,11 @@ public class EntityRegistryService(
         string urlPattern;
         if (IsSyntheticOrganizationNumber(organizationNumber))
         {
-            urlPattern = UseCoreProxy ? PpeProxyMainUnitLookupEndpoint : PpeMainUnitLookupEndpoint;
+            urlPattern = PpeMainUnitLookupEndpoint;
         }
         else
         {
-            urlPattern = UseCoreProxy ? ProxyMainUnitLookupEndpoint : MainUnitLookupEndpoint;
+            urlPattern = MainUnitLookupEndpoint;
         }
 
         return new Uri(string.Format(urlPattern, organizationNumber));
@@ -345,11 +335,11 @@ public class EntityRegistryService(
         string urlPattern;
         if (IsSyntheticOrganizationNumber(organizationNumber))
         {
-            urlPattern = UseCoreProxy ? PpeProxySubUnitLookupEndpoint : PpeSubUnitLookupEndpoint;
+            urlPattern = PpeSubUnitLookupEndpoint;
         }
         else
         {
-            urlPattern = UseCoreProxy ? ProxySubUnitLookupEndpoint : SubUnitLookupEndpoint;
+            urlPattern = SubUnitLookupEndpoint;
         }
 
         return new Uri(string.Format(urlPattern, organizationNumber));
@@ -360,11 +350,11 @@ public class EntityRegistryService(
         string urlPattern;
         if (IsSyntheticOrganizationNumber(organizationNumber))
         {
-            urlPattern = UseCoreProxy ? PpeProxySubUnitLookupEndpoint : PpeSubUnitLookupEndpoint;
+            urlPattern = PpeSubUnitLookupEndpoint;
         }
         else
         {
-            urlPattern = UseCoreProxy ? ProxySubUnitLookupEndpoint : SubUnitLookupEndpoint;
+            urlPattern = SubUnitLookupEndpoint;
         }
         
         var query = $"?overordnetEnhet={organizationNumber}";

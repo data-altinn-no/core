@@ -47,7 +47,6 @@ namespace Dan.Core
             _accreditationRepository = accreditationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
 
-            _entityRegistryService.UseCoreProxy = false;
             _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
         }
 

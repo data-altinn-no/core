@@ -65,7 +65,6 @@ public class ConsentService : IConsentService
         _altinnServiceOwnerApiService = altinnServiceOwnerApiService;
         _requestContextService = requestContextService;
 
-        _entityRegistryService.UseCoreProxy = false;
         _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
