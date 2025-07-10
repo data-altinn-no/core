@@ -1,10 +1,12 @@
 using System.Net;
+using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Extensions;
 using Dan.Core.Models;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Dan.Core;
 
@@ -16,6 +18,7 @@ public class FuncAccreditationList
     private readonly IRequestContextService _requestContextService;
     private readonly IAccreditationRepository _accreditationRepository;
     private readonly IEvidenceStatusService _evidenceStatusService;
+    private readonly ILogger<FuncAccreditationList> _logger;
 
     /// <summary>
     /// Creates an instance of <see cref="FuncAccreditationList"/>
@@ -23,11 +26,12 @@ public class FuncAccreditationList
     /// <param name="requestContextService"></param>
     /// <param name="accreditationRepository"></param>
     /// <param name="evidenceStatusService"></param>
-    public FuncAccreditationList(IRequestContextService requestContextService, IAccreditationRepository accreditationRepository, IEvidenceStatusService evidenceStatusService)
+    public FuncAccreditationList(IRequestContextService requestContextService, IAccreditationRepository accreditationRepository, IEvidenceStatusService evidenceStatusService, ILoggerFactory loggerFactory)
     {
         _requestContextService = requestContextService;
         _accreditationRepository = accreditationRepository;
         _evidenceStatusService = evidenceStatusService;
+        _logger = loggerFactory.CreateLogger<FuncAccreditationList>();
     }
 
     /// <summary>
@@ -65,8 +69,8 @@ public class FuncAccreditationList
         {
             accreditations = accreditations.Where(x => x.AggregateStatus == EvidenceStatusCode.Available).ToList();
         }
+        _logger.DanLog(LogAction.AccreditationsRetrieved, _requestContextService.AuthenticatedOrgNumber, accreditationsQuery.Requestor ??= string.Empty, _requestContextService.ServiceContext.Name);
 
-        // TODO! Should we clear the 
 
         return req.CreateExternalResponse(HttpStatusCode.OK, accreditations);
     }
