@@ -93,7 +93,22 @@ public class Metadata : IEvidenceSourceMetadata
                         ValueType = EvidenceValueType.Boolean
                     }
                 ]
-            }
+            },
+            new EvidenceCode
+            {
+                EvidenceCodeName = PluginConstants.PluginGenericTest,
+                EvidenceSource = PluginConstants.Source,
+                BelongsToServiceContexts = _serviceContexts,
+                Values =
+                [
+                    new EvidenceValue
+                    {
+                        EvidenceValueName = "default",
+                        ValueType = EvidenceValueType.JsonSchema,
+                        JsonSchemaDefintion = EvidenceValue.SchemaFromObject<DatasetResponse>()
+                    }
+                ]
+            },
         ];
     }
 }

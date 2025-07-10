@@ -133,6 +133,12 @@ var host = new HostBuilder()
                         ), AvailableEvidenceCodesService.DistributedCacheTtl)
                 },
                 {
+                    CachingEntityRegistryApiClientService.EntityRegistryListCachePolicy, Policy.CacheAsync(
+                        distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
+                            new JsonSerializer<List<EntityRegistryUnit>>(new JsonSerializerSettings())),
+                        TimeSpan.FromHours(12))
+                },
+                {
                     "MaskinportenTokenPolicy", Policy.CacheAsync(
                         distributedCache.AsAsyncCacheProvider<string>(),
                         new Oauth2AccessTokenCachingStrategy())

@@ -9,4 +9,9 @@ public interface IEntityRegistryApiClientService
     /// Get entity registry unit
     /// </summary>
     public Task<EntityRegistryUnit?> GetUpstreamEntityRegistryUnitAsync(Uri registryApiUri);
+    
+    /// <summary>
+    /// Get list of entity registry units
+    /// </summary>
+    public Task<List<EntityRegistryUnit>> GetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri);
 }
