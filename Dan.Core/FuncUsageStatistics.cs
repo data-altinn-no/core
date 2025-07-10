@@ -61,7 +61,7 @@ public class FuncUsageStatistics
         return response;
     }
 
-    [Function("DigdirStatistics"), NoAuthentication]
+    [Function("DigdirStatistics")]
     public async Task<HttpResponseData> DigdirStatistics(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "metadata/usage/digdir")]
        HttpRequestData req)
