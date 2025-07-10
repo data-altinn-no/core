@@ -12,7 +12,7 @@ public interface IUsageStatisticsService
     Task<List<MonthlyUsageStatistics>> GetMonthlyUsage();
     Task<List<IGrouping<string?, YearlyUsageStatistics>>> GetLastYearsUsage();
     Task<List<IGrouping<string?, YearlyUsageStatistics>>> GetAllUsage();
-    Task<ParquetSource> GetUsageDataForParquet();    
+    Task<ParquetSource> GetLast24HoursPerServiceContext();    
 }
 
 public class UsageStatisticsService : IUsageStatisticsService
@@ -50,25 +50,26 @@ public class UsageStatisticsService : IUsageStatisticsService
         return usage;
     }
 
-    public async Task<ParquetSource> GetUsageDataForParquet()
+    public async Task<ParquetSource> GetLast24HoursPerServiceContext()
     {
         var query = $$"""
             traces
             | where tostring(customDimensions["action"]) in ("DatasetRetrieved", "ConsentRequested", "NotificationSent", "AccreditationsRetrieved", "ConsentReminderSent")
-            | where timestamp between (startofday(ago(1d)) .. startofday(now())) 
-            | project 
-            timestamp = timestamp, 
-            action = tostring(customDimensions["action"]), 
-            dataset = tostring(customDimensions["evidenceCodeName"]), 
-            serviceContext = tostring(customDimensions["serviceContext"])    
-            | summarize 
+            | where timestamp between (startofday(ago(1d)) .. startofday(now()))
+            | extend 
+                action = tostring(customDimensions["action"]),
+                dataset = tostring(customDimensions["evidenceCodeName"]),
+                serviceContext = tostring(customDimensions["serviceContext"]),
+                day = startofday(timestamp)
+            | summarize
                 DatasetsRetrieved = countif(action == "DatasetRetrieved"),
                 ConsentsRequested = countif(action == "ConsentRequested"),
                 NotificationsSent = countif(action == "NotificationSent"),
                 AccreditationsRetrieved = countif(action == "AccreditationsRetrieved"),
                 ConsentRemindersSent = countif(action == "ConsentReminderSent"),
                 ApiCalls = count()
-                by serviceContext            
+            by serviceContext, day
+            | order by serviceContext asc, day desc          
             """;
 
         var results = await _logsQueryClient.QueryResourceAsync(
@@ -85,8 +86,9 @@ public class UsageStatisticsService : IUsageStatisticsService
         {
             var item = new ParquetSourceRecord()
             {
+                TimeStamp = DateTime.Parse(row["day"].ToString()),
                 ConsentRequests = (long)row["ConsentsRequested"],
-                ApiCalls = (long)row["ApiCalls"] - (long)row["NotificationSent"],
+                ApiCalls = (long)row["ApiCalls"] - (long)row["NotificationsSent"],
                 DatasetsRetrieved = (long)row["DatasetsRetrieved"],
                 Environment = Settings.IsProductionEnvironment ? "prod" : "test",
                 ServiceName = row["serviceContext"].ToString(),
