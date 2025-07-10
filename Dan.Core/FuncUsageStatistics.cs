@@ -22,7 +22,7 @@ public class FuncUsageStatistics
         _usageStatisticsService = usageStatisticsService;
     }
 
-    [Function("MonthlyUsageStatistics")]
+    [Function("MonthlyUsageStatistics"), NoAuthentication]
     public async Task<HttpResponseData> MonthlyUsageStatistics(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "metadata/usage/month")]
        HttpRequestData req)
@@ -35,7 +35,7 @@ public class FuncUsageStatistics
         return response;
     }
 
-    [Function("LastYearUsageStatistics")]
+    [Function("LastYearUsageStatistics"), NoAuthentication]
     public async Task<HttpResponseData> LastYearUsageStatistics(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "metadata/usage/lastYear")]
        HttpRequestData req)
@@ -48,7 +48,7 @@ public class FuncUsageStatistics
         return response;
     }
 
-    [Function("AllUsageStatistics")]
+    [Function("AllUsageStatistics"), NoAuthentication]
     public async Task<HttpResponseData> AllUsageStatistics(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "metadata/usage/all")]
        HttpRequestData req)
@@ -61,7 +61,7 @@ public class FuncUsageStatistics
         return response;
     }
 
-    [Function("DigdirStatistics")]
+    [Function("DigdirStatistics"), NoAuthentication]
     public async Task<HttpResponseData> DigdirStatistics(
         [HttpTrigger(AuthorizationLevel.Function, "get", Route = "metadata/usage/digdir")]
        HttpRequestData req)
