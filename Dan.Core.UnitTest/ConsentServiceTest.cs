@@ -3,7 +3,6 @@ using Moq;
 using System.Diagnostics.CodeAnalysis;
 using Dan.Common;
 using Dan.Common.Enums;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Helpers;
 using Dan.Core.ServiceContextTexts;
@@ -24,8 +23,8 @@ namespace Dan.Core.UnitTest
 
             private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
 
-            private readonly Mock<Services.Interfaces.IEntityRegistryService> _mockEntityRegistryService =
-                new Mock<Services.Interfaces.IEntityRegistryService>();
+            private readonly Mock<IEntityRegistryService> _mockEntityRegistryService =
+                new Mock<IEntityRegistryService>();
 
             private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService =
                 new Mock<IAvailableEvidenceCodesService>();

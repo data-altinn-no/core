@@ -1,6 +1,4 @@
 using System.Net;
-using Dan.Common.Interfaces;
-using Dan.Common.Models;
 using Dan.Core.Attributes;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
@@ -8,16 +6,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Dan.Core
 {
-    public class FuncCcrWrapper
+    public class FuncCcrWrapper(Services.Interfaces.IEntityRegistryService entityRegistryService)
     {
-        private readonly IEntityRegistryService entityRegistryService;
-
-        public FuncCcrWrapper(IEntityRegistryService entityRegistryService)
-        {
-            this.entityRegistryService = entityRegistryService;
-            this.entityRegistryService.UseCoreProxy = false;
-        }
-        
         // Attempts to first find main unit on orgnumber, then subunit if no main unit found
         [Function("FuncCcrOrgnumberLookup"), NoAuthentication]
         public async Task<HttpResponseData> RunCcrOrgnumberLookup(

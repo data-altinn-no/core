@@ -23,13 +23,6 @@ public interface IEntityRegistryService
     Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false);
 
     /// <summary>
-    /// Gets the uppermost parent for the given organization number
-    /// </summary>
-    /// <param name="organizationNumber">The organization number</param>
-    /// <returns>A simplified model from ER suitable for most verification purposes</returns>
-    Task<SimpleEntityRegistryUnit?> GetMainUnit(string organizationNumber);
-
-    /// <summary>
     /// Gets the organization number from ER.
     /// </summary>
     /// <param name="organizationNumber">The organization number</param>
@@ -66,59 +59,6 @@ public interface IEntityRegistryService
         int currentDepth = 0,
         int maxDepth = 10,
         EntityRegistryUnit? unit = null);
-
-    /// <summary>
-    /// Returns true if the unit is a main unit
-    /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if main unit</returns>
-    bool IsMainUnit(SimpleEntityRegistryUnit unit);
-
-    /// <summary>
-    /// Returns true if the unit is a main unit
-    /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if main unit</returns>
-    bool IsMainUnit(EntityRegistryUnit unit);
-
-    /// <summary>
-    /// Returns true if the unit is a main unit
-    /// </summary>
-    /// <param name="organizationNumber">The organizationNumber</param>
-    /// <returns>True if main unit</returns>
-    Task<bool> IsMainUnit(string organizationNumber);
-
-    /// <summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if sub unit</returns>
-    /// </summary>
-    bool IsSubUnit(SimpleEntityRegistryUnit unit);
-
-    /// <summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if sub unit</returns>
-    /// </summary>
-    bool IsSubUnit(EntityRegistryUnit unit);
-
-    /// <summary>
-    /// <param name="organizationNumber">The organizationNumber</param>
-    /// <returns>True if sub unit</returns>
-    /// </summary>
-    Task<bool> IsSubUnit(string organizationNumber);
-
-    /// <summary>
-    /// Returns true if the unit is determined to be a public agency
-    /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if public agency</returns>
-    bool IsPublicAgency(SimpleEntityRegistryUnit unit);
-
-    /// <summary>
-    /// Returns true if the unit is determined to be a public agency
-    /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if public agency</returns>
-    bool IsPublicAgency(EntityRegistryUnit unit);
 
     /// <summary>
     /// Returns true if the unit is determined to be a public agency

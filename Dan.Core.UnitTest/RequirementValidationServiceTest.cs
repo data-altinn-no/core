@@ -1,9 +1,7 @@
 ﻿using Dan.Common.Enums;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
-using Dan.Core.Models;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -17,7 +15,7 @@ namespace Dan.Core.UnitTest
     public class RequirementValidationServiceTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
-        private readonly Mock<Services.Interfaces.IEntityRegistryService> _mockEntityRegistryService = new Mock<Services.Interfaces.IEntityRegistryService>();
+        private readonly Mock<IEntityRegistryService> _mockEntityRegistryService = new Mock<IEntityRegistryService>();
         private readonly Mock<IAltinnServiceOwnerApiService> _mockAltinnServiceOwnerApiService =
             new Mock<IAltinnServiceOwnerApiService>();
         private readonly Mock<IRequestContextService> _mockRequestContextService =

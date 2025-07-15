@@ -9,8 +9,7 @@ namespace Dan.Common.Services;
 /// </summary>
 [Obsolete("Use Dan.Common.Services.CcrClientService instead.")]
 public class EntityRegistryService(
-    IEntityRegistryApiClientService entityRegistryApiClientService, 
-    ILogger<EntityRegistryService> logger) : IEntityRegistryService
+    IEntityRegistryApiClientService entityRegistryApiClientService) : IEntityRegistryService
 {
     /// <summary>
     /// Flag to set if using PpeProxyMainUnitLookupEndpoint or MainUnitLookupEndpoint
@@ -124,77 +123,6 @@ public class EntityRegistryService(
 
         return unit;
     }
-    
-    /// <summary>
-    /// Get full entity registry unit
-    /// </summary>
-    public async Task<List<EntityRegistryUnit>> GetSubunits(string organizationNumber)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        var cacheKey = "SubunitList_" + organizationNumber;
-        if (SubunitListCache.TryGetValue(cacheKey, out var cacheEntry) && cacheEntry.expiresAt > DateTime.UtcNow)
-        {
-            stopwatch.Stop();
-            logger.LogInformation($"Found cached subunits for {organizationNumber} in {stopwatch.ElapsedMilliseconds} ms");
-            return cacheEntry.list;
-        }
-
-        var url = GetLookupUrlForSubunitsOfAUnit(organizationNumber);
-        
-        var entry = (DateTime.UtcNow.Add(cacheEntryTtl), await GetListFromClientService(url));
-        SubunitListCache.AddOrUpdate(cacheKey, entry, (_, _) => entry);
-        
-        stopwatch.Stop();
-        logger.LogInformation($"Fetched subunits for {organizationNumber} from source  in {stopwatch.ElapsedMilliseconds} ms");
-        return entry.Item2;
-    }
-    
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="orgNumber"></param>
-    /// <param name="currentDepth"></param>
-    /// <param name="maxDepth"></param>
-    /// <param name="unit"></param>
-    /// <returns></returns>
-    public async Task<EntityRegistryUnitHierarchy?> GetSubunitHierarchy(
-        string orgNumber,
-        int currentDepth = 0,
-        int maxDepth = 10,
-        EntityRegistryUnit? unit = null)
-    {
-        logger.LogInformation("Getting subunit hierarchy for {orgNumber}, current depth: {currentDepth}, max depth: {maxDepth}", orgNumber, currentDepth, maxDepth);
-        currentDepth++;
-        unit ??= await GetFull(orgNumber, attemptSubUnitLookupIfNotFound: true);
-        if (unit == null)
-        {
-            return null;
-        }
-        
-        
-        var subunits = await GetSubunits(orgNumber);
-        var subunitHierarchies = new List<EntityRegistryUnitHierarchy>();
-        if (currentDepth < maxDepth)
-        {
-            foreach (var subunit in subunits)
-            {
-                var subunitHierarchy = await GetSubunitHierarchy(subunit.Organisasjonsnummer, currentDepth, maxDepth, subunit);
-                if (subunitHierarchy != null)
-                {
-                    subunitHierarchies.Add(subunitHierarchy);
-                }
-            } 
-        }
-            
-        var hierarchy = new EntityRegistryUnitHierarchy
-        {
-            OrgNumber = orgNumber,
-            Unit = unit,
-            Subunits = subunitHierarchies
-        };
-
-        return hierarchy;
-    }
 
     /// <summary>
     /// Get full entity registry main unit
@@ -299,11 +227,6 @@ public class EntityRegistryService(
     private async Task<EntityRegistryUnit?> GetFromClientService(Uri url)
     {
         return await entityRegistryApiClientService.GetUpstreamEntityRegistryUnitAsync(url);
-    }
-    
-    private async Task<List<EntityRegistryUnit>> GetListFromClientService(Uri url)
-    {
-        return await entityRegistryApiClientService.GetUpstreamEntityRegistryUnitsAsync(url);
     }
 
     private SimpleEntityRegistryUnit? MapToEntityRegistryUnit(EntityRegistryUnit? upstreamEntityRegistryUnit)

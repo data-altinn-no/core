@@ -5,6 +5,7 @@ namespace Dan.Common.Services;
 /// <summary>
 /// Default implementation of IEntityRegistryApiClientService
 /// </summary>
+[Obsolete("Should not be used, use Dan.Common.Services.ICcrClientService for fetching data from CCR")]
 public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientService
 {
     private readonly IHttpClientFactory _clientFactory;
@@ -31,23 +32,5 @@ public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientSer
 
         var responseString = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<EntityRegistryUnit>(responseString);
-    }
-    
-    /// <summary>
-    /// Get list of entity registry units
-    /// </summary>
-    public async Task<List<EntityRegistryUnit>> GetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri)
-    {
-        var client = _clientFactory.CreateClient("entityRegistryClient");
-        var request = new HttpRequestMessage(HttpMethod.Get, registryApiUri);
-        request.Headers.TryAddWithoutValidation("Accept", "application/json");
-
-        var response = await client.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return [];
-
-        // TODO: Handle pagination
-        var responseString = await response.Content.ReadAsStringAsync();
-        var subunitsPage = JsonConvert.DeserializeObject<BrregPage<Subunits>>(responseString);
-        return subunitsPage?.Embedded?.SubUnits ?? [];
     }
 }

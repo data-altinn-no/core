@@ -1,8 +1,6 @@
-﻿using System.Diagnostics;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using AsyncKeyedLock;
 using Dan.Common.Extensions;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Config;
 using Microsoft.Extensions.Caching.Distributed;
@@ -14,7 +12,7 @@ public partial class CachingEntityRegistryApiClientService(
     ILoggerFactory loggerFactory,
     IHttpClientFactory clientFactory,
     IDistributedCache distributedCache)
-    : IEntityRegistryApiClientService
+    : Interfaces.IEntityRegistryApiClientService
 {
     public const string EntityRegistryCachePolicy = "EntityRegistryCachePolicy";
     public const string EntityRegistryListCachePolicy = "EntityRegistryListCachePolicy";
@@ -131,7 +129,6 @@ public partial class CachingEntityRegistryApiClientService(
     
     private async Task<List<EntityRegistryUnit>> InternalGetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri)
     {
-        var stopwatch = Stopwatch.StartNew();
         var client = clientFactory.CreateClient("entityRegistryClient");
         var nextUri = registryApiUri;
         var subUnits = new List<EntityRegistryUnit>();

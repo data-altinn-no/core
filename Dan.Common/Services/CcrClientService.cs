@@ -9,6 +9,11 @@ namespace Dan.Common.Services;
 public interface ICcrClientService
 {
     /// <summary>
+    /// Flag to set if allowed to look up synthetic users
+    /// </summary>
+    public bool AllowTestCcrLookup { get; set; }
+    
+    /// <summary>
     /// Fetches Entity Registry Unit, looks up main unit first, attempts to look up subunit if main unit not found
     /// </summary>
     /// <param name="organizationNumber">Organisation number of unit to fetch</param>
@@ -57,12 +62,21 @@ public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrC
     private const string CrrBaseProd = "https://api.data.altinn.no/v1/public/ccr";
     
     /// <summary>
+    /// Flag to set if allowed to look up synthetic users
+    /// </summary>
+    public bool AllowTestCcrLookup { get; set; } = false;
+    
+    /// <summary>
     /// Fetches Entity Registry Unit, looks up main unit first, attempts to look up subunit if main unit not found
     /// </summary>
     /// <param name="organizationNumber">Organisation number of unit to fetch</param>
     /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<EntityRegistryUnit?> GetUnit(string organizationNumber, string env)
     {
+        if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
+        {
+            return null;
+        }
         var url = $"{GetBaseUrl(env)}/{organizationNumber}";
         return await GetCcrResponse<EntityRegistryUnit>(url);
     }
@@ -74,6 +88,10 @@ public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrC
     /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<List<EntityRegistryUnit>?> GetSubunits(string organizationNumber, string env)
     {
+        if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
+        {
+            return null;
+        }
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/subunits";
         return await GetCcrResponse<List<EntityRegistryUnit>>(url);
     }
@@ -85,6 +103,10 @@ public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrC
     /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<EntityRegistryUnit?> GetMainUnit(string organizationNumber, string env)
     {
+        if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
+        {
+            return null;
+        }
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/mainunit";
         return await GetCcrResponse<EntityRegistryUnit>(url);
     }
@@ -96,6 +118,10 @@ public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrC
     /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<bool> IsPublic(string organizationNumber, string env)
     {
+        if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
+        {
+            return false;
+        }
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/ispublic";
         return await GetCcrResponse<bool>(url);
     }
@@ -108,6 +134,10 @@ public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrC
     /// <param name="env">Environment to fetch from: local, dev, test, prod</param>
     public async Task<EntityRegistryUnitHierarchy?> GetUnitHierarchy(string organizationNumber, string env)
     {
+        if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
+        {
+            return null;
+        }
         var url = $"{GetBaseUrl(env)}/{organizationNumber}/hierarchy";
         return await GetCcrResponse<EntityRegistryUnitHierarchy>(url);
     }
@@ -153,8 +183,7 @@ public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrC
         }
     }
     
-    // TODO: Add synth checks
-    private bool IsSyntheticOrganizationNumber(string organizationNumber)
+    private static bool IsSyntheticOrganizationNumber(string organizationNumber)
     {
         return organizationNumber.StartsWith('2') || organizationNumber.StartsWith('3');
     }

@@ -2,10 +2,8 @@
 using Moq;
 using System.Diagnostics.CodeAnalysis;
 using Dan.Common.Enums;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
-using Dan.Core.Models;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
@@ -19,7 +17,7 @@ namespace Dan.Core.UnitTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
         private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        private readonly Mock<Services.Interfaces.IEntityRegistryService> _mockEntityRegistryService = new Mock<Services.Interfaces.IEntityRegistryService>();
+        private readonly Mock<IEntityRegistryService> _mockEntityRegistryService = new Mock<IEntityRegistryService>();
         private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService = new Mock<IAvailableEvidenceCodesService>();
         private readonly Mock<IConsentService> _mockConsentService = new Mock<IConsentService>();
         private readonly Mock<IEvidenceStatusService> _mockEvidenceStatusService = new Mock<IEvidenceStatusService>();
