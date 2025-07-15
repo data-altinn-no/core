@@ -365,6 +365,11 @@ public static class Settings
     public static string MaskinportenWellknownUrl => GetSetting("MaskinportenWellknownUrl");
 
     public static string AltinnWellknownUrl => GetSetting("AltinnWellknownUrl");
+    
+    /// <summary>
+    /// Gets the Url to use for CCR wrapper
+    /// </summary>
+    public static string CcrUrl => GetSetting("CcrUrl");
 
     public const int MaxReferenceLength = 50;
 

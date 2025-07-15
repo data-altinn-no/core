@@ -20,11 +20,15 @@ namespace Dan.Core
     public class FuncOpenData
     {
         private readonly IEvidenceHarvesterService _evidenceHarvesterService;
-        private readonly IEntityRegistryService _entityRegistryService;
+        private readonly Services.Interfaces.IEntityRegistryService _entityRegistryService;
         private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
         private readonly ILogger<FuncOpenData> _logger;
 
-        public FuncOpenData(IAvailableEvidenceCodesService availableEvidenceCodesService, IEvidenceHarvesterService evidenceHarvesterService, IEntityRegistryService entityRegistryService, ILoggerFactory loggerFactory)
+        public FuncOpenData(
+            IAvailableEvidenceCodesService availableEvidenceCodesService,
+            IEvidenceHarvesterService evidenceHarvesterService,
+            Services.Interfaces.IEntityRegistryService entityRegistryService,
+            ILoggerFactory loggerFactory)
         {
             _availableEvidenceCodesService = availableEvidenceCodesService;
             _evidenceHarvesterService = evidenceHarvesterService;
