@@ -6,7 +6,7 @@ namespace Dan.Core.Helpers;
 
 public class Oauth2AccessTokenCachingStrategy : ITtlStrategy<string>
 {
-    private const uint SafetyMarginInSeconds = 20;
+    private const uint SafetyMarginInSeconds = 30;
 
     /// <summary>
     /// Returns the TTL for a access token received from the OAuth2 authorization server, based on the lifetime for the token itself. Has a safety margin to avoid
