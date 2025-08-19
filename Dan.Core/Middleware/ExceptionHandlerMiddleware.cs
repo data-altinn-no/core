@@ -1,8 +1,6 @@
-﻿using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using Dan.Common.Exceptions;
 using Dan.Common.Models;
-using Dan.Core.Config;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;
 using Microsoft.Azure.Functions.Worker;
@@ -40,7 +38,6 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
 
             DanException nex;
             LogLevel logLevel;
-            string cert = string.Empty;
             var request = await context.GetHttpRequestDataAsync();
 
             // Occurs when any of the Altinn integration services fail
@@ -63,11 +60,6 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
 
                 // Most errors are just functional user errors, but EvidenceSourcePermanentServerException indicates a serverside misconfiguration or similar
                 logLevel = exception is EvidenceSourcePermanentServerException ? LogLevel.Error : LogLevel.Information;
-
-                if (exception is InvalidCertificateException)
-                {
-                    cert = request?.Headers.Get(Settings.CertificateHeader) ?? "none supplied";
-                }
             }
             else if (exception is HttpRequestException || exception is TimeoutException)
             {
@@ -86,7 +78,7 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
             HttpStatusCode statusCode = nex.GetErrorCode();
 
             string message =
-                "Core OnException handler: {status={statusCode} ex={exception} nex={DanException} msg={message} nexMsg={nexMessage} innerEx={innerEx} innerExMsg={innerExMsg} func={functionName} invocationId={invocationId} cert={cert} detailDescription={detailDescription} detailedErrorCode={detailedErrorCode}";
+                "Core OnException handler: {status={statusCode} ex={exception} nex={DanException} msg={message} nexMsg={nexMessage} innerEx={innerEx} innerExMsg={innerExMsg} func={functionName} invocationId={invocationId} detailDescription={detailDescription} detailedErrorCode={detailedErrorCode}";
             object[] args =
             {
                 statusCode, // statusCode
@@ -98,7 +90,6 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                 exception.InnerException?.Message!, // innerExMessage
                 context.FunctionDefinition.Name, // functionName
                 context.InvocationId, // invocationId
-                cert, // cert
                 errorModel.DetailDescription ?? string.Empty, // detailDescription
                 errorModel.DetailCode ?? string.Empty // detailedErrorCode
             };
