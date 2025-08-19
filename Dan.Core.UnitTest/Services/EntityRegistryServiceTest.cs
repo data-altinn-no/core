@@ -1,21 +1,29 @@
-namespace Dan.Common.UnitTest.Services;
+using System.Diagnostics.CodeAnalysis;
+using Dan.Common.Models;
+using Dan.Core.Services;
+using Dan.Core.Services.Interfaces;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace Dan.Core.UnitTest.Services;
 
 [TestClass]
 [ExcludeFromCodeCoverage]
 public class EntityRegistryServiceTest
 {
-    private readonly Mock<IEntityRegistryApiClientService> _entityRegistryApiClientServiceMock = new();
-    private readonly IEntityRegistryService _entityRegistryService;
+    private readonly Mock<IEntityRegistryApiClientService> entityRegistryApiClientServiceMock = new();
+    private readonly Mock<ILogger<EntityRegistryService>> logger = new();
+    private readonly EntityRegistryService entityRegistryService;
 
     public EntityRegistryServiceTest()
     {
-        _entityRegistryService = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object);
+        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
     }
 
     [TestInitialize]
     public void TestInitialize()
     {
-        _entityRegistryApiClientServiceMock.Setup(_ => _.GetUpstreamEntityRegistryUnitAsync(It.IsAny<Uri>()))
+        entityRegistryApiClientServiceMock.Setup(_ => _.GetUpstreamEntityRegistryUnitAsync(It.IsAny<Uri>()))
             .Returns((Uri url) =>
             {
                 var orgForm = new Organisasjonsform { Kode = "AS" };
@@ -53,7 +61,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMapping()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.Get("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -61,7 +69,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundReturnsSubUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.Get("92").Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
@@ -69,7 +77,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundSetToFalseReturnsNull()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.Get("92", attemptSubUnitLookupIfNotFound: false).Result;
         Assert.IsNull(r);
     }
@@ -77,7 +85,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMainUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.GetMainUnit("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -85,7 +93,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMainUnitAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.GetMainUnit("92").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -93,7 +101,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetFullMainAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.GetFullMainUnit("92").Result;
         Assert.AreEqual("91", r?.Organisasjonsnummer);
     }
@@ -101,7 +109,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsSubunit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.Get("92", subUnitOnly: true).Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
@@ -109,7 +117,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsNullIfMainUnit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.Get("91", subUnitOnly: true).Result;
         Assert.IsNull(r);
     }
@@ -117,7 +125,7 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetNestToTopmostMainUnitReturnsMainunit()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.GetMainUnit("94").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
@@ -125,66 +133,18 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestSyntheticLookupsNotAllowedByDefault()
     {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
+        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
         var r = s.GetMainUnit("31").Result;
         Assert.IsNull(r);
     }
     
-    [TestMethod]
-    public void TestIsMainUnit()
-    {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
-        var r = s.IsMainUnit("91").Result;
-        Assert.IsTrue(r);
-    }
-    
-    [TestMethod]
-    public void TestIsMainUnitSimpleObj()
-    {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
-        var r = s.IsMainUnit(new SimpleEntityRegistryUnit());
-        Assert.IsTrue(r);
-    }
-    
-    [TestMethod]
-    public void TestIsMainUnitFullObj()
-    {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
-        var r = s.IsMainUnit(new EntityRegistryUnit { Organisasjonsnummer = "91", Organisasjonsform = new Organisasjonsform { Kode = "AS" } });
-        Assert.IsTrue(r);
-    }
-    
-    [TestMethod]
-    public void TestIsSubUnit()
-    {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
-        var r = s.IsSubUnit("92").Result;
-        Assert.IsTrue(r);
-    }
-    
-    [TestMethod]
-    public void TestIsSubUnitSimpleObj()
-    {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
-        var r = s.IsSubUnit(new SimpleEntityRegistryUnit { ParentUnit = "x" });
-        Assert.IsTrue(r);
-    }
-    
-    [TestMethod]
-    public void TestIsSubUnitFullObj()
-    {
-        var s = new EntityRegistryService(_entityRegistryApiClientServiceMock.Object) { UseCoreProxy = false };
-        var r = s.IsSubUnit(new EntityRegistryUnit { Organisasjonsnummer = "91", Organisasjonsform = new Organisasjonsform { Kode = "AS" }, OverordnetEnhet = "x" });
-        Assert.IsTrue(r);
-    }
-    
     [DataTestMethod]
     [DataRow("971032146", "AS", "0000", "0000", true)]  // Public sector organization from PublicSectorOrganizations
-    [DataRow("123456789", "KF", "0000", "0000", true)]  // Public sector unit type
-    [DataRow("123456789", "AS", "3900", "0000", true)]  // Public sector sector code
-    [DataRow("123456789", "AS", "0000", "8411", true)]  // Public sector industrial code
-    [DataRow("123456789", "AS", "0000", "0000", false)] // Non-public sector organization
-    public void TestIsPublicAgency(
+    [DataRow("123456781", "KF", "0000", "0000", true)]  // Public sector unit type
+    [DataRow("123456782", "AS", "3900", "0000", true)]  // Public sector sector code
+    [DataRow("123456783", "AS", "0000", "8411", true)]  // Public sector industrial code
+    [DataRow("123456784", "AS", "0000", "0000", false)] // Non-public sector organization
+    public async Task TestIsPublicAgency(
         string organizationNumber,
         string organizationForm,
         string sectorCode,
@@ -192,16 +152,20 @@ public class EntityRegistryServiceTest
         bool expectedResult)
     {
         // Arrange
-        var entityRegistryUnit = new SimpleEntityRegistryUnit
+        var entityRegistryUnit = new EntityRegistryUnit
         {
-            OrganizationNumber = organizationNumber,
-            OrganizationForm = organizationForm,
-            SectorCode = sectorCode,
-            IndustrialCodes =  new List<string> { industrialCode1 }
+            Organisasjonsnummer = organizationNumber,
+            Organisasjonsform = new Organisasjonsform { Kode = organizationForm },
+            InstitusjonellSektorkode = new SektorKodeDto{Kode = sectorCode},
+            Naeringskode1 = new NaeringsKodeDto{ Kode = industrialCode1 }
         };
+        
+        entityRegistryApiClientServiceMock
+            .Setup(m => m.GetUpstreamEntityRegistryUnitAsync(It.IsAny<Uri>()))
+            .ReturnsAsync(entityRegistryUnit);
 
         // Act
-        var isPublicAgency = _entityRegistryService.IsPublicAgency(entityRegistryUnit);
+        var isPublicAgency = await entityRegistryService.IsPublicAgency(organizationNumber);
 
         // Assert
         Assert.AreEqual(expectedResult, isPublicAgency);

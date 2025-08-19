@@ -1,16 +1,12 @@
-﻿namespace Dan.Common.Interfaces;
+﻿using Dan.Common.Models;
+
+namespace Dan.Core.Services.Interfaces;
 
 /// <summary>
 /// Service for handling entity registry
 /// </summary>
-[Obsolete("Use Dan.Common.Services.ICcrClientService instead.")]
 public interface IEntityRegistryService
 {
-    /// <summary>
-    /// This controls whether the service should call the proxy in Dan.Core or ER directory. Should be true for plugins and false for Core.
-    /// </summary>
-    public bool UseCoreProxy { get; set; }
-
     /// <summary>
     /// Controls whether lookups on synthetic (Tenor) organization numbers are allowed. Should be false in production.
     /// </summary>
@@ -25,13 +21,6 @@ public interface IEntityRegistryService
     /// <param name="subUnitOnly">Will skip checking for main unit, and only return a subunit if it's found</param>
     /// <returns>A simplified model from ER suitable for most verification purposes</returns>
     Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false);
-
-    /// <summary>
-    /// Gets the uppermost parent for the given organization number
-    /// </summary>
-    /// <param name="organizationNumber">The organization number</param>
-    /// <returns>A simplified model from ER suitable for most verification purposes</returns>
-    Task<SimpleEntityRegistryUnit?> GetMainUnit(string organizationNumber);
 
     /// <summary>
     /// Gets the organization number from ER.
@@ -51,57 +40,25 @@ public interface IEntityRegistryService
     Task<EntityRegistryUnit?> GetFullMainUnit(string organizationNumber);
 
     /// <summary>
-    /// Returns true if the unit is a main unit
+    /// Gets sub units of the given organization number
     /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if main unit</returns>
-    bool IsMainUnit(SimpleEntityRegistryUnit unit);
+    /// <param name="organizationNumber">Organization number to get sub units for</param>
+    /// <returns>List of full models from ER contain all the subunits for the organisation</returns>
+    Task<List<EntityRegistryUnit>> GetSubunits(string organizationNumber);
 
     /// <summary>
-    /// Returns true if the unit is a main unit
+    /// Get full hierarchy of subunits recursively for the given organization number
     /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if main unit</returns>
-    bool IsMainUnit(EntityRegistryUnit unit);
-
-    /// <summary>
-    /// Returns true if the unit is a main unit
-    /// </summary>
-    /// <param name="organizationNumber">The organizationNumber</param>
-    /// <returns>True if main unit</returns>
-    Task<bool> IsMainUnit(string organizationNumber);
-
-    /// <summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if sub unit</returns>
-    /// </summary>
-    bool IsSubUnit(SimpleEntityRegistryUnit unit);
-
-    /// <summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if sub unit</returns>
-    /// </summary>
-    bool IsSubUnit(EntityRegistryUnit unit);
-
-    /// <summary>
-    /// <param name="organizationNumber">The organizationNumber</param>
-    /// <returns>True if sub unit</returns>
-    /// </summary>
-    Task<bool> IsSubUnit(string organizationNumber);
-
-    /// <summary>
-    /// Returns true if the unit is determined to be a public agency
-    /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if public agency</returns>
-    bool IsPublicAgency(SimpleEntityRegistryUnit unit);
-
-    /// <summary>
-    /// Returns true if the unit is determined to be a public agency
-    /// </summary>
-    /// <param name="unit">The unit</param>
-    /// <returns>True if public agency</returns>
-    bool IsPublicAgency(EntityRegistryUnit unit);
+    /// <param name="orgNumber">Organization number to get </param>
+    /// <param name="currentDepth"></param>
+    /// <param name="maxDepth"></param>
+    /// <param name="unit"></param>
+    /// <returns>Nested structure of subunit hierarchy</returns>
+    Task<EntityRegistryUnitHierarchy?> GetSubunitHierarchy(
+        string orgNumber,
+        int currentDepth = 0,
+        int maxDepth = 10,
+        EntityRegistryUnit? unit = null);
 
     /// <summary>
     /// Returns true if the unit is determined to be a public agency
