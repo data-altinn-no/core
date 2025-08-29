@@ -103,6 +103,7 @@ var host = new HostBuilder()
         services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
         services.AddSingleton<IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
         services.AddSingleton<IFunctionContextAccessor, FunctionContextAccessor>();
+        services.AddSingleton<IPluginCredentialService, PluginCredentialService>();
 
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
