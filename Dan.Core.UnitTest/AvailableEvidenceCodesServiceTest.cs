@@ -27,6 +27,7 @@ namespace Dan.Core.UnitTest
         private readonly Mock<AsyncPolicy<List<EvidenceCode>>> _mockAsyncPolicy = new Mock<AsyncPolicy<List<EvidenceCode>>>();
         private readonly Mock<IServiceContextService> _mockServiceContextService = new Mock<IServiceContextService>();
         private readonly Mock<IFunctionContextAccessor> _mockFunctionContextAccessor = new Mock<IFunctionContextAccessor>();
+        private readonly Mock<IDistributedCache> _mockDistributedCache = new Mock<IDistributedCache>();
 
         private IPolicyRegistry<string> _policyRegistry;
 
@@ -135,6 +136,7 @@ namespace Dan.Core.UnitTest
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
+                _mockDistributedCache.Object,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
@@ -183,6 +185,7 @@ namespace Dan.Core.UnitTest
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
+                _mockDistributedCache.Object,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 

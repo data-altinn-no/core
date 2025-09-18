@@ -6,5 +6,5 @@ public interface IAvailableEvidenceCodesService
 {
     public Task<List<EvidenceCode>> GetAvailableEvidenceCodes(bool forceRefresh = false);
 
-    public Dictionary<string, string> GetAliases();
+    public Task<Dictionary<string, string>> GetAliases();
 }
