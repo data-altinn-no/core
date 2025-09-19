@@ -68,8 +68,8 @@ public class AvailableEvidenceCodesService(
                 return evidenceCodes;
             }
             evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
-            evidenceCodes = FilterEvidenceCodes(evidenceCodes);
             await distributedCache.SetValueAsync(CacheContextKey, evidenceCodes);
+            evidenceCodes = FilterEvidenceCodes(evidenceCodes);
             return evidenceCodes;
         }
     }
@@ -77,7 +77,8 @@ public class AvailableEvidenceCodesService(
     public async Task<Dictionary<string, string>> GetAliases()
     {
         var aliases = new Dictionary<string, string>();
-        var aliasedEvidenceCodes = (await GetAvailableEvidenceCodes())
+        var availableEvienceCodes = await GetAvailableEvidenceCodes();
+        var aliasedEvidenceCodes = availableEvienceCodes
             .Where(ec => ec.DatasetAliases is not null && ec.DatasetAliases.Count > 0);
         foreach (var aliasedEvidenceCode in aliasedEvidenceCodes)
         {

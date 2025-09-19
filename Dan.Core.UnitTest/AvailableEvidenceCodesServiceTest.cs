@@ -27,7 +27,6 @@ namespace Dan.Core.UnitTest
         private readonly Mock<AsyncPolicy<List<EvidenceCode>>> _mockAsyncPolicy = new Mock<AsyncPolicy<List<EvidenceCode>>>();
         private readonly Mock<IServiceContextService> _mockServiceContextService = new Mock<IServiceContextService>();
         private readonly Mock<IFunctionContextAccessor> _mockFunctionContextAccessor = new Mock<IFunctionContextAccessor>();
-        private readonly Mock<IDistributedCache> _mockDistributedCache = new Mock<IDistributedCache>();
 
         private IPolicyRegistry<string> _policyRegistry;
 
@@ -132,11 +131,12 @@ namespace Dan.Core.UnitTest
         {
 
             // Arrange
+            var mockCache = new MockCache();
             var acs = new AvailableEvidenceCodesService(
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
-                _mockDistributedCache.Object,
+                mockCache,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
@@ -181,11 +181,12 @@ namespace Dan.Core.UnitTest
         [TestMethod]
         public async Task GetAliases()
         {
+            var mockCache = new MockCache();
             var acs = new AvailableEvidenceCodesService(
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
-                _mockDistributedCache.Object,
+                mockCache,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
@@ -197,7 +198,7 @@ namespace Dan.Core.UnitTest
 
             // Act
             await acs.GetAvailableEvidenceCodes();
-            var actual = acs.GetAliases();
+            var actual = await acs.GetAliases();
             
             // Assert
             actual.Should().BeEquivalentTo(expected);
