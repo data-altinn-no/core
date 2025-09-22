@@ -55,13 +55,21 @@ public class PluginCredentialService(IConfiguration configuration, ILogger<Plugi
         
         using (await semaphore.LockAsync(cancellationToken))
         {
-            using var listener = AzureEventSourceListener.CreateConsoleLogger();
-            var clientid = configuration.GetSection("AZURE_CLIENT_ID").Value;
-            var ident = configuration.GetSection("AZURE_CLIENT_SECRET").Value?[..5];
-            logger.LogInformation("Getting token for {clientid} - {ident}", clientid, ident);
-            var tokenRequestContext = new TokenRequestContext(scopes);
-            var tokenResult = await credentials.GetTokenAsync(tokenRequestContext, cancellationToken);
-            return tokenResult.Token;
+            try
+            {
+                using var listener = AzureEventSourceListener.CreateConsoleLogger();
+                var clientid = configuration.GetSection("AZURE_CLIENT_ID").Value;
+                var ident = configuration.GetSection("AZURE_CLIENT_SECRET").Value?[..5];
+                logger.LogInformation("Getting token for {clientid} - {ident}", clientid, ident);
+                var tokenRequestContext = new TokenRequestContext(scopes);
+                var tokenResult = await credentials.GetTokenAsync(tokenRequestContext, cancellationToken);
+                return tokenResult.Token;
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to get token for plugins with message: {message}", e.Message);
+                return null;
+            }
         }
     }
 }
