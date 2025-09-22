@@ -1,5 +1,6 @@
 ﻿using AsyncKeyedLock;
 using Azure.Core;
+using Azure.Core.Diagnostics;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,16 @@ public interface IPluginCredentialService
 /// </summary>
 public class PluginCredentialService(IConfiguration configuration, ILogger<PluginCredentialService> logger) : IPluginCredentialService
 {
-    private readonly DefaultAzureCredential credentials = new();
+    private static readonly DefaultAzureCredentialOptions Options = new()
+    {
+        Diagnostics =
+        {
+            LoggedHeaderNames = { "x-ms-request-id" },
+            LoggedQueryParameters = { "api-version" },
+            IsAccountIdentifierLoggingEnabled = true
+        }
+    };
+    private readonly DefaultAzureCredential credentials = new(Options);
     private readonly AsyncNonKeyedLocker semaphore = new(1);
 
     /// <summary>
@@ -45,6 +55,7 @@ public class PluginCredentialService(IConfiguration configuration, ILogger<Plugi
         
         using (await semaphore.LockAsync(cancellationToken))
         {
+            using var listener = AzureEventSourceListener.CreateConsoleLogger();
             var clientid = configuration.GetSection("AZURE_CLIENT_ID").Value;
             var ident = configuration.GetSection("AZURE_CLIENT_SECRET").Value?[..5];
             logger.LogInformation("Getting token for {clientid} - {ident}", clientid, ident);
