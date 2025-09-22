@@ -2,6 +2,7 @@
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Dan.Common.Services;
 
@@ -21,7 +22,7 @@ public interface IPluginCredentialService
 /// <summary>
 /// Service for handling getting auth token for plugins
 /// </summary>
-public class PluginCredentialService(IConfiguration configuration) : IPluginCredentialService
+public class PluginCredentialService(IConfiguration configuration, ILogger<PluginCredentialService> logger) : IPluginCredentialService
 {
     private readonly DefaultAzureCredential credentials = new();
     private readonly AsyncNonKeyedLocker semaphore = new(1);
@@ -44,6 +45,9 @@ public class PluginCredentialService(IConfiguration configuration) : IPluginCred
         
         using (await semaphore.LockAsync(cancellationToken))
         {
+            var clientid = configuration.GetSection("AZURE_CLIENT_ID").Value;
+            var ident = configuration.GetSection("AZURE_CLIENT_SECRET").Value?[..5];
+            logger.LogInformation("Getting token for {clientid} - {ident}", clientid, ident);
             var tokenRequestContext = new TokenRequestContext(scopes);
             var tokenResult = await credentials.GetTokenAsync(tokenRequestContext, cancellationToken);
             return tokenResult.Token;
