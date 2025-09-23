@@ -50,6 +50,7 @@ public class AvailableEvidenceCodesService(
             if (evidenceCodes is not null)
             {
                 SetCacheDiagnosticsHeader("hit-distributed");
+                evidenceCodes = FilterEvidenceCodes(evidenceCodes);
                 return evidenceCodes;
             }
         }
@@ -67,6 +68,7 @@ public class AvailableEvidenceCodesService(
                 evidenceCodes = await distributedCache.GetValueAsync<List<EvidenceCode>>(CacheContextKey);
                 if (evidenceCodes is not null)
                 {
+                    evidenceCodes = FilterEvidenceCodes(evidenceCodes);
                     return evidenceCodes;
                 }
             }
