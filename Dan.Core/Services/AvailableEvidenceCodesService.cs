@@ -61,11 +61,14 @@ public class AvailableEvidenceCodesService(
 
         using (await semaphore.LockAsync())
         {
-            // Checking if another thread finished caching
-            evidenceCodes = await distributedCache.GetValueAsync<List<EvidenceCode>>(CacheContextKey);
-            if (evidenceCodes is not null)
+            if (!forceRefresh)
             {
-                return evidenceCodes;
+                // Checking if another thread finished caching
+                evidenceCodes = await distributedCache.GetValueAsync<List<EvidenceCode>>(CacheContextKey);
+                if (evidenceCodes is not null)
+                {
+                    return evidenceCodes;
+                }
             }
             evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
             await distributedCache.SetValueAsync(CacheContextKey, evidenceCodes);
