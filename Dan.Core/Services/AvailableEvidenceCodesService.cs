@@ -82,7 +82,11 @@ public class AvailableEvidenceCodesService(
     public async Task<Dictionary<string, string>> GetAliases()
     {
         var aliases = new Dictionary<string, string>();
-        var availableEvienceCodes = await GetAvailableEvidenceCodes();
+        var availableEvienceCodes = await distributedCache.GetValueAsync<List<EvidenceCode>>(CacheContextKey);
+        if (availableEvienceCodes is null)
+        {
+            return aliases;
+        }
         var aliasedEvidenceCodes = availableEvienceCodes
             .Where(ec => ec.DatasetAliases is not null && ec.DatasetAliases.Count > 0);
         foreach (var aliasedEvidenceCode in aliasedEvidenceCodes)
