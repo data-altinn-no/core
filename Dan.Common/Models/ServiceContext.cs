@@ -19,7 +19,13 @@ public class ServiceContext
     /// </summary>
     [DataMember(Name = "id")]
     public string Id { get; set; } = string.Empty;
-    
+
+    /// <summary>
+    /// Organisation managing/orchestrating the service context towards consumers and providers
+    /// </summary>
+    [DataMember(Name = "owner")]
+    public string Owner { get; set; } = string.Empty;
+
     /// <summary>
     /// Description of the service context
     /// </summary>

@@ -4,17 +4,19 @@ using Microsoft.Extensions.Caching.Distributed;
 namespace Dan.Common.Extensions;
 
 /// <summary>
-/// Extensions for IDistributedCache
+/// Extension methods for IDistributedCache (i.e Redis)
 /// </summary>
 public static class DistributedCacheExtensions
 {
+    private static readonly JsonSerializerSettings JsonSerializerSettings = new()
+    {
+        TypeNameHandling = TypeNameHandling.All
+    };
+    
     /// <summary>
-    /// Gets value from distributed cache, handles decoding from UTF8 bytes
+    /// Gets value from distributed cache by key and deserializes into POCO
     /// </summary>
-    /// <param name="distributedCache">Target cache</param>
-    /// <param name="key">Cache key</param>
-    /// <typeparam name="T">Type that cached value should be deserialised into</typeparam>
-    /// <returns>Deserialized value, or null if not found</returns>
+    /// <typeparam name="T">Type to deserialize into</typeparam>
     public static async Task<T?> GetValueAsync<T>(this IDistributedCache distributedCache, string key)
     {
         var encodedPoco = await distributedCache.GetAsync(key);
@@ -23,21 +25,16 @@ public static class DistributedCacheExtensions
             return default;
         }
         var serializedPoco = Encoding.UTF8.GetString(encodedPoco);
-        return JsonConvert.DeserializeObject<T>(serializedPoco);
+        return JsonConvert.DeserializeObject<T>(serializedPoco, JsonSerializerSettings);
     }
-    
+
     /// <summary>
-    /// Sets value by handling encoding to UTF8
+    /// Serializes and sets value in distributed cache
     /// </summary>
-    /// <param name="distributedCache">Target cache</param>
-    /// <param name="key">Cache key</param>
-    /// <param name="value">Cache value</param>
-    /// <param name="options">Cache options</param>
-    /// <typeparam name="T">Any class that can be serialised and encoded to UTF8</typeparam>
     public static async Task SetValueAsync<T>(this IDistributedCache distributedCache, string key, T value, DistributedCacheEntryOptions? options = null)
     {
         options ??= new DistributedCacheEntryOptions();
-        var serializedValue = JsonConvert.SerializeObject(value);
+        var serializedValue = JsonConvert.SerializeObject(value, JsonSerializerSettings);
         var encodedValue = Encoding.UTF8.GetBytes(serializedValue);
         await distributedCache.SetAsync(key, encodedValue, options);
     }

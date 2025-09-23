@@ -147,7 +147,7 @@ public class EvidenceStatusService : IEvidenceStatusService
 
     private async Task<EvidenceStatusCode> GetAsynchronousEvidenceStatusCode(Accreditation accreditation, EvidenceCode evidenceCode)
     {
-        var aliases = _availableEvidenceCodesService.GetAliases();
+        var aliases = await _availableEvidenceCodesService.GetAliases();
         var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);

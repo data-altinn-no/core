@@ -104,6 +104,7 @@ var host = new HostBuilder()
         services.AddSingleton<Dan.Core.Services.Interfaces.IEntityRegistryService, Dan.Core.Services.EntityRegistryService>();
         services.AddSingleton<Dan.Core.Services.Interfaces.IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
         services.AddSingleton<IFunctionContextAccessor, FunctionContextAccessor>();
+        services.AddSingleton<IPluginCredentialService, PluginCredentialService>();
 
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();

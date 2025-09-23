@@ -3,6 +3,7 @@ using Azure.Identity;
 using Azure.Monitor.Query;
 using Dan.Core.Config;
 using Dan.Core.Models;
+using Dan.Core.Services.Interfaces;
 
 namespace Dan.Core.Services;
 
@@ -11,6 +12,7 @@ public interface IUsageStatisticsService
     Task<List<MonthlyUsageStatistics>> GetMonthlyUsage();
     Task<List<IGrouping<string?, YearlyUsageStatistics>>> GetLastYearsUsage();
     Task<List<IGrouping<string?, YearlyUsageStatistics>>> GetAllUsage();
+    Task<ParquetSource> GetLast24HoursPerServiceContext();    
 }
 
 public class UsageStatisticsService : IUsageStatisticsService
@@ -20,6 +22,12 @@ public class UsageStatisticsService : IUsageStatisticsService
     private const string SortingfieldKey = "Sortingfield";
     
     private readonly LogsQueryClient _logsQueryClient = new(new DefaultAzureCredential());
+    private readonly IServiceContextService _serviceContextService;
+
+    public UsageStatisticsService(IServiceContextService serviceContextService)
+    {
+        _serviceContextService = serviceContextService;
+    }
 
     public async Task<List<MonthlyUsageStatistics>> GetMonthlyUsage()
     {
@@ -41,7 +49,60 @@ public class UsageStatisticsService : IUsageStatisticsService
             .ToList();
         return usage;
     }
-    
+
+    public async Task<ParquetSource> GetLast24HoursPerServiceContext()
+    {
+        var query = $$"""
+            traces
+            | where tostring(customDimensions["action"]) in ("DatasetRetrieved", "ConsentRequested", "NotificationSent", "AccreditationsRetrieved", "ConsentReminderSent")
+            | where timestamp between (startofday(ago(1d)) .. startofday(now()))
+            | extend 
+                action = tostring(customDimensions["action"]),
+                dataset = tostring(customDimensions["evidenceCodeName"]),
+                serviceContext = tostring(customDimensions["serviceContext"]),
+                day = startofday(timestamp)
+            | summarize
+                DatasetsRetrieved = countif(action == "DatasetRetrieved"),
+                ConsentsRequested = countif(action == "ConsentRequested"),
+                NotificationsSent = countif(action == "NotificationSent"),
+                AccreditationsRetrieved = countif(action == "AccreditationsRetrieved"),
+                ConsentRemindersSent = countif(action == "ConsentReminderSent"),
+                ApiCalls = count()
+            by serviceContext, day
+            | order by serviceContext asc, day desc          
+            """;
+
+        var results = await _logsQueryClient.QueryResourceAsync(
+            new ResourceIdentifier(Settings.ApplicationInsightsResourceId),
+            query,
+            new QueryTimeRange(new DateTimeOffset(DateTime.Now.Date.AddDays(-2)), new DateTimeOffset(DateTime.Now)));
+
+        var rows = results.Value.Table.Rows;
+
+        var parquetStats = new ParquetSource();
+
+        var serviceContexts = await _serviceContextService.GetRegisteredServiceContexts();
+        foreach (var row in rows)
+        {
+            var item = new ParquetSourceRecord()
+            {
+                TimeStamp = DateTime.Parse(row["day"].ToString()),
+                ConsentRequests = (long)row["ConsentsRequested"],
+                ApiCalls = (long)row["ApiCalls"] - (long)row["NotificationsSent"],
+                DatasetsRetrieved = (long)row["DatasetsRetrieved"],
+                Environment = Settings.IsProductionEnvironment ? "prod" : "test",
+                ServiceName = row["serviceContext"].ToString(),
+                NotificationsSent = (long)row["NotificationsSent"] + (long)row["ConsentsRequested"] * 2,
+                ServiceOwner = serviceContexts
+                    .FirstOrDefault(s => s.Name == row["serviceContext"].ToString()).Owner
+            };
+
+            parquetStats.Records.Add(item);
+        }
+
+        return parquetStats;
+    }
+
     public async Task<List<IGrouping<string?,YearlyUsageStatistics>>> GetLastYearsUsage()
     {
         var lastYear = DateTime.UtcNow.Year - 1;

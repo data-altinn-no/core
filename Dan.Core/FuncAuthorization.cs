@@ -93,7 +93,7 @@ public class FuncAuthorization
             using (var t = _logger.Timer($"{evidenceCode.EvidenceCodeName}-init"))
             {
                 _logger.LogInformation("Start init async evidenceCode={evidenceCode} aid={accreditationId}", evidenceCode.EvidenceCodeName, accreditation.AccreditationId);
-                var aliases = _availableEvidenceCodesService.GetAliases();
+                var aliases = await _availableEvidenceCodesService.GetAliases();
                 await EvidenceSourceHelper.InitAsynchronousEvidenceCodeRequest(accreditation, evidenceCode, _client, aliases);
                 _logger.LogInformation("Completed init async evidenceCode={evidenceCode} aid={accreditationId} elapsedMs={elapsedMs}", evidenceCode.EvidenceCodeName, accreditation.AccreditationId, t.ElapsedMilliseconds);
             }
