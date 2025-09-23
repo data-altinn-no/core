@@ -73,6 +73,10 @@ public class AvailableEvidenceCodesService(
                 }
             }
             evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
+            foreach (var es in evidenceCodes)
+            {
+                es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
+            }
             await distributedCache.SetValueAsync(CacheContextKey, evidenceCodes);
             evidenceCodes = FilterEvidenceCodes(evidenceCodes);
             return evidenceCodes;
@@ -197,10 +201,10 @@ public class AvailableEvidenceCodesService(
     {
         evidenceCodes = FilterInactive(evidenceCodes);
         evidenceCodes = SplitAliases(evidenceCodes);
-        foreach (var es in evidenceCodes)
-        {
-            es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
-        }
+        // foreach (var es in evidenceCodes)
+        // {
+        //     es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
+        // }
         return evidenceCodes.ToList();
     }
     private static List<EvidenceCode> FilterInactive(IEnumerable<EvidenceCode> evidenceCodes)
