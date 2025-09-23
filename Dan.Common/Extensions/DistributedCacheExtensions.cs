@@ -8,6 +8,11 @@ namespace Dan.Common.Extensions;
 /// </summary>
 public static class DistributedCacheExtensions
 {
+    private static readonly JsonSerializerSettings JsonSerializerSettings = new()
+    {
+        TypeNameHandling = TypeNameHandling.All
+    };
+    
     /// <summary>
     /// Gets value from distributed cache by key and deserializes into POCO
     /// </summary>
@@ -20,7 +25,7 @@ public static class DistributedCacheExtensions
             return default;
         }
         var serializedPoco = Encoding.UTF8.GetString(encodedPoco);
-        return JsonConvert.DeserializeObject<T>(serializedPoco);
+        return JsonConvert.DeserializeObject<T>(serializedPoco, JsonSerializerSettings);
     }
 
     /// <summary>
@@ -29,7 +34,7 @@ public static class DistributedCacheExtensions
     public static async Task SetValueAsync<T>(this IDistributedCache distributedCache, string key, T value, DistributedCacheEntryOptions? options = null)
     {
         options ??= new DistributedCacheEntryOptions();
-        var serializedValue = JsonConvert.SerializeObject(value);
+        var serializedValue = JsonConvert.SerializeObject(value, JsonSerializerSettings);
         var encodedValue = Encoding.UTF8.GetBytes(serializedValue);
         await distributedCache.SetAsync(key, encodedValue, options);
     }
