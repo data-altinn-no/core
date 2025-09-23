@@ -131,10 +131,12 @@ namespace Dan.Core.UnitTest
         {
 
             // Arrange
+            var mockCache = new MockCache();
             var acs = new AvailableEvidenceCodesService(
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
+                mockCache,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
@@ -179,10 +181,12 @@ namespace Dan.Core.UnitTest
         [TestMethod]
         public async Task GetAliases()
         {
+            var mockCache = new MockCache();
             var acs = new AvailableEvidenceCodesService(
                 _loggerFactory,
                 _mockHttpClientFactory.Object,
                 _policyRegistry,
+                mockCache,
                 _mockServiceContextService.Object,
                 _mockFunctionContextAccessor.Object);
 
@@ -194,7 +198,7 @@ namespace Dan.Core.UnitTest
 
             // Act
             await acs.GetAvailableEvidenceCodes();
-            var actual = acs.GetAliases();
+            var actual = await acs.GetAliases();
             
             // Assert
             actual.Should().BeEquivalentTo(expected);

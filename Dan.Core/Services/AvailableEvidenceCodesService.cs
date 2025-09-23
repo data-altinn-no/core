@@ -1,4 +1,5 @@
 ﻿using Dan.Common.Models;
+using Dan.Common.Extensions;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
 using Dan.Core.Services.Interfaces;
@@ -11,6 +12,7 @@ using Dan.Core.Helpers;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using AsyncKeyedLock;
+using Azure.Identity;
 
 namespace Dan.Core.Services;
 
@@ -18,6 +20,7 @@ public class AvailableEvidenceCodesService(
     ILoggerFactory loggerFactory,
     IHttpClientFactory httpClientFactory,
     IPolicyRegistry<string> policyRegistry,
+    IDistributedCache distributedCache,
     IServiceContextService serviceContextService,
     IFunctionContextAccessor functionContextAccessor)
     : IAvailableEvidenceCodesService
@@ -25,10 +28,7 @@ public class AvailableEvidenceCodesService(
     public static TimeSpan DistributedCacheTtl = TimeSpan.FromHours(12);
     private readonly ILogger<IAvailableEvidenceCodesService> _logger = loggerFactory.CreateLogger<AvailableEvidenceCodesService>();
 
-    private List<EvidenceCode> _memoryCache = [];
-    private DateTime _updateMemoryCache = DateTime.MinValue;
-    private readonly AsyncNonKeyedLocker _semaphoreForceRefresh = new(1);
-    private readonly AsyncNonKeyedLocker _semaphore = new(1);
+    private readonly AsyncNonKeyedLocker semaphore = new(1);
     private const int MemoryCacheTtlSeconds = 600;
 
     private const string CachingPolicy = "EvidenceCodesCachePolicy";
@@ -37,53 +37,51 @@ public class AvailableEvidenceCodesService(
     private const string CacheResponseHeader = "x-cache";
 
     /// <summary>
-    /// Gets the list of current active evidence codes. This endpoint can be hit several times during a request. In order to reduce I/O to the distributed cache, it employs
-    /// an additional layer of caching via memory. Uses semaphores to handle concurrent writes to the caches. 
+    /// Gets the list of current active evidence codes. This endpoint can be hit several times during a request.
     /// </summary>
     /// <param name="forceRefresh">If true will evict the current cache (both in-memory and distributed) and force a source-level refresh</param>
     /// <returns>A list of active evidence codes</returns>
     public async Task<List<EvidenceCode>> GetAvailableEvidenceCodes(bool forceRefresh = false)
     {
-        // Cache still valid
-        if (!forceRefresh && DateTime.UtcNow < _updateMemoryCache)
+        List<EvidenceCode>? evidenceCodes;
+        if (!forceRefresh)
         {
-            SetCacheDiagnosticsHeader("hit-local");
-            return FilterEvidenceCodes(_memoryCache);
+            evidenceCodes = await distributedCache.GetValueAsync<List<EvidenceCode>>(CacheContextKey);
+            if (evidenceCodes is not null)
+            {
+                SetCacheDiagnosticsHeader("hit-distributed");
+                return evidenceCodes;
+            }
         }
 
         if (forceRefresh)
         {
-            // Force refresh has been called. This is only performed manually or in conjuction with a deploy.
-            // Use a separate semaphore to ensure only a single thread can do this at a time without blocking other requests
-            using (await _semaphoreForceRefresh.LockAsync())
-            {
-                await RefreshEvidenceCodesCache();
-                return FilterEvidenceCodes(_memoryCache);
-            }
+            SetCacheDiagnosticsHeader("force-evict");
         }
 
-        // The memory cache is expired. We do not know if Redis cache is expired, as this is handled by Polly.
-        using (await _semaphore.LockAsync())
+        using (await semaphore.LockAsync())
         {
-            // Recheck if another thread has updated the memory cache while we were waiting for the semaphore
-            if (DateTime.UtcNow < _updateMemoryCache)
+            if (!forceRefresh)
             {
-                SetCacheDiagnosticsHeader("hit-local-late");
-                return FilterEvidenceCodes(_memoryCache);
+                // Checking if another thread finished caching
+                evidenceCodes = await distributedCache.GetValueAsync<List<EvidenceCode>>(CacheContextKey);
+                if (evidenceCodes is not null)
+                {
+                    return evidenceCodes;
+                }
             }
-
-            // This uses Polly to get from the distributed cache, or refresh from source if Redis cache is expired.
-            _memoryCache = await GetAvailableEvidenceCodesFromDistributedCache();
-            _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
-
-            return FilterEvidenceCodes(_memoryCache);
+            evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
+            await distributedCache.SetValueAsync(CacheContextKey, evidenceCodes);
+            evidenceCodes = FilterEvidenceCodes(evidenceCodes);
+            return evidenceCodes;
         }
     }
 
-    public Dictionary<string, string> GetAliases()
+    public async Task<Dictionary<string, string>> GetAliases()
     {
         var aliases = new Dictionary<string, string>();
-        var aliasedEvidenceCodes = _memoryCache
+        var availableEvienceCodes = await GetAvailableEvidenceCodes();
+        var aliasedEvidenceCodes = availableEvienceCodes
             .Where(ec => ec.DatasetAliases is not null && ec.DatasetAliases.Count > 0);
         foreach (var aliasedEvidenceCode in aliasedEvidenceCodes)
         {
@@ -109,38 +107,6 @@ public class AvailableEvidenceCodesService(
             requestContextService.CustomResponseHeaders.TryAdd(CacheResponseHeader, value);
         }
 
-    }
-
-    /// <summary>
-    /// This fetches evidence codes from the sources and updates the distributed and in-memory caches. 
-    /// </summary>
-    /// <returns>Nothing</returns>
-    private async Task RefreshEvidenceCodesCache()
-    {
-        var evidenceCodes = await GetAvailableEvidenceCodesFromEvidenceSources();
-        SetCacheDiagnosticsHeader("force-evict");
-        if (evidenceCodes.Count == 0)
-        {
-            _logger.LogWarning("Failed to refresh evidence codes cache, received empty list");
-            return;
-        }
-
-        //  Add some metadata properties to make serialized output more parseable
-        foreach (var es in evidenceCodes)
-        {
-            es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
-        }
-
-        _memoryCache = evidenceCodes;
-        _updateMemoryCache = DateTime.UtcNow.AddSeconds(MemoryCacheTtlSeconds);
-    }
-
-    private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromDistributedCache()
-    {
-        SetCacheDiagnosticsHeader("hit-distributed");
-        var cachePolicy = policyRegistry.Get<AsyncPolicy<List<EvidenceCode>>>(CachingPolicy);
-        return await cachePolicy.ExecuteAsync(
-            async _ => await GetAvailableEvidenceCodesFromEvidenceSources(), new Context(CacheContextKey));
     }
 
     private async Task<List<EvidenceCode>> GetAvailableEvidenceCodesFromEvidenceSources()
@@ -225,6 +191,10 @@ public class AvailableEvidenceCodesService(
     {
         evidenceCodes = FilterInactive(evidenceCodes);
         evidenceCodes = SplitAliases(evidenceCodes);
+        foreach (var es in evidenceCodes)
+        {
+            es.AuthorizationRequirements.ForEach(x => x.RequirementType = x.GetType().Name);
+        }
         return evidenceCodes.ToList();
     }
     private static List<EvidenceCode> FilterInactive(IEnumerable<EvidenceCode> evidenceCodes)

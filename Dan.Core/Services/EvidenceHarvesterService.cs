@@ -87,7 +87,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     {
         _log.LogDebug("Running HaaS (Harvest as a Service) for open data with dataset {evidenceCodeName} and identifier {identifier}", evidenceCode.EvidenceCodeName, identifier == "" ? "(empty)" : identifier);
         List<EvidenceValue> harvestedEvidence;
-        var aliases = _availableEvidenceCodesService.GetAliases();
+        var aliases = await _availableEvidenceCodesService.GetAliases();
         var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
@@ -191,7 +191,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private async Task<HttpRequestMessage> GetEvidenceHarvesterRequestMessage(Accreditation accreditation,
         EvidenceCode evidenceCode, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
     {
-        var aliases = _availableEvidenceCodesService.GetAliases();
+        var aliases = await _availableEvidenceCodesService.GetAliases();
         var url = evidenceCode.GetEvidenceSourceUrl(aliases);
 
         var request = new HttpRequestMessage(HttpMethod.Post, url);
