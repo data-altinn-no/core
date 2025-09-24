@@ -102,14 +102,13 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         }
 
         // Usually this header is set by APIM, but for local testing check Authorization header as well
-        if (!request.Headers.TryGetValues(AuthorizationHeader, out IEnumerable<string>? headerValues))
+        if (!request.Headers.TryGetValues(AuthorizationHeader, out var headerValues))
         {
             request.Headers.TryGetValues(AuthorizationHeaderLocal, out headerValues);
         }
 
         // check authorization header for bearer token
-        // Also check if certificate header is set (x-nadobe-cert) to prevent apim's MSI token from being attempted as auth when testing locally 
-        if (headerValues != null && (request.Headers.Get(Settings.CertificateHeader) == null))
+        if (headerValues != null)
         {
             var accessTokenJwt = headerValues.First();
             accessTokenJwt = Jwt.RemoveBearer(accessTokenJwt);
@@ -126,39 +125,9 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
 
             context.Items.Add(Constants.ACCESS_TOKEN, accessTokenJwt);
         }
-        //check for certificate header
         else
         {
-            var header = Settings.CertificateHeader;
-            var certificate = request.Headers.Get(header);
-
-            if (!string.IsNullOrEmpty(certificate))
-            {
-                X509Certificate2 suppliedCertificate;
-                try
-                {
-                    suppliedCertificate =
-                        new X509Certificate2(Encoding.UTF8.GetBytes(certificate));
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidCertificateException("Unable to parse supplied certificate: " + e.Message);
-                }
-
-                try
-                {
-                    orgNumber = X509CertificateHelper.GetValidOrgNumberFromCertificate(suppliedCertificate);
-                }
-                catch (Exception e)
-                {
-                    throw new InvalidCertificateException("Unable to parse organization number from certificate", e);
-                }
-            }
-            // No token or certificate found 
-            else
-            {
-                throw new MissingAuthenticationException("No authentication method supplied");
-            }
+            throw new MissingAuthenticationException("No authentication method supplied");
         }
 
         context.Items.Add(Constants.AUTHENTICATED_ORGNO, orgNumber);
