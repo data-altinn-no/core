@@ -50,6 +50,9 @@ public class EntityRegistryUnit
 
     [JsonProperty("overordnetEnhet", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     public string? OverordnetEnhet { get; set; }
+    
+    [JsonProperty("underEnheter", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
+    public List<string>? Underenheter { get; set; }
 
     [JsonProperty("oppstartsdato", NullValueHandling = NullValueHandling.Ignore, Required = Required.DisallowNull)]
     [JsonConverter(typeof(DateFormatConverter), "yyyy-MM-dd")]

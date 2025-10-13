@@ -5,6 +5,7 @@ namespace Dan.Common.Services;
 /// <summary>
 /// Default implementation of IEntityRegistryApiClientService
 /// </summary>
+[Obsolete("Should not be used, use Dan.Common.Services.ICcrClientService for fetching data from CCR")]
 public class DefaultEntityRegistryApiClientService : IEntityRegistryApiClientService
 {
     private readonly IHttpClientFactory _clientFactory;

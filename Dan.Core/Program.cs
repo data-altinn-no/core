@@ -112,8 +112,9 @@ var host = new HostBuilder()
         services.AddSingleton<ITokenRequesterService, TokenRequesterService>();
         services.AddSingleton<IServiceContextService, ServiceContextService>();
         services.AddSingleton<IAccreditationRepository, CosmosDbAccreditationRepository>();
-        services.AddSingleton<IEntityRegistryService, EntityRegistryService>();
-        services.AddSingleton<IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
+        // Using explicit namespacing until the interface is removed from common in the future
+        services.AddSingleton<Dan.Core.Services.Interfaces.IEntityRegistryService, Dan.Core.Services.EntityRegistryService>();
+        services.AddSingleton<Dan.Core.Services.Interfaces.IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
         services.AddSingleton<IFunctionContextAccessor, FunctionContextAccessor>();
         services.AddSingleton<IPluginCredentialService, PluginCredentialService>();
 
@@ -144,6 +145,12 @@ var host = new HostBuilder()
                                 TypeNameHandling = TypeNameHandling.All
                             })
                         ), AvailableEvidenceCodesService.DistributedCacheTtl)
+                },
+                {
+                    CachingEntityRegistryApiClientService.EntityRegistryListCachePolicy, Policy.CacheAsync(
+                        distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
+                            new JsonSerializer<List<EntityRegistryUnit>>(new JsonSerializerSettings())),
+                        TimeSpan.FromHours(12))
                 },
                 {
                     "MaskinportenTokenPolicy", Policy.CacheAsync(
