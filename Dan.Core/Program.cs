@@ -28,6 +28,7 @@ using Polly.Caching.Distributed;
 using Polly.Caching.Serialization.Json;
 using Polly.Extensions.Http;
 using Polly.Registry;
+using StackExchange.Redis;
 
 IHostEnvironment danHostingEnvironment;
 var host = new HostBuilder()
@@ -85,22 +86,31 @@ var host = new HostBuilder()
             }
         });
 
+        TokenCredential credential = new DefaultAzureCredential();
         services.AddStackExchangeRedisCache(option =>
         {
-            option.Configuration = Settings.RedisCacheConnectionString;
+            option.ConnectionMultiplexerFactory = async () =>
+            {
+                var configurationOptions = await ConfigurationOptions
+                    .Parse(Settings.RedisCacheConnectionString)
+                    .ConfigureForAzureWithTokenCredentialAsync(credential);
+
+                var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
+
+                return connectionMultiplexer;
+            };
         });
 
         var sp = services.BuildServiceProvider();
         var distributedCache = sp.GetRequiredService<IDistributedCache>();
 
         // Cosmos emulator doesn't support credential auth
-        if (Settings.CosmosDbConnection.Contains("localhost"))
+        if (Settings.CosmosDbConnection.StartsWith("AccountEndpoint="))
         {
             services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection).Build());
         }
         else
         {
-            TokenCredential credential = new DefaultAzureCredential();
             services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection, credential).Build());
             
         }
