@@ -87,19 +87,32 @@ var host = new HostBuilder()
         });
 
         TokenCredential credential = new DefaultAzureCredential();
-        services.AddStackExchangeRedisCache(option =>
+        // In case of still using access key (or local redis), 
+        if (Settings.RedisCacheConnectionString.Contains("password=") ||
+            Settings.RedisCacheConnectionString.Contains("127.0.0.1"))
         {
-            option.ConnectionMultiplexerFactory = async () =>
+            services.AddStackExchangeRedisCache(option =>
             {
-                var configurationOptions = await ConfigurationOptions
-                    .Parse(Settings.RedisCacheConnectionString)
-                    .ConfigureForAzureWithTokenCredentialAsync(credential);
+                option.Configuration = Settings.RedisCacheConnectionString;
+            });
+        }
+        else
+        {
+            services.AddStackExchangeRedisCache(option =>
+            {
+                option.ConnectionMultiplexerFactory = async () =>
+                {
+                    var configurationOptions = await ConfigurationOptions
+                        .Parse(Settings.RedisCacheConnectionString)
+                        .ConfigureForAzureWithTokenCredentialAsync(credential);
 
-                var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
+                    var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
 
-                return connectionMultiplexer;
-            };
-        });
+                    return connectionMultiplexer;
+                };
+            });
+        }
+        
 
         var sp = services.BuildServiceProvider();
         var distributedCache = sp.GetRequiredService<IDistributedCache>();
