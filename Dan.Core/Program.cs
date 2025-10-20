@@ -86,7 +86,17 @@ var host = new HostBuilder()
             }
         });
 
-        TokenCredential credential = new DefaultAzureCredential();
+        DefaultAzureCredentialOptions options = new()
+        {
+            Diagnostics =
+            {
+                LoggedHeaderNames = { "x-ms-request-id" },
+                LoggedQueryParameters = { "api-version" },
+                IsAccountIdentifierLoggingEnabled = true
+            }
+        };
+        DefaultAzureCredential credentials = new(options);
+        services.AddSingleton(credentials);
         // In case of still using access key (or local redis), 
         if (Settings.RedisCacheConnectionString.Contains("password=") ||
             Settings.RedisCacheConnectionString.Contains("127.0.0.1"))
@@ -104,7 +114,7 @@ var host = new HostBuilder()
                 {
                     var configurationOptions = await ConfigurationOptions
                         .Parse(Settings.RedisCacheConnectionString)
-                        .ConfigureForAzureWithTokenCredentialAsync(credential);
+                        .ConfigureForAzureWithTokenCredentialAsync(credentials);
 
                     var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
 
@@ -124,7 +134,7 @@ var host = new HostBuilder()
         }
         else
         {
-            services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection, credential).Build());
+            services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection, credentials).Build());
             
         }
         
