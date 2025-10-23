@@ -23,18 +23,11 @@ public interface IPluginCredentialService
 /// <summary>
 /// Service for handling getting auth token for plugins
 /// </summary>
-public class PluginCredentialService(IConfiguration configuration, ILogger<PluginCredentialService> logger) : IPluginCredentialService
+public class PluginCredentialService(
+    DefaultAzureCredential credentials,
+    IConfiguration configuration, 
+    ILogger<PluginCredentialService> logger) : IPluginCredentialService
 {
-    private static readonly DefaultAzureCredentialOptions Options = new()
-    {
-        Diagnostics =
-        {
-            LoggedHeaderNames = { "x-ms-request-id" },
-            LoggedQueryParameters = { "api-version" },
-            IsAccountIdentifierLoggingEnabled = true
-        }
-    };
-    private readonly DefaultAzureCredential credentials = new(Options);
     private readonly AsyncNonKeyedLocker semaphore = new(1);
 
     /// <summary>
