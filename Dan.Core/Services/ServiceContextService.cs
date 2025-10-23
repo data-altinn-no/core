@@ -40,7 +40,11 @@ public class ServiceContextService : IServiceContextService
                         {
                             new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor,PartyTypeConstraint.PublicAgency)
                         }
-                    }
+                    },
+                    new MaskinportenScopeRequirement()
+                    {
+                        RequiredScopes = new List<string> { "altinn:dataaltinnno/drosje" }
+                    },
                 },
                 ServiceContextTextTemplate = new DrosjeloyveServiceContextTextTemplate()
             },
