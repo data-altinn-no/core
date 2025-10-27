@@ -168,12 +168,7 @@ public static class Settings
     /// SSL Certificate Thumbprint
     /// </summary>
     public static string KeyVaultSslCertificate => GetSetting("KeyVaultSslCertificate");
-
-    /// <summary>
-    /// Nadobe certificate header
-    /// </summary>
-    public static string CertificateHeader => "X-NADOBE-CERT";
-
+    
     /// <summary>
     /// Key Vault Name
     /// </summary>

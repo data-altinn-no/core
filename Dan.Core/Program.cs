@@ -1,5 +1,7 @@
 using System.Reflection;
+using Azure.Core;
 using Azure.Core.Serialization;
+using Azure.Identity;
 using Dan.Common;
 using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
@@ -18,7 +20,6 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
@@ -27,8 +28,9 @@ using Polly.Caching.Distributed;
 using Polly.Caching.Serialization.Json;
 using Polly.Extensions.Http;
 using Polly.Registry;
+using StackExchange.Redis;
 
-IHostEnvironment danHostingEnvironment = new HostingEnvironment();
+IHostEnvironment danHostingEnvironment;
 var host = new HostBuilder()
     .ConfigureAppConfiguration((hostContext, config) =>
     {
@@ -84,15 +86,48 @@ var host = new HostBuilder()
             }
         });
 
-        services.AddStackExchangeRedisCache(option =>
+        TokenCredential credential = new DefaultAzureCredential();
+        // In case of still using access key (or local redis), 
+        if (Settings.RedisCacheConnectionString.Contains("password=") ||
+            Settings.RedisCacheConnectionString.Contains("127.0.0.1"))
         {
-            option.Configuration = Settings.RedisCacheConnectionString;
-        });
+            services.AddStackExchangeRedisCache(option =>
+            {
+                option.Configuration = Settings.RedisCacheConnectionString;
+            });
+        }
+        else
+        {
+            services.AddStackExchangeRedisCache(option =>
+            {
+                option.ConnectionMultiplexerFactory = async () =>
+                {
+                    var configurationOptions = await ConfigurationOptions
+                        .Parse(Settings.RedisCacheConnectionString)
+                        .ConfigureForAzureWithTokenCredentialAsync(credential);
+
+                    var connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
+
+                    return connectionMultiplexer;
+                };
+            });
+        }
+        
 
         var sp = services.BuildServiceProvider();
         var distributedCache = sp.GetRequiredService<IDistributedCache>();
 
-        services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection).Build());
+        // Cosmos emulator doesn't support credential auth
+        if (Settings.CosmosDbConnection.StartsWith("AccountEndpoint="))
+        {
+            services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection).Build());
+        }
+        else
+        {
+            services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection, credential).Build());
+            
+        }
+        
         services.AddSingleton<IChannelManagerService, ChannelManagerService>();
         services.AddSingleton<IAltinnCorrespondenceService, AltinnCorrespondenceService>();
         services.AddSingleton<IAvailableEvidenceCodesService, AvailableEvidenceCodesService>();
