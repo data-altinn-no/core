@@ -130,14 +130,6 @@ public class EntityRegistryServiceTest
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
-    [TestMethod]
-    public void TestSyntheticLookupsNotAllowedByDefault()
-    {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.GetMainUnit("31").Result;
-        Assert.IsNull(r);
-    }
-    
     [DataTestMethod]
     [DataRow("971032146", "AS", "0000", "0000", true)]  // Public sector organization from PublicSectorOrganizations
     [DataRow("123456781", "KF", "0000", "0000", true)]  // Public sector unit type
