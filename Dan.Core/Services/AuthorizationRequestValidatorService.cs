@@ -45,8 +45,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         _availableEvidenceCodesService = availableEvidenceCodesService;
         _requirementValidationService = requirementValidationService;
         _requestContextService = requestContextService;
-
-        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>

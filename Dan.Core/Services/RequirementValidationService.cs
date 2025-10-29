@@ -43,8 +43,6 @@ public class RequirementValidationService : IRequirementValidationService
         _authRequest = new AuthorizationRequest();
         _errors = new ConcurrentBag<string>();
         _skippedEvidenceCodes = new ConcurrentDictionary<string, Requirement>();
-
-        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>

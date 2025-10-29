@@ -47,9 +47,9 @@ public partial class CachingEntityRegistryApiClientService(
             {
                 return cacheHit;
             }
-            var options = new DistributedCacheEntryOptions()
-                .SetAbsoluteExpiration(TimeSpan.FromHours(12));
             var result = await InternalGetUpstreamEntityRegistryUnitAsync(registryApiUri);
+            var ttl = result is null ? TimeSpan.FromMinutes(5) : TimeSpan.FromHours(12);
+            var options = new DistributedCacheEntryOptions().SetAbsoluteExpiration(ttl);
             await distributedCache.SetValueAsync(cacheKey, result, options);
             return result;
         }
@@ -57,9 +57,17 @@ public partial class CachingEntityRegistryApiClientService(
     
     public async Task<List<EntityRegistryUnit>> GetUpstreamEntityRegistryUnitsAsync(Uri registryApiUri)
     {
-        // Short circuit checks for organization numbers that are configured to be test numbers.
         var match = MainUnitQueryParamRegex().Match(registryApiUri.Query);
-        var organizationNumber = match.Groups[1].Value;
+        
+        // Unlikely to be mismatch if used by the internal chain that calls this from EntityRegistryService, but if used
+        // by another place wrongly then just return empty list
+        var organizationNumber = match.Success ? match.Groups[1].Value : string.Empty;
+        if (organizationNumber == string.Empty)
+        {
+            return [];
+        }
+        
+        // Short circuit checks for organization numbers that are configured to be test numbers.
         if (Settings.IsDevEnvironment && Settings.TestEnvironmentValidOrgs.Contains(organizationNumber))
         {
             if (organizationNumber == "111111111")

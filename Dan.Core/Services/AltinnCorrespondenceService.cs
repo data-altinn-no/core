@@ -61,8 +61,6 @@ internal class AltinnCorrespondenceService : IAltinnCorrespondenceService
         _channelManagerService = channelManagerService;
         _entityRegistryService = entityRegistryService;
 
-        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
-
         var correspondenceSettings = Settings.CorrespondenceSettings.Split(',');
         var correspondenceServiceCode = correspondenceSettings[0].Trim();
         var correspondenceServiceEdition = correspondenceSettings[1].Trim();

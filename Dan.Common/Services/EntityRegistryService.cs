@@ -48,8 +48,7 @@ public class EntityRegistryService(
     private static readonly string[] PublicSectorOrganizations = ["971032146" /*KS-KOMMUNESEKTORENS ORGANISASJON*/];
 
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
-    private static readonly ConcurrentDictionary<string, (DateTime expiresAt, List<EntityRegistryUnit> list)> SubunitListCache = new();
-
+    
     private readonly TimeSpan cacheEntryTtl = TimeSpan.FromSeconds(600);
 
     private enum UnitType
@@ -278,22 +277,5 @@ public class EntityRegistryService(
         }
 
         return new Uri(string.Format(urlPattern, organizationNumber));
-    }
-    
-    private Uri GetLookupUrlForSubunitsOfAUnit(string organizationNumber)
-    {
-        string urlPattern;
-        if (IsSyntheticOrganizationNumber(organizationNumber))
-        {
-            urlPattern = UseCoreProxy ? PpeProxySubUnitLookupEndpoint : PpeSubUnitLookupEndpoint;
-        }
-        else
-        {
-            urlPattern = UseCoreProxy ? ProxySubUnitLookupEndpoint : SubUnitLookupEndpoint;
-        }
-        
-        var query = $"?overordnetEnhet={organizationNumber}";
-
-        return new Uri(string.Format(urlPattern, query));
     }
 }

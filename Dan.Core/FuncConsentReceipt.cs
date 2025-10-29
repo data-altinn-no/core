@@ -46,8 +46,6 @@ namespace Dan.Core
             _serviceContextService = serviceContextService;
             _accreditationRepository = accreditationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
-
-            _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
         }
 
         /// <summary>

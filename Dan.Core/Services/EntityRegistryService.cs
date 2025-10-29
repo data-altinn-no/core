@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Dan.Common.Models;
+using Dan.Core.Config;
 using Microsoft.Extensions.Logging;
 
 namespace Dan.Core.Services;
@@ -9,9 +10,10 @@ public class EntityRegistryService(
     ILogger<EntityRegistryService> logger) : Interfaces.IEntityRegistryService
 {
     /// <summary>
-    /// Flag to set if allowed to look up synthetic users
+    /// Flag to set if allowed to look up synthetic users, defaults by checking Settings.IsProductionEnvironment, which
+    /// should be true in non-production environments
     /// </summary>
-    public bool AllowTestCcrLookup { get; set; } = false;
+    public bool AllowTestCcrLookup { get; set; } = !Settings.IsProductionEnvironment;
 
     private const string MainUnitLookupEndpoint         = "https://data.brreg.no/enhetsregisteret/api/enheter/{0}";
     private const string SubUnitLookupEndpoint          = "https://data.brreg.no/enhetsregisteret/api/underenheter/{0}";
@@ -242,9 +244,21 @@ public class EntityRegistryService(
             IsDeleted = upstreamEntityRegistryUnit.Slettedato is not null
         };
 
-        if (upstreamEntityRegistryUnit.Naeringskode1 != null) unit.IndustrialCodes = [upstreamEntityRegistryUnit.Naeringskode1.Kode];
-        if (upstreamEntityRegistryUnit.Naeringskode2 != null) unit.IndustrialCodes!.Add(upstreamEntityRegistryUnit.Naeringskode2.Kode);
-        if (upstreamEntityRegistryUnit.Naeringskode3 != null) unit.IndustrialCodes!.Add(upstreamEntityRegistryUnit.Naeringskode3.Kode);
+        // By default Næringskode 2 and 3 should not be set unless 1 is also set, but might as well be defensive here
+       if (upstreamEntityRegistryUnit.Naeringskode1 != null)
+       {
+           unit.IndustrialCodes = [upstreamEntityRegistryUnit.Naeringskode1.Kode];
+       }
+       if (upstreamEntityRegistryUnit.Naeringskode2 != null)
+       {
+           unit.IndustrialCodes ??= [];
+           unit.IndustrialCodes.Add(upstreamEntityRegistryUnit.Naeringskode2.Kode);
+       }
+       if (upstreamEntityRegistryUnit.Naeringskode3 != null)
+       {
+           unit.IndustrialCodes ??= [];
+           unit.IndustrialCodes.Add(upstreamEntityRegistryUnit.Naeringskode3.Kode);
+       }
 
         return unit;
     }
