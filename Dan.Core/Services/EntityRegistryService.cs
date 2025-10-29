@@ -10,8 +10,7 @@ public class EntityRegistryService(
     ILogger<EntityRegistryService> logger) : Interfaces.IEntityRegistryService
 {
     /// <summary>
-    /// Flag to set if allowed to look up synthetic users, defaults by checking Settings.IsProductionEnvironment, which
-    /// should be true in non-production environments
+    /// Flag to allow synthetic CCR lookups. Defaults to true outside Production
     /// </summary>
     public bool AllowTestCcrLookup { get; set; } = !Settings.IsProductionEnvironment;
 
