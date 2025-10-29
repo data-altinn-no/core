@@ -196,7 +196,9 @@ public class EntityRegistryService(
 
     private static bool IsSyntheticOrganizationNumber(string organizationNumber)
     {
-        return organizationNumber.StartsWith('2') || organizationNumber.StartsWith('3');
+        return string.IsNullOrEmpty(organizationNumber) ||
+               organizationNumber.StartsWith('2') || 
+               organizationNumber.StartsWith('3');
     }
 
     private async Task<EntityRegistryUnit?> InternalGet(string organizationNumber, UnitType unitType)
@@ -287,6 +289,10 @@ public class EntityRegistryService(
             PpeSubUnitLookupEndpoint : 
             SubUnitLookupEndpoint;
         
+        if(urlPattern.EndsWith("/{0}"))
+        {
+            urlPattern = urlPattern.Replace("/{0}", "{0}");
+        }
         var query = $"?overordnetEnhet={organizationNumber}";
 
         return new Uri(string.Format(urlPattern, query));
