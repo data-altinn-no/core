@@ -55,7 +55,11 @@ public class EntityRegistryService(
     public async Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true,
         bool nestToAndReturnMainUnit = false, bool subUnitOnly = false)
     {
-
+        if (string.IsNullOrWhiteSpace(organizationNumber))
+        {
+            return null;
+        }
+        organizationNumber = organizationNumber.Trim();
         if (IsSyntheticOrganizationNumber(organizationNumber) && !AllowTestCcrLookup)
         {
             return null;
