@@ -67,31 +67,7 @@ public class ServiceContextService : IServiceContextService
                         }
                     }
                 }
-            },
-            new ServiceContext()
-            {
-                Name = "Seriøsitetsinformasjon",
-                Id = "seriositet-product",
-                Owner = "Brønnøysundregistrene",
-                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
-                AuthorizationRequirements = new List<Requirement>() {
-                    new PartyTypeRequirement()
-                    {
-                        AllowedPartyTypes = new AllowedPartyTypesList()
-                        {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor,PartyTypeConstraint.PrivateEnterprise)
-                        }
-                    },
-                    new AccreditationPartyRequirement()
-                    {
-                        PartyRequirements = new List<AccreditationPartyRequirementType>()
-                        {
-                            AccreditationPartyRequirementType.RequestorAndOwnerAreEqual
-                        }
-                    }
-                },
-                ServiceContextTextTemplate = new SeriositetServiceContextTextTemplate()
-            },
+            },          
             new ServiceContext()
             {
                 Name = "OED",
@@ -155,21 +131,7 @@ public class ServiceContextService : IServiceContextService
                         RequiredScopes = new List<string>() { "altinn:dataaltinnno/dihe" }
                     }
                 }
-            },
-            new ServiceContext()
-            {
-                Name = "EURES",
-                Id = "eures-product",
-                Owner = "Arbeids- og velferdsetaten (Nav)",
-                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
-                AuthorizationRequirements = new List<Requirement>() {
-                    new MaskinportenScopeRequirement()
-                    {
-                        RequiredScopes = new List<string>() { "altinn:dataaltinnno/eures" }
-                    }
-                },
-                ServiceContextTextTemplate = new EuresServiceContextTextTemplate()
-            },
+            },            
             new ServiceContext()
             {
                 Name = "Økonomisk informasjon",
