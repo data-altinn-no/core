@@ -106,10 +106,8 @@ public class ExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                 response.Headers.Add("WWW-Authenticate",
                     nex is InvalidAccessTokenException ? schemeAndRealm + ",error=\"invalid_token\"" : schemeAndRealm);
             }
-
-            // You need to explicitly pass the status code in WriteAsJsonAsync method.
-            // https://github.com/Azure/azure-functions-dotnet-worker/issues/776
-            await response.WriteAsJsonAsync(errorModel, statusCode);
+            
+            await response.WriteAsJsonAsync(errorModel);
 
             var invocationResult = context.GetInvocationResult();
 

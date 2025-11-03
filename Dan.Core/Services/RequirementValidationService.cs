@@ -17,7 +17,7 @@ namespace Dan.Core.Services;
 public class RequirementValidationService : IRequirementValidationService
 {
     private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
-    private readonly IEntityRegistryService _entityRegistryService;
+    private readonly Interfaces.IEntityRegistryService _entityRegistryService;
     private readonly IRequestContextService _requestContextService;
     private AuthorizationRequest _authRequest;
     private string _owner;
@@ -31,7 +31,10 @@ public class RequirementValidationService : IRequirementValidationService
     /// <param name="altinnServiceOwnerApiService"></param>
     /// <param name="entityRegistryService"></param>
     /// <param name="requestContextService"></param>
-    public RequirementValidationService(IAltinnServiceOwnerApiService altinnServiceOwnerApiService, IEntityRegistryService entityRegistryService, IRequestContextService requestContextService)
+    public RequirementValidationService(
+        IAltinnServiceOwnerApiService altinnServiceOwnerApiService,
+        Interfaces.IEntityRegistryService entityRegistryService, 
+        IRequestContextService requestContextService)
     {
         _altinnServiceOwnerApiService = altinnServiceOwnerApiService;
         _entityRegistryService = entityRegistryService;
@@ -40,9 +43,6 @@ public class RequirementValidationService : IRequirementValidationService
         _authRequest = new AuthorizationRequest();
         _errors = new ConcurrentBag<string>();
         _skippedEvidenceCodes = new ConcurrentDictionary<string, Requirement>();
-
-        _entityRegistryService.UseCoreProxy = false;
-        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>

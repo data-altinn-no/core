@@ -22,7 +22,7 @@ namespace Dan.Core
     public class FuncConsentReceipt
     {
 
-        private readonly IEntityRegistryService _entityRegistryService;
+        private readonly Services.Interfaces.IEntityRegistryService _entityRegistryService;
         private readonly IServiceContextService _serviceContextService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly ILogger<FuncConsentReceipt> _logger;
@@ -36,15 +36,16 @@ namespace Dan.Core
         /// <param name="serviceContextService"></param>
         /// <param name="accreditationRepository"></param>
         /// <param name="loggerFactory"></param>
-        public FuncConsentReceipt(IEntityRegistryService entityRegistryService, IServiceContextService serviceContextService, IAccreditationRepository accreditationRepository, ILoggerFactory loggerFactory)
+        public FuncConsentReceipt(
+            Services.Interfaces.IEntityRegistryService entityRegistryService,
+            IServiceContextService serviceContextService,
+            IAccreditationRepository accreditationRepository,
+            ILoggerFactory loggerFactory)
         {
             _entityRegistryService = entityRegistryService;
             _serviceContextService = serviceContextService;
             _accreditationRepository = accreditationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
-
-            _entityRegistryService.UseCoreProxy = false;
-            _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
         }
 
         /// <summary>

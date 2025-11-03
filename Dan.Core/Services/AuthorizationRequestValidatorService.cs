@@ -17,7 +17,7 @@ namespace Dan.Core.Services;
 public class AuthorizationRequestValidatorService : IAuthorizationRequestValidatorService
 {
     private readonly ILogger<AuthorizationRequestValidatorService> _log;
-    private readonly IEntityRegistryService _entityRegistryService;
+    private readonly Interfaces.IEntityRegistryService _entityRegistryService;
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly IRequirementValidationService _requirementValidationService;
     private readonly IRequestContextService _requestContextService;
@@ -35,7 +35,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     /// <param name="requestContextService">The injected service for getting request context information</param>
     public AuthorizationRequestValidatorService(
         ILoggerFactory loggerFactory,
-        IEntityRegistryService entityRegistryService,
+        Interfaces.IEntityRegistryService entityRegistryService,
         IAvailableEvidenceCodesService availableEvidenceCodesService,
         IRequirementValidationService requirementValidationService,
         IRequestContextService requestContextService)
@@ -45,9 +45,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         _availableEvidenceCodesService = availableEvidenceCodesService;
         _requirementValidationService = requirementValidationService;
         _requestContextService = requestContextService;
-
-        _entityRegistryService.UseCoreProxy = false;
-        _entityRegistryService.AllowTestCcrLookup = !Settings.IsProductionEnvironment;
     }
 
     /// <summary>
