@@ -38,7 +38,7 @@ jobs:
         run: pip install requests
 
       - name: Run extract_findings.py
-        working-directory: ./tools/ #Update path to script directory
+        working-directory: .github/tools/ #Update path to script directory
         env:
           POLARIS_URL: ${{ secrets.POLARIS_URL }}
           POLARIS_TOKEN: ${{ secrets.POLARIS_TOKEN }}
