@@ -1,18 +1,19 @@
-﻿using Dan.Common.Models;
+﻿using AsyncKeyedLock;
+using Azure.Identity;
 using Dan.Common.Extensions;
+using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
+using Dan.Core.Helpers;
 using Dan.Core.Services.Interfaces;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
 using Polly.Registry;
+using System.Linq;
 using System.Text;
-using Dan.Core.Helpers;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.DependencyInjection;
-using AsyncKeyedLock;
-using Azure.Identity;
 
 namespace Dan.Core.Services;
 
@@ -125,8 +126,11 @@ public class AvailableEvidenceCodesService(
         using (var _ = _logger.Timer($"availableevidence-cache-refresh"))
         {
             var sources = GetEvidenceSources();
+
+            var serviceContextList = await serviceContextService.GetRegisteredServiceContexts();
             var evidenceCodes =
-                await Task.WhenAll(sources.Select(async source => await GetEvidenceCodesFromSource(source)));
+                await Task.WhenAll(sources.Select(async source => await GetEvidenceCodesFromSource(source, serviceContextList)));
+
             var evidenceCodesFlattened = evidenceCodes.SelectMany(x => x).ToList();
             await AddServiceContextAuthorizationRequirements(evidenceCodesFlattened);
             return evidenceCodesFlattened;
@@ -151,7 +155,7 @@ public class AvailableEvidenceCodesService(
         }
     }
 
-    private async Task<List<EvidenceCode>> GetEvidenceCodesFromSource(EvidenceSource source)
+    private async Task<List<EvidenceCode>> GetEvidenceCodesFromSource(EvidenceSource source, List<ServiceContext> serviceContexts)
     {
         var client = httpClientFactory.CreateClient(HttpClientName);
         try
@@ -172,10 +176,18 @@ public class AvailableEvidenceCodesService(
             if (list == null)
             {
                 return new List<EvidenceCode>();
-            }
-
+            }            
+            
             list.ForEach(x => x.EvidenceSource = source.Provider);
-            return list;
+
+            var serviceContextNames = serviceContexts.Select(sc => sc.Name).ToHashSet();
+
+            // Filter evidence codes to only those that belong to known service contexts
+            var filteredList = list
+                .Where(x => x.BelongsToServiceContexts.Any(bsc => serviceContextNames.Contains(bsc)))
+                .ToList();
+
+            return filteredList;
         }
         catch (Exception ex)
         {
