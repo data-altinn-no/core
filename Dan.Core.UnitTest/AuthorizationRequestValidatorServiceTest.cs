@@ -127,7 +127,7 @@ namespace Dan.Core.UnitTest
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidSubjectException))]
+       
         public async Task ValidateTestFailureWithInvalidSubjectOrgNo()
         {
             // Setup
@@ -139,11 +139,14 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object);
 
             // Act
-            await arvs.Validate(GetAuthorizationRequest(subject: "123456789"));
+            await Assert.ThrowsAsync<InvalidSubjectException>(async () =>
+            {
+                await arvs.Validate(GetAuthorizationRequest(subject: "123456789"));
+            });
         }
+           
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidRequestorException))]
         public async Task ValidateTestFailureWithInvalidRequestorOrgNo()
         {
             // Setup
@@ -155,7 +158,10 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object);
 
             // Act
-            await arvs.Validate(GetAuthorizationRequest(requestor: "123456789"));
+            await Assert.ThrowsAsync<InvalidRequestorException>(async () =>
+            {
+                await arvs.Validate(GetAuthorizationRequest(requestor: "123456789"));
+            });
         }
 
         [TestMethod]
@@ -208,8 +214,7 @@ namespace Dan.Core.UnitTest
             Assert.IsTrue(arvs.GetValidTo() > DateTime.Now);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(UnknownEvidenceCodeException))]
+        [TestMethod]        
         public async Task ValidateWrongCaseEvidenceCodeNameFailure()
         {
             // Setup
@@ -224,11 +229,13 @@ namespace Dan.Core.UnitTest
             ar.EvidenceRequests.First().EvidenceCodeName = ar.EvidenceRequests.First().EvidenceCodeName.ToLowerInvariant();
 
             // Act
-            await arvs.Validate(ar);
+            await Assert.ThrowsAsync<UnknownEvidenceCodeException>(async () =>
+            {
+                await arvs.Validate(ar);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidAuthorizationRequestException))]
         public async Task ValidateAuthRequestAndRequestIsNullFailure()
         {
             // Setup
@@ -240,11 +247,13 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object);
 
             // Act
-            await arvs.Validate(null);
+            await Assert.ThrowsAsync<InvalidAuthorizationRequestException>(async () =>
+            {
+                await arvs.Validate(null);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AuthorizationFailedException))]
         public async Task ValidateRequirementValidatorHasErrorsFailure()
         {
             // Setup
@@ -260,7 +269,10 @@ namespace Dan.Core.UnitTest
                 .Returns(Task.FromResult(new List<string>() { "someerror" }));
 
             // Act
-            await arvs.Validate(GetAuthorizationRequest());
+            await Assert.ThrowsAsync<AuthorizationFailedException>(async () =>
+            {
+                await arvs.Validate(GetAuthorizationRequest());
+            }); 
         }
 
         [TestMethod]
@@ -288,7 +300,6 @@ namespace Dan.Core.UnitTest
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestException))]
         public async Task ValidateWrongServiceContext()
         {
             // Setup
@@ -304,7 +315,11 @@ namespace Dan.Core.UnitTest
 
 
             // Act
-            await arvs.Validate(GetAuthorizationRequest());
+            await Assert.ThrowsAsync<InvalidEvidenceRequestException>(async () => 
+            {
+                await arvs.Validate(GetAuthorizationRequest());
+            });
+
         }
 
 
@@ -327,7 +342,6 @@ namespace Dan.Core.UnitTest
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamNotANumber()
         {
             // Setup
@@ -344,11 +358,14 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_OPTIONAL_3, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
+
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamNotADateTime()
         {
             // Setup
@@ -365,11 +382,14 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_OPTIONAL_3, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
+
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamNotABoolean()
         {
             // Setup
@@ -386,11 +406,13 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_OPTIONAL_3, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamTooFew()
         {
             // Setup
@@ -407,11 +429,13 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_REQUIRED_2, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamTooFewIsNull()
         {
             // Setup
@@ -426,11 +450,13 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_REQUIRED_2 });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamTooMany()
         {
             // Setup
@@ -447,11 +473,14 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_REQUIRED_2, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            }); 
+
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamMissingRequired()
         {
             // Setup
@@ -468,11 +497,13 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_REQUIRED_2, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidEvidenceRequestParameterException))]
         public async Task InvalidParamUnknown()
         {
             // Setup
@@ -490,7 +521,10 @@ namespace Dan.Core.UnitTest
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_OPTIONAL_3, Parameters = invalidParamList });
 
             // Act
-            await arvs.Validate(authRequest);
+            await Assert.ThrowsAsync<InvalidEvidenceRequestParameterException>(async () =>
+            {
+                await arvs.Validate(authRequest);
+            });
         }
 
         [TestMethod]

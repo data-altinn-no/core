@@ -64,7 +64,6 @@ namespace Dan.Core.UnitTest
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InternalServerErrorException))]
         public async Task MisnamedEvidenceCodeTest()
         {
             string subject = "abc";
@@ -77,7 +76,14 @@ namespace Dan.Core.UnitTest
             };
 
             var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
-            var errorList = await svc.ValidateRequirements(reqs, authRequest);
+
+            List<string> errorList = new();
+
+            await Assert.ThrowsAsync    <InternalServerErrorException>(async () =>
+            {
+                errorList = await svc.ValidateRequirements(reqs, authRequest);
+            });
+
 
             Assert.IsTrue(errorList.Count == 0);
         }
