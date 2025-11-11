@@ -197,9 +197,14 @@ namespace Dan.Core.UnitTest
             // Act
             await acs.GetAvailableEvidenceCodes();
             var actual = await acs.GetAliases();
-            
+
             // Assert
-            CollectionAssert.AreEqual(expected, actual);
+            Assert.HasCount(expected.Count, actual);
+            foreach (var kvp in expected)
+            {
+                Assert.IsTrue(actual.ContainsKey(kvp.Key));
+                Assert.AreEqual(kvp.Value, actual[kvp.Key]);
+            }
 
         }
     }

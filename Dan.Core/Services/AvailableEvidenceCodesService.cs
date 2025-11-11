@@ -1,5 +1,4 @@
 ﻿using AsyncKeyedLock;
-using Azure.Identity;
 using Dan.Common.Extensions;
 using Dan.Common.Models;
 using Dan.Core.Config;
@@ -10,10 +9,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Polly;
 using Polly.Registry;
-using System.Linq;
-using System.Text;
 
 namespace Dan.Core.Services;
 
