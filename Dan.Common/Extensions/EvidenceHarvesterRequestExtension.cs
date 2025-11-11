@@ -1,4 +1,6 @@
-﻿namespace Dan.Common.Extensions;
+﻿using System.Globalization;
+
+namespace Dan.Common.Extensions;
 
 /// <summary>
 /// Extension methods for evidence harvester requests
@@ -108,8 +110,18 @@ public static class EvidenceHarvesterRequestExtension
                 value = Convert.ToDecimal(doubleValue);
                 return true;
             // If string, try to parse
+            // Need to handle culture differences, as some languages use dot (.) as decimal separator, some use comma (,)
+            // Some languages use space as thousand separator, some use comma (,), can be omitted in both
+            // It's impossible to determine if 12,000 is meant to be twelve or twelve-thousand if you dont already know
+            // the culture. So we default that if a comma has two or less digits after it and there are no dots
+            // found, we use norwegian culture, otherwise use invariant culture.
             case string stringValue:
-                return decimal.TryParse(stringValue, out value);
+                stringValue = stringValue.Replace(" ", string.Empty);
+                if (stringValue.Contains(',') && !stringValue.Contains('.') && stringValue.Split(',').Last().Length <= 2)
+                {
+                    return decimal.TryParse(stringValue, new CultureInfo("nb-NO"), out value);
+                }
+                return decimal.TryParse(stringValue, CultureInfo.InvariantCulture, out value);
             // Otherwise return false, can't think of any other realistic value type that could be interpreted
             // as a decimal type
             default:
