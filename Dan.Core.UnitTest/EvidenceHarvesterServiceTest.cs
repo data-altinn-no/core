@@ -130,7 +130,7 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object,
                 _mockAvailableEvidenceCodesService.Object);
 
-            var actual = Assert.ThrowsExceptionAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
+            var actual =  Assert.ThrowsAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
             StringAssert.Contains(actual.Result.Message, "pending a reply to the consent request");
         }
 
@@ -157,7 +157,7 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object,
                 _mockAvailableEvidenceCodesService.Object);
 
-            var actual = Assert.ThrowsExceptionAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
+            var actual = Assert.ThrowsAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
             StringAssert.Contains(actual.Result.Message, "evidence code has been denied or revoked");
         }
 
@@ -184,7 +184,7 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object,
                 _mockAvailableEvidenceCodesService.Object);
 
-            var actual = Assert.ThrowsExceptionAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
+            var actual = Assert.ThrowsAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
             StringAssert.Contains(actual.Result.Message, "evidence code has expired");
         }
 
@@ -212,7 +212,7 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object,
                 _mockAvailableEvidenceCodesService.Object);
 
-            var actual = Assert.ThrowsExceptionAsync<AsyncEvidenceStillWaitingException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation));
+            var actual = Assert.ThrowsAsync<AsyncEvidenceStillWaitingException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation));
             StringAssert.Contains(actual.Result.Message, "The data for the requested evidence is not yet available");
         }
 
@@ -243,7 +243,7 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object,
                 _mockAvailableEvidenceCodesService.Object);
 
-            var actual = Assert.ThrowsExceptionAsync<ServiceNotAvailableException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_OPEN, accreditation));
+            var actual = Assert.ThrowsAsync<ServiceNotAvailableException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_OPEN, accreditation));
             StringAssert.Contains(actual.Result.Message, "unable to retrieve authentication token");
         }
 
@@ -275,7 +275,7 @@ namespace Dan.Core.UnitTest
                 _mockRequestContextService.Object,
                 _mockAvailableEvidenceCodesService.Object);
 
-            var actual = Assert.ThrowsExceptionAsync<AsyncEvidenceStillWaitingException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation));
+            var actual = Assert.ThrowsAsync<AsyncEvidenceStillWaitingException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation));
             StringAssert.Contains(actual.Result.Message, "The data for the requested evidence is not yet available");
         }
 

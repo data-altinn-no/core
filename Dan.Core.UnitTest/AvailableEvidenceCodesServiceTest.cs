@@ -1,11 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.Serialization;
-using Dan.Common.Models;
+﻿using Dan.Common.Models;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
-using FluentAssertions;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,6 +10,8 @@ using Newtonsoft.Json;
 using Polly;
 using Polly.Caching.Memory;
 using Polly.Registry;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
 namespace Dan.Core.UnitTest
 {
@@ -201,7 +199,8 @@ namespace Dan.Core.UnitTest
             var actual = await acs.GetAliases();
             
             // Assert
-            actual.Should().BeEquivalentTo(expected);
+            CollectionAssert.AreEqual(expected, actual);
+
         }
     }
 
