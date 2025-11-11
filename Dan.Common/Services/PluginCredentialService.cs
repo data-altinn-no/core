@@ -51,9 +51,9 @@ public class PluginCredentialService(
             try
             {
                 using var listener = AzureEventSourceListener.CreateConsoleLogger();
-                // var clientid = configuration.GetSection("AZURE_CLIENT_ID").Value;
-                // var ident = configuration.GetSection("AZURE_CLIENT_SECRET").Value?[..5];
-                // logger.LogInformation("Getting token for {clientid} - {ident}", clientid, ident);
+                var clientid = configuration.GetSection("AZURE_CLIENT_ID").Value;
+                var ident = configuration.GetSection("AZURE_CLIENT_SECRET").Value?[..5];
+                logger.LogInformation("Getting token for {clientid} - {ident}", clientid, ident);
                 var tokenRequestContext = new TokenRequestContext(scopes);
                 var tokenResult = await credentials.GetTokenAsync(tokenRequestContext, cancellationToken);
                 return tokenResult.Token;
