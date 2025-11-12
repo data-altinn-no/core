@@ -1,5 +1,6 @@
 using System.Reflection;
 using Azure.Core.Serialization;
+using Azure.Identity;
 using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
 using Dan.Common.Services;
@@ -116,6 +117,10 @@ public static class HostBuilderExtensions
                 services.AddTransient<PluginAuthorizationMessageHandler>();
                 services.AddTransient<IDanPluginClientService, DanPluginClientService>();
                 services.AddTransient<ICcrClientService, CcrClientService>();
+
+                // This can be overwritten by plugins by doing their own registrations if needing special options
+                var defaultCredentials = new DefaultAzureCredential();
+                services.AddSingleton(defaultCredentials);
 
                 // Try to add the first IEvidenceSourceMetadata implementation we can find in the entry assembly
                 var evidenceSourceMetadataServiceType = typeof(IEvidenceSourceMetadata);
