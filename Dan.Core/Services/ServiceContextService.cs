@@ -257,6 +257,12 @@ public class ServiceContextService : IServiceContextService
                 Owner = "Brønnøysundregistrene",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }                
             },
+            new ServiceContext() {
+                Name = "NSG",
+                Id = "nsg-product",
+                Owner = "Brønnøysundregistrene",
+                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }
+            }
         };
 
         return await Task.FromResult(serviceContexts);
