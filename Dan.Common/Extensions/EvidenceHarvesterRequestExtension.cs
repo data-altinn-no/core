@@ -1,4 +1,6 @@
-﻿namespace Dan.Common.Extensions;
+﻿using System.Globalization;
+
+namespace Dan.Common.Extensions;
 
 /// <summary>
 /// Extension methods for evidence harvester requests
@@ -109,7 +111,8 @@ public static class EvidenceHarvesterRequestExtension
                 return true;
             // If string, try to parse
             case string stringValue:
-                return decimal.TryParse(stringValue, out value);
+                stringValue = stringValue.Replace(" ", string.Empty);
+                return decimal.TryParse(stringValue, CultureInfo.InvariantCulture, out value);
             // Otherwise return false, can't think of any other realistic value type that could be interpreted
             // as a decimal type
             default:
