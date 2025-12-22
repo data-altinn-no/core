@@ -1,12 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
-using Moq;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
+using FakeItEasy;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dan.Core.UnitTest
@@ -16,15 +16,15 @@ namespace Dan.Core.UnitTest
     public class AuthorizationRequestValidatorServiceTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
-        private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        private readonly Mock<IEntityRegistryService> _mockEntityRegistryService = new Mock<IEntityRegistryService>();
-        private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService = new Mock<IAvailableEvidenceCodesService>();
-        private readonly Mock<IConsentService> _mockConsentService = new Mock<IConsentService>();
-        private readonly Mock<IEvidenceStatusService> _mockEvidenceStatusService = new Mock<IEvidenceStatusService>();
-        private readonly Mock<ITokenRequesterService> _mockTokenRequesterService = new Mock<ITokenRequesterService>();
-        private readonly Mock<IRequirementValidationService> _mockRequirementValidatorService = new Mock<IRequirementValidationService>();
-        private readonly Mock<IServiceContextService> _mockServiceContextService = new Mock<IServiceContextService>();
-        private readonly Mock<IRequestContextService> _mockRequestContextService = new Mock<IRequestContextService>();
+        private readonly IHttpClientFactory _mockHttpClientFactory = A.Fake<IHttpClientFactory>();
+        private readonly IEntityRegistryService _mockEntityRegistryService = A.Fake<IEntityRegistryService>();
+        private readonly IAvailableEvidenceCodesService _mockAvailableEvidenceCodesService = A.Fake<IAvailableEvidenceCodesService>();
+        private readonly IConsentService _mockConsentService = A.Fake<IConsentService>();
+        private readonly IEvidenceStatusService _mockEvidenceStatusService = A.Fake<IEvidenceStatusService>();
+        private readonly ITokenRequesterService _mockTokenRequesterService = A.Fake<ITokenRequesterService>();
+        private readonly IRequirementValidationService _mockRequirementValidatorService = A.Fake<IRequirementValidationService>();
+        private readonly IServiceContextService _mockServiceContextService = A.Fake<IServiceContextService>();
+        private readonly IRequestContextService _mockRequestContextService = A.Fake<IRequestContextService>();
 
         private const string EVIDENCECODE_OPEN = "EvidenceCodeOpen";
         private const string EVIDENCECODE_REQUIRING_LEGALBASIS_1 = "EvidenceCodeRequiringLegalBasis1";
@@ -54,32 +54,31 @@ namespace Dan.Core.UnitTest
         [TestInitialize]
         public void Initialize()
         {
-            _mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>()))
+            A.CallTo(() => _mockHttpClientFactory.CreateClient(A<string>._))
                 .Returns(TestHelpers.GetHttpClientMock("[{}]"));
 
-            _mockTokenRequesterService.Setup(_ => _.GetMaskinportenToken(It.IsAny<string>(), It.IsAny<string>()))
+            A.CallTo(() => _mockTokenRequesterService.GetMaskinportenToken(A<string>._, A<string>._))
                 .Returns(Task.FromResult("{\"access_token\":\"\"}"));
 
-            _mockEntityRegistryService.Setup(_ => _.Get(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
                 .Returns(Task.FromResult(GetBrEntry()));
 
-            _mockAvailableEvidenceCodesService.Setup(_ => _.GetAvailableEvidenceCodes(It.IsAny<bool>()))
+            A.CallTo(() => _mockAvailableEvidenceCodesService.GetAvailableEvidenceCodes(A<bool>._))
                 .Returns(Task.FromResult(GetAvailableEvidenceCodes()));
 
-            _mockRequirementValidatorService.Setup(_ => _.ValidateRequirements(
-                    It.IsAny<Dictionary<string, List<Requirement>>>(), It.IsAny<AuthorizationRequest>()))
+            A.CallTo(() => _mockRequirementValidatorService.ValidateRequirements(
+                    A<Dictionary<string, List<Requirement>>>._, A<AuthorizationRequest>._))
                 .Returns(Task.FromResult(new List<string>()));
 
-            _mockRequirementValidatorService.Setup(_ => _.GetSkippedEvidenceCodes())
+            A.CallTo(() => _mockRequirementValidatorService.GetSkippedEvidenceCodes())
                 .Returns(new Dictionary<string, Requirement>()
                 {
                     { EVIDENCECODE_FAILURE_ACTION_SKIP, new AltinnRoleRequirement() }
                 });
 
-            _mockRequestContextService.SetupAllProperties();
-            _mockRequestContextService.SetupGet(_ => _.AuthenticatedOrgNumber).Returns("912345678");
-            _mockRequestContextService.SetupGet(_ => _.Scopes).Returns(new List<string>() { "a", "b" });
-            _mockRequestContextService.SetupGet(_ => _.ServiceContext).Returns(new ServiceContext() { Id = "ebevis-product", Name = "eBevis", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = new List<Requirement>() });
+            _mockRequestContextService.AuthenticatedOrgNumber = "912345678";
+            _mockRequestContextService.Scopes = ["a", "b"];
+            _mockRequestContextService.ServiceContext = new ServiceContext { Id = "ebevis-product", Name = "eBevis", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = [] };
         }
 
         [TestMethod]
@@ -88,10 +87,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             // Act
             await arvs.Validate(GetAuthorizationRequest());
@@ -100,7 +99,7 @@ namespace Dan.Core.UnitTest
             Assert.IsNotNull(arvs.GetAuthorizationRequest());
             Assert.IsNotNull(arvs.GetAuthorizationRequest().RequestorParty);
             Assert.IsNotNull(arvs.GetAuthorizationRequest().SubjectParty);
-            Assert.IsTrue(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis().Count == 0);
+            Assert.IsEmpty(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis());
             Assert.IsTrue(arvs.GetValidTo() > DateTime.Now);
         }
 
@@ -110,10 +109,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             // Act
             await arvs.Validate(GetAuthorizationRequest(subject: "iso6523-actorid-upis::0192:991825827", requestor: "iso6523-actorid-upis::9999:blabla-123"));
@@ -122,7 +121,7 @@ namespace Dan.Core.UnitTest
             Assert.IsNotNull(arvs.GetAuthorizationRequest());
             Assert.IsNotNull(arvs.GetAuthorizationRequest().RequestorParty);
             Assert.IsNotNull(arvs.GetAuthorizationRequest().SubjectParty);
-            Assert.IsTrue(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis().Count == 0);
+            Assert.IsEmpty(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis());
             Assert.IsTrue(arvs.GetValidTo() > DateTime.Now);
         }
 
@@ -133,10 +132,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             // Act
             await Assert.ThrowsAsync<InvalidSubjectException>(async () =>
@@ -152,10 +151,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             // Act
             await Assert.ThrowsAsync<InvalidRequestorException>(async () =>
@@ -170,10 +169,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             // Act
             await arvs.Validate(GetAuthorizationRequest(subject: "03065001488", requestor: "03065001488"));
@@ -182,7 +181,7 @@ namespace Dan.Core.UnitTest
             Assert.IsNotNull(arvs.GetAuthorizationRequest());
             Assert.IsNotNull(arvs.GetAuthorizationRequest().RequestorParty);
             Assert.IsNotNull(arvs.GetAuthorizationRequest().SubjectParty);
-            Assert.IsTrue(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis().Count == 0);
+            Assert.IsEmpty(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis());
             Assert.IsTrue(arvs.GetValidTo() > DateTime.Now);
         }
 
@@ -193,10 +192,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService
                 );
 
             var ar = GetAuthorizationRequest();
@@ -210,7 +209,7 @@ namespace Dan.Core.UnitTest
 
             // Verify
             Assert.IsNotNull(arvs.GetAuthorizationRequest());
-            Assert.IsTrue(arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis().Count == 1);
+            Assert.HasCount(1, arvs.GetEvidenceCodeNamesWithVerifiedLegalBasis());
             Assert.IsTrue(arvs.GetValidTo() > DateTime.Now);
         }
 
@@ -220,10 +219,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var ar = GetAuthorizationRequest();
             ar.EvidenceRequests.First().EvidenceCodeName = ar.EvidenceRequests.First().EvidenceCodeName.ToLowerInvariant();
@@ -241,10 +240,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             // Act
             await Assert.ThrowsAsync<InvalidAuthorizationRequestException>(async () =>
@@ -259,13 +258,13 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
-            _mockRequirementValidatorService.Setup(_ => _.ValidateRequirements(
-                    It.IsAny<Dictionary<string, List<Requirement>>>(), It.IsAny<AuthorizationRequest>()))
+            A.CallTo(() => _mockRequirementValidatorService.ValidateRequirements(
+                    A<Dictionary<string, List<Requirement>>>._, A<AuthorizationRequest>._))
                 .Returns(Task.FromResult(new List<string>() { "someerror" }));
 
             // Act
@@ -281,10 +280,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authorizationRequest = GetAuthorizationRequest();
             authorizationRequest.EvidenceRequests.Add(new EvidenceRequest() { EvidenceCodeName = EVIDENCECODE_FAILURE_ACTION_SKIP });
@@ -293,8 +292,8 @@ namespace Dan.Core.UnitTest
             await arvs.Validate(authorizationRequest);
 
             // Verify
-            Assert.AreEqual(1, arvs.GetEvidenceCodes().Count);
-            Assert.AreEqual(1, arvs.GetSkippedEvidenceCodes().Count);
+            Assert.HasCount(1, arvs.GetEvidenceCodes());
+            Assert.HasCount(1, arvs.GetSkippedEvidenceCodes());
             Assert.AreEqual(EVIDENCECODE_FAILURE_ACTION_SKIP, arvs.GetSkippedEvidenceCodes().First().Key);
             Assert.IsInstanceOfType(arvs.GetSkippedEvidenceCodes().First().Value, typeof(AltinnRoleRequirement));
         }
@@ -303,15 +302,15 @@ namespace Dan.Core.UnitTest
         public async Task ValidateWrongServiceContext()
         {
             // Setup
-            var mockRequestContextServiceWithDifferentServiceContext = new Mock<IRequestContextService>();
-            mockRequestContextServiceWithDifferentServiceContext.SetupGet(_ => _.ServiceContext).Returns(new ServiceContext() { Id = "someothercontext", Name = "someothercontext-id", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = new List<Requirement>() });
+            var mockRequestContextServiceWithDifferentServiceContext = A.Fake<IRequestContextService>();
+            A.CallTo(() => mockRequestContextServiceWithDifferentServiceContext.ServiceContext).Returns(new ServiceContext() { Id = "someothercontext", Name = "someothercontext-id", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = new List<Requirement>() });
 
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                mockRequestContextServiceWithDifferentServiceContext.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                mockRequestContextServiceWithDifferentServiceContext);
 
 
             // Act
@@ -329,10 +328,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_REQUIRED_2, Parameters = GetParameterListForRequest() });
@@ -347,10 +346,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -371,10 +370,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -395,10 +394,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -418,10 +417,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -441,10 +440,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             authRequest.EvidenceRequests.Add(new EvidenceRequest { EvidenceCodeName = EVIDENCECODE_PARAMS_REQUIRED_2 });
@@ -462,10 +461,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -486,10 +485,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -509,10 +508,10 @@ namespace Dan.Core.UnitTest
             // Setup
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
             var invalidParamList = GetParameterListForRequest();
@@ -535,15 +534,15 @@ namespace Dan.Core.UnitTest
             ae.First().BelongsToServiceContexts = new List<string>();
             ae.First().ServiceContext = null;
 
-            _mockAvailableEvidenceCodesService.Setup(_ => _.GetAvailableEvidenceCodes(It.IsAny<bool>()))
+            A.CallTo(() => _mockAvailableEvidenceCodesService.GetAvailableEvidenceCodes(A<bool>._))
                 .Returns(Task.FromResult(ae));
 
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
-                _mockEntityRegistryService.Object,
-                _mockAvailableEvidenceCodesService.Object,
-                _mockRequirementValidatorService.Object,
-                _mockRequestContextService.Object);
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
 
             var authRequest = GetAuthorizationRequest();
 

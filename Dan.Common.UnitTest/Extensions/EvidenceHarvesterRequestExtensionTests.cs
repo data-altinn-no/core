@@ -1,5 +1,5 @@
-﻿using Dan.Common.Extensions;
-using FluentAssertions;
+﻿using AwesomeAssertions;
+using Dan.Common.Extensions;
 
 namespace Dan.Common.UnitTest.Extensions;
 
