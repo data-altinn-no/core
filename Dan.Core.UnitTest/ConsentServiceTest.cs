@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Moq;
 using System.Diagnostics.CodeAnalysis;
 using Dan.Common;
 using Dan.Common.Enums;
@@ -8,7 +7,7 @@ using Dan.Core.Helpers;
 using Dan.Core.ServiceContextTexts;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
-using Microsoft.Extensions.Logging.Abstractions;
+using FakeItEasy;
 using ConsentRequirement = Nadobe.Common.Models.ConsentRequirement;
 
 namespace Dan.Core.UnitTest
@@ -19,32 +18,23 @@ namespace Dan.Core.UnitTest
         [ExcludeFromCodeCoverage]
         public class AuthorizationRequestValidatorServiceTest
         {
-            private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
+            private readonly IHttpClientFactory _mockHttpClientFactory = A.Fake<IHttpClientFactory>();
 
-            private readonly Mock<IHttpClientFactory> _mockHttpClientFactory = new Mock<IHttpClientFactory>();
+            private readonly IEntityRegistryService _mockEntityRegistryService =
+                A.Fake<IEntityRegistryService>();
 
-            private readonly Mock<IEntityRegistryService> _mockEntityRegistryService =
-                new Mock<IEntityRegistryService>();
+            private readonly IAvailableEvidenceCodesService _mockAvailableEvidenceCodesService =
+                A.Fake<IAvailableEvidenceCodesService>();
 
-            private readonly Mock<IAvailableEvidenceCodesService> _mockAvailableEvidenceCodesService =
-                new Mock<IAvailableEvidenceCodesService>();
+            private readonly ITokenRequesterService _mockTokenRequesterService =
+                A.Fake<ITokenRequesterService>();
 
-            private readonly Mock<IConsentService> _mockConsentService = new Mock<IConsentService>();
+            private readonly IRequirementValidationService _mockRequirementValidatorService =
+                A.Fake<IRequirementValidationService>();
+            
 
-            private readonly Mock<IEvidenceStatusService> _mockEvidenceStatusService =
-                new Mock<IEvidenceStatusService>();
-
-            private readonly Mock<ITokenRequesterService> _mockTokenRequesterService =
-                new Mock<ITokenRequesterService>();
-
-            private readonly Mock<IRequirementValidationService> _mockRequirementValidatorService =
-                new Mock<IRequirementValidationService>();
-
-            private readonly Mock<IServiceContextService> _mockServiceContextService =
-                new Mock<IServiceContextService>();
-
-            private readonly Mock<IRequestContextService> _mockRequestContextService =
-                new Mock<IRequestContextService>();
+            private readonly IRequestContextService _mockRequestContextService =
+                A.Fake<IRequestContextService>();
 
             private Accreditation accreditation;
 
@@ -64,32 +54,31 @@ namespace Dan.Core.UnitTest
 
                 accreditation = GetAccreditation();
 
-                _mockHttpClientFactory.Setup(_ => _.CreateClient(It.IsAny<string>()))
+                A.CallTo(() => _mockHttpClientFactory.CreateClient(A<string>._))
                     .Returns(TestHelpers.GetHttpClientMock("[{}]"));
 
-                _mockTokenRequesterService.Setup(_ => _.GetMaskinportenToken(It.IsAny<string>(), It.IsAny<string>()))
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenToken(A<string>._, A<string>._))
                     .Returns(Task.FromResult("{\"access_token\":\"\"}"));
 
-                _mockEntityRegistryService.Setup(_ => _.Get(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>()))
+                A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
                     .Returns(Task.FromResult(GetBrEntry()));
 
-                _mockAvailableEvidenceCodesService.Setup(_ => _.GetAvailableEvidenceCodes(It.IsAny<bool>()))
+                A.CallTo(() => _mockAvailableEvidenceCodesService.GetAvailableEvidenceCodes(A<bool>._))
                     .Returns(Task.FromResult(GetAvailableEvidenceCodes()));
 
-                _mockRequirementValidatorService.Setup(_ => _.ValidateRequirements(
-                        It.IsAny<Dictionary<string, List<Requirement>>>(), It.IsAny<AuthorizationRequest>()))
+                A.CallTo(() => _mockRequirementValidatorService.ValidateRequirements(
+                        A<Dictionary<string, List<Requirement>>>._, A<AuthorizationRequest>._))
                     .Returns(Task.FromResult(new List<string>()));
 
-                _mockRequirementValidatorService.Setup(_ => _.GetSkippedEvidenceCodes())
+                A.CallTo(() =>_mockRequirementValidatorService.GetSkippedEvidenceCodes())
                     .Returns(new Dictionary<string, Requirement>()
                     {
                         { EVIDENCECODE_FAILURE_ACTION_SKIP, new AltinnRoleRequirement() }
                     });
 
-                _mockRequestContextService.SetupAllProperties();
-                _mockRequestContextService.SetupGet(_ => _.AuthenticatedOrgNumber).Returns("912345678");
-                _mockRequestContextService.SetupGet(_ => _.Scopes).Returns(new List<string>() { "a", "b" });
-                _mockRequestContextService.SetupGet(_ => _.ServiceContext).Returns(new ServiceContext()
+                A.CallTo(() => _mockRequestContextService.AuthenticatedOrgNumber).Returns("912345678");
+                A.CallTo(() => _mockRequestContextService.Scopes).Returns(new List<string>() { "a", "b" });
+                A.CallTo(() => _mockRequestContextService.ServiceContext).Returns(new ServiceContext()
                 {
                     Id = "ebevis-product",
                     Name = "eBevis",
@@ -98,29 +87,11 @@ namespace Dan.Core.UnitTest
                     ServiceContextTextTemplate = new EBevisServiceContextTextTemplate()
                 });
             }
-            /*
-            [TestMethod]
-            public async Task TestInitiateSuccess()
-            {
-                
-            }
-
-            public async Task TestInitiateSuccess()
-            {
-                
-            }
-
-            [TestMethod]
-            public async Task TestInitiate()
-            {
-
-            }
-            */
 
             [TestMethod]
             public void CheckConsentDelegationTexts()
             {
-                var renderedTexts = TextTemplateProcessor.ProcessConsentRequestMacros(_mockRequestContextService.Object.ServiceContext.ServiceContextTextTemplate.ConsentDelegationContexts, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME", "https://www.vg.no/consenturl");
+                var renderedTexts = TextTemplateProcessor.ProcessConsentRequestMacros(_mockRequestContextService.ServiceContext.ServiceContextTextTemplate.ConsentDelegationContexts, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME", "https://www.vg.no/consenturl");
                 Assert.IsFalse(renderedTexts.En.Contains("#"));
                 Assert.IsFalse(renderedTexts.NoNn.Contains("#"));
                 Assert.IsFalse(renderedTexts.NoNb.Contains("#"));
@@ -129,7 +100,7 @@ namespace Dan.Core.UnitTest
             [TestMethod]
             public void CheckAllTextReplacement()
             {
-                var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_mockRequestContextService.Object.ServiceContext, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME", "https://www.vg.no/consenturl");
+                var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_mockRequestContextService.ServiceContext, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME", "https://www.vg.no/consenturl");
 
                 Assert.IsFalse(renderedTexts.ConsentDelegationContexts.En.Contains("#"));
                 Assert.IsFalse(renderedTexts.ConsentDelegationContexts.NoNn.Contains("#"));
