@@ -90,72 +90,63 @@ public class EntityRegistryServiceTest
     [TestMethod]
     public void TestGetMapping()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.Get("91").Result;
+        var r = entityRegistryService.Get("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
 
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundReturnsSubUnit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.Get("92").Result;
+        var r = entityRegistryService.Get("92").Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundSetToFalseReturnsNull()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.Get("92", attemptSubUnitLookupIfNotFound: false).Result;
+        var r = entityRegistryService.Get("92", attemptSubUnitLookupIfNotFound: false).Result;
         Assert.IsNull(r);
     }
     
     [TestMethod]
     public void TestGetMainUnit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.GetMainUnit("91").Result;
+        var r = entityRegistryService.GetMainUnit("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetMainUnitAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.GetMainUnit("92").Result;
+        var r = entityRegistryService.GetMainUnit("92").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetFullMainAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.GetFullMainUnit("92").Result;
+        var r = entityRegistryService.GetFullMainUnit("92").Result;
         Assert.AreEqual("91", r?.Organisasjonsnummer);
     }
     
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsSubunit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.Get("92", subUnitOnly: true).Result;
+        var r = entityRegistryService.Get("92", subUnitOnly: true).Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsNullIfMainUnit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.Get("91", subUnitOnly: true).Result;
+        var r = entityRegistryService.Get("91", subUnitOnly: true).Result;
         Assert.IsNull(r);
     }
 
     [TestMethod]
     public void TestGetNestToTopmostMainUnitReturnsMainunit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
-        var r = s.GetMainUnit("94").Result;
+        var r = entityRegistryService.GetMainUnit("94").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     

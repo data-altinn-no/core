@@ -300,7 +300,7 @@ namespace Dan.Core.UnitTest
         {
             // Setup
             var mockRequestContextServiceWithDifferentServiceContext = A.Fake<IRequestContextService>();
-            A.CallTo(() => mockRequestContextServiceWithDifferentServiceContext.ServiceContext).Returns(new ServiceContext() { Id = "someothercontext", Name = "someothercontext-id", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = new List<Requirement>() });
+            mockRequestContextServiceWithDifferentServiceContext.ServiceContext = new ServiceContext() { Id = "someothercontext", Name = "someothercontext-id", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = new List<Requirement>() };
 
             var arvs = new AuthorizationRequestValidatorService(
                 _loggerFactory,
