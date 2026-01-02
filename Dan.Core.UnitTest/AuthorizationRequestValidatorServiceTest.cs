@@ -19,11 +19,8 @@ namespace Dan.Core.UnitTest
         private readonly IHttpClientFactory _mockHttpClientFactory = A.Fake<IHttpClientFactory>();
         private readonly IEntityRegistryService _mockEntityRegistryService = A.Fake<IEntityRegistryService>();
         private readonly IAvailableEvidenceCodesService _mockAvailableEvidenceCodesService = A.Fake<IAvailableEvidenceCodesService>();
-        private readonly IConsentService _mockConsentService = A.Fake<IConsentService>();
-        private readonly IEvidenceStatusService _mockEvidenceStatusService = A.Fake<IEvidenceStatusService>();
         private readonly ITokenRequesterService _mockTokenRequesterService = A.Fake<ITokenRequesterService>();
         private readonly IRequirementValidationService _mockRequirementValidatorService = A.Fake<IRequirementValidationService>();
-        private readonly IServiceContextService _mockServiceContextService = A.Fake<IServiceContextService>();
         private readonly IRequestContextService _mockRequestContextService = A.Fake<IRequestContextService>();
 
         private const string EVIDENCECODE_OPEN = "EvidenceCodeOpen";
@@ -77,7 +74,7 @@ namespace Dan.Core.UnitTest
                 });
 
             _mockRequestContextService.AuthenticatedOrgNumber = "912345678";
-            _mockRequestContextService.Scopes = ["a", "b"];
+            _mockRequestContextService.Scopes = new List<string> {"a", "b"};
             _mockRequestContextService.ServiceContext = new ServiceContext { Id = "ebevis-product", Name = "eBevis", ValidLanguages = new List<string>() { "no" }, AuthorizationRequirements = [] };
         }
 
