@@ -4,9 +4,10 @@ using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
+using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
+
 using ConsentRequirement = Nadobe.Common.Models.ConsentRequirement;
 
 namespace Dan.Core.UnitTest
@@ -15,34 +16,33 @@ namespace Dan.Core.UnitTest
     public class RequirementValidationServiceTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
-        private readonly Mock<IEntityRegistryService> _mockEntityRegistryService = new Mock<IEntityRegistryService>();
-        private readonly Mock<IAltinnServiceOwnerApiService> _mockAltinnServiceOwnerApiService =
-            new Mock<IAltinnServiceOwnerApiService>();
-        private readonly Mock<IRequestContextService> _mockRequestContextService =
-            new Mock<IRequestContextService>();
+        private readonly IEntityRegistryService _mockEntityRegistryService = A.Fake<IEntityRegistryService>();
+        private readonly IAltinnServiceOwnerApiService _mockAltinnServiceOwnerApiService = A.Fake<IAltinnServiceOwnerApiService>();
+        private readonly IRequestContextService _mockRequestContextService = A.Fake<IRequestContextService>();
 
         [TestInitialize]
         public void TestInitialize()
         {
 
-            _mockEntityRegistryService.Setup(_ => _.Get(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>()))
+            A.CallTo(() => _mockEntityRegistryService
+                    .Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
                 .Returns(Task.FromResult(GetBrEntry()));
 
-            _mockEntityRegistryService.Setup(_ => _.IsPublicAgency(It.IsAny<string>()))
+            A.CallTo(() => _mockEntityRegistryService
+                    .IsPublicAgency(A<string>._))
                 .Returns(Task.FromResult(true));
 
-            _mockAltinnServiceOwnerApiService.Setup(_ =>
-                    _.VerifyAltinnRole(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            A.CallTo(() => _mockAltinnServiceOwnerApiService
+                    .VerifyAltinnRole(A<string>._, A<string>._, A<string>._))
                 .Returns(Task.FromResult(true));
 
-            _mockAltinnServiceOwnerApiService.Setup(_ =>
-                    _.VerifyAltinnRight(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            A.CallTo(() => _mockAltinnServiceOwnerApiService
+                    .VerifyAltinnRight(A<string>._, A<string>._, A<string>._, A<string>._))
                 .Returns(Task.FromResult(true));
 
-            _mockRequestContextService.SetupAllProperties();
-            _mockRequestContextService.SetupGet(_ => _.AuthenticatedOrgNumber).Returns("912345678");
-            _mockRequestContextService.SetupGet(_ => _.Scopes).Returns(new List<string>() { "a", "b" });
-            _mockRequestContextService.SetupProperty(_ => _.ServiceContext, new Mock<ServiceContext>().Object);
+
+            _mockRequestContextService.AuthenticatedOrgNumber = "912345678";
+            _mockRequestContextService.Scopes = new List<string> { "a", "b" };
         }
 
         [TestMethod]
@@ -57,7 +57,7 @@ namespace Dan.Core.UnitTest
                 { "ec1", new List<Requirement>() }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
 
             Assert.IsTrue(errorList.Count == 0);
@@ -75,7 +75,7 @@ namespace Dan.Core.UnitTest
                 { "notinrequest", new List<Requirement>() { GetAltinnRoleRequirement(AccreditationPartyTypes.Subject, AccreditationPartyTypes.Requestor, "UTINN") } }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
 
             List<string> errorList = new();
 
@@ -100,7 +100,7 @@ namespace Dan.Core.UnitTest
                 { "ec1", new List<Requirement>() { GetAltinnRoleRequirement(AccreditationPartyTypes.Subject, AccreditationPartyTypes.Requestor, "UTINN") } }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
 
             Assert.IsTrue(errorList.Count == 0);
@@ -118,7 +118,7 @@ namespace Dan.Core.UnitTest
                 { "ec1", new List<Requirement>() { GetAltinnRightsRequirement(AccreditationPartyTypes.Subject, AccreditationPartyTypes.Requestor, "UTINN") } }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -132,7 +132,7 @@ namespace Dan.Core.UnitTest
                 { "ec1", new List<Requirement>() { GetAccreditationPartyRequirement(AccreditationPartyRequirementType.RequestorAndOwnerAreEqual) } }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -146,7 +146,7 @@ namespace Dan.Core.UnitTest
                 { "ec1", new List<Requirement>() {GetMaskinportenScopeRequirement("a", "b") } }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -165,7 +165,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
 
@@ -174,8 +174,8 @@ namespace Dan.Core.UnitTest
         [TestMethod]
         public async Task BR_OpenDataTest_Negative_MissingRole()
         {
-            _mockAltinnServiceOwnerApiService.Setup(_ =>
-                    _.VerifyAltinnRole(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            A.CallTo(() =>
+                    _mockAltinnServiceOwnerApiService.VerifyAltinnRole(A<string>._, A<string>._, A<string>._))
                 .Returns(Task.FromResult(false));
 
             var authRequest = GetAuthRequest("erlend", "requestor");
@@ -191,7 +191,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -211,7 +211,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -232,7 +232,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 2);
         }
@@ -254,7 +254,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -278,7 +278,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
 
             Assert.IsTrue(errorList.Count == 0);
@@ -303,7 +303,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
 
             Assert.IsTrue(errorList.Count == 1);
@@ -328,7 +328,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
 
             Assert.IsTrue(errorList.Count == 3);
@@ -337,8 +337,8 @@ namespace Dan.Core.UnitTest
         [TestMethod]
         public async Task SoftRequirementTest()
         {
-            _mockAltinnServiceOwnerApiService.Setup(_ =>
-                    _.VerifyAltinnRole(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            A.CallTo(() =>
+                    _mockAltinnServiceOwnerApiService.VerifyAltinnRole(A<string>._, A<string>._, A<string>._))
                 .Returns(Task.FromResult(false));
 
             var authRequest = GetAuthRequest("erlend", "requestor");
@@ -358,7 +358,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
             Assert.IsTrue(svc.GetSkippedEvidenceCodes().Count == 1);
@@ -388,7 +388,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -419,7 +419,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -455,7 +455,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -491,7 +491,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -527,7 +527,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -549,7 +549,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
         }
@@ -570,7 +570,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -591,7 +591,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -611,7 +611,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 2);
         }
@@ -635,7 +635,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -659,7 +659,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
         }
@@ -685,7 +685,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
 
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 0);
@@ -711,7 +711,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
 
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
@@ -738,7 +738,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
 
             var errorList = await svc.ValidateRequirements(reqs, authRequest);
             Assert.IsTrue(errorList.Count == 1);
@@ -766,7 +766,7 @@ namespace Dan.Core.UnitTest
                 }
             };
 
-            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService.Object, _mockEntityRegistryService.Object, _mockRequestContextService.Object);
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
 
             var errorList = await svc.ValidateRequirements(req, authRequest);
             Assert.IsTrue(errorList.Count == 1);
