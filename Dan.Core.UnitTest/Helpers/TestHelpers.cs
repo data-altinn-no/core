@@ -2,8 +2,8 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Dan.Common.Models;
-using Moq;
-using Moq.Protected;
+using FakeItEasy;
+using FakeItEasy.Core;
 using Newtonsoft.Json;
 
 namespace Dan.Core.UnitTest.Helpers
@@ -83,23 +83,29 @@ namespace Dan.Core.UnitTest.Helpers
         /// </exception>
         public static HttpClient GetSafeHttpClientMock(string responseBody = "")
         {
-            var handler = new Mock<HttpClientHandler>();
+            var handler = A.Fake<HttpClientHandler>(options =>
+                options.CallsBaseMethods());
 
-            handler.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .Returns(Task<HttpResponseMessage>.Factory.StartNew(() =>
+            A.CallTo(handler)
+                .Where(call => call.Method.Name == "SendAsync")
+                .WithReturnType<Task<HttpResponseMessage>>()
+                .Invokes((IFakeObjectCall call) =>
+                {
+                    var request = (HttpRequestMessage)call.Arguments[0];
+
+                    if (request.Method != HttpMethod.Get)
                     {
-                        return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(responseBody) };
-                    })).Callback<HttpRequestMessage, CancellationToken>(
-                    (r, _) =>
+                        throw new Exception("GetSafeHttpClientMock() expected GET");
+                    }
+                })
+                .ReturnsLazily(() =>
+                    Task.FromResult(
+                        new HttpResponseMessage(HttpStatusCode.OK)
                         {
-                        if (r.Method != HttpMethod.Get)
-                        {
-                            throw new Exception("GetSafeHttpClientMock() expected GET");
-                        }
-                        });
+                            Content = new StringContent(responseBody)
+                        }));
 
-            return new HttpClient(handler.Object);
+            return new HttpClient(handler);
         }
 
         /// <summary>
@@ -113,19 +119,20 @@ namespace Dan.Core.UnitTest.Helpers
         /// </returns>
         public static HttpClient GetHttpClientMock(string responseBody = "")
         {
-            var handler = new Mock<HttpMessageHandler>();
+            var handler = A.Fake<HttpMessageHandler>(options =>
+                options.CallsBaseMethods());
 
-            handler.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .Returns(Task<HttpResponseMessage>.Factory.StartNew(() =>
-                {
-                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(responseBody) };
-                })).Callback<HttpRequestMessage, CancellationToken>(
-                    (_, _) =>
-                    {
-                    });
+            A.CallTo(handler)
+                .Where(call => call.Method.Name == "SendAsync")
+                .WithReturnType<Task<HttpResponseMessage>>()
+                .ReturnsLazily(() =>
+                    Task.FromResult(
+                        new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(responseBody)
+                        }));
 
-            return new HttpClient(handler.Object);
+            return new HttpClient(handler);
         }
 
         /// <summary>
@@ -136,28 +143,33 @@ namespace Dan.Core.UnitTest.Helpers
         /// <returns>A http client that uses the webserver</returns>
         public static HttpClient GetHttpClientMock(Func<HttpRequestMessage, HttpResponseMessage> response, X509Certificate2 certificate = null)
         {
-            var handler = new Mock<HttpClientHandler>();
+            var handler = A.Fake<HttpClientHandler>(options =>
+                options.CallsBaseMethods());
 
-            handler.Protected()
-                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
-                .Returns<HttpRequestMessage, CancellationToken>((r, c) => Task<HttpResponseMessage>.Factory.StartNew(() =>
+            A.CallTo(handler)
+                .Where(call => call.Method.Name == "SendAsync")
+                .WithReturnType<Task<HttpResponseMessage>>()
+                .ReturnsLazily((IFakeObjectCall call) =>
                 {
-                    var resp = response.Invoke(r);
+                    var request = (HttpRequestMessage)call.Arguments[0];
+                    var cancellationToken = (CancellationToken)call.Arguments[1];
 
-                    if (resp == null)
-                    {
-                        throw new HttpRequestException("Connection refused");
-                    }
-
-                    if (c.IsCancellationRequested)
+                    if (cancellationToken.IsCancellationRequested)
                     {
                         throw new TaskCanceledException();
                     }
 
-                    return resp;
-                }));
+                    var responseMessage = response.Invoke(request);
 
-            return new HttpClient(handler.Object);
+                    if (responseMessage == null)
+                    {
+                        throw new HttpRequestException("Connection refused");
+                    }
+
+                    return Task.FromResult(responseMessage);
+                });
+
+            return new HttpClient(handler);
         }
 
         /// <summary>

@@ -2,8 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using Dan.Common.Models;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
+using FakeItEasy;
 using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace Dan.Core.UnitTest.Services;
 
@@ -11,122 +11,142 @@ namespace Dan.Core.UnitTest.Services;
 [ExcludeFromCodeCoverage]
 public class EntityRegistryServiceTest
 {
-    private readonly Mock<IEntityRegistryApiClientService> entityRegistryApiClientServiceMock = new();
-    private readonly Mock<ILogger<EntityRegistryService>> logger = new();
+    private readonly IEntityRegistryApiClientService entityRegistryApiClientServiceMock = A.Fake<IEntityRegistryApiClientService>();
+    private readonly ILogger<EntityRegistryService> logger = A.Fake<ILogger<EntityRegistryService>>();
     private readonly EntityRegistryService entityRegistryService;
 
     public EntityRegistryServiceTest()
     {
-        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
+        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
     }
 
     [TestInitialize]
     public void TestInitialize()
     {
-        entityRegistryApiClientServiceMock.Setup(_ => _.GetUpstreamEntityRegistryUnitAsync(It.IsAny<Uri>()))
-            .Returns((Uri url) =>
-            {
-                var orgForm = new Organisasjonsform { Kode = "AS" };
-                if (url.AbsolutePath.Contains("/enheter/91"))
-                {
-                    return Task.FromResult(new EntityRegistryUnit { Organisasjonsnummer = "91", Organisasjonsform = orgForm })!;
-                }
+        A.CallTo(() => entityRegistryApiClientServiceMock
+        .GetUpstreamEntityRegistryUnitAsync(A<Uri>._))
+    .ReturnsLazily((Uri url) =>
+    {
+        var orgForm = new Organisasjonsform { Kode = "AS" };
 
-                if (url.AbsolutePath.Contains("/underenheter/92"))
+        if (url.AbsolutePath.Contains("/enheter/91"))
+        {
+            return Task.FromResult<EntityRegistryUnit?>(
+                new EntityRegistryUnit
                 {
-                    return Task.FromResult(new EntityRegistryUnit { Organisasjonsnummer = "92", OverordnetEnhet = "91", Organisasjonsform = orgForm  })!;
-                }
+                    Organisasjonsnummer = "91",
+                    Organisasjonsform = orgForm
+                });
+        }
 
-                // Only subunits are at the leaf node, any nested parents are MainUnits
-                // Example: https://data.brreg.no/enhetsregisteret/api/underenheter/879587662
-                if (url.AbsolutePath.Contains("/enheter/93"))
+        if (url.AbsolutePath.Contains("/underenheter/92"))
+        {
+            return Task.FromResult<EntityRegistryUnit?>(
+                new EntityRegistryUnit
                 {
-                    return Task.FromResult(new EntityRegistryUnit { Organisasjonsnummer = "93", OverordnetEnhet = "91", Organisasjonsform = orgForm  })!;
-                }
+                    Organisasjonsnummer = "92",
+                    OverordnetEnhet = "91",
+                    Organisasjonsform = orgForm
+                });
+        }
 
-                if (url.AbsolutePath.Contains("/underenheter/94"))
+        // Only subunits are at the leaf node, any nested parents are MainUnits
+        if (url.AbsolutePath.Contains("/enheter/93"))
+        {
+            return Task.FromResult<EntityRegistryUnit?>(
+                new EntityRegistryUnit
                 {
-                    return Task.FromResult(new EntityRegistryUnit { Organisasjonsnummer = "94", OverordnetEnhet = "93", Organisasjonsform = orgForm  })!;
-                }
-                
-                if (url.AbsolutePath.Contains("/underenheter/31"))
-                {
-                    return Task.FromResult(new EntityRegistryUnit { Organisasjonsnummer = "31", Organisasjonsform = orgForm  })!;
-                }
+                    Organisasjonsnummer = "93",
+                    OverordnetEnhet = "91",
+                    Organisasjonsform = orgForm
+                });
+        }
 
-                return Task.FromResult<EntityRegistryUnit?>(null);
-            });
+        if (url.AbsolutePath.Contains("/underenheter/94"))
+        {
+            return Task.FromResult<EntityRegistryUnit?>(
+                new EntityRegistryUnit
+                {
+                    Organisasjonsnummer = "94",
+                    OverordnetEnhet = "93",
+                    Organisasjonsform = orgForm
+                });
+        }
+
+        if (url.AbsolutePath.Contains("/underenheter/31"))
+        {
+            return Task.FromResult<EntityRegistryUnit?>(
+                new EntityRegistryUnit
+                {
+                    Organisasjonsnummer = "31",
+                    Organisasjonsform = orgForm
+                });
+        }
+
+        return Task.FromResult<EntityRegistryUnit?>(null);
+    });
     }
     
     [TestMethod]
     public void TestGetMapping()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.Get("91").Result;
+        var r = entityRegistryService.Get("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
 
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundReturnsSubUnit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.Get("92").Result;
+        var r = entityRegistryService.Get("92").Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetAttemptSubUnitLookupIfNotFoundSetToFalseReturnsNull()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.Get("92", attemptSubUnitLookupIfNotFound: false).Result;
+        var r = entityRegistryService.Get("92", attemptSubUnitLookupIfNotFound: false).Result;
         Assert.IsNull(r);
     }
     
     [TestMethod]
     public void TestGetMainUnit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.GetMainUnit("91").Result;
+        var r = entityRegistryService.GetMainUnit("91").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetMainUnitAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.GetMainUnit("92").Result;
+        var r = entityRegistryService.GetMainUnit("92").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetFullMainAttemptsSubunitLookup()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.GetFullMainUnit("92").Result;
+        var r = entityRegistryService.GetFullMainUnit("92").Result;
         Assert.AreEqual("91", r?.Organisasjonsnummer);
     }
     
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsSubunit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.Get("92", subUnitOnly: true).Result;
+        var r = entityRegistryService.Get("92", subUnitOnly: true).Result;
         Assert.AreEqual("92", r?.OrganizationNumber);
     }
     
     [TestMethod]
     public void TestGetSubUnitOnlyReturnsNullIfMainUnit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.Get("91", subUnitOnly: true).Result;
+        var r = entityRegistryService.Get("91", subUnitOnly: true).Result;
         Assert.IsNull(r);
     }
 
     [TestMethod]
     public void TestGetNestToTopmostMainUnitReturnsMainunit()
     {
-        var s = new EntityRegistryService(entityRegistryApiClientServiceMock.Object, logger.Object);
-        var r = s.GetMainUnit("94").Result;
+        var r = entityRegistryService.GetMainUnit("94").Result;
         Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
@@ -152,9 +172,9 @@ public class EntityRegistryServiceTest
             Naeringskode1 = new NaeringsKodeDto{ Kode = industrialCode1 }
         };
         
-        entityRegistryApiClientServiceMock
-            .Setup(m => m.GetUpstreamEntityRegistryUnitAsync(It.IsAny<Uri>()))
-            .ReturnsAsync(entityRegistryUnit);
+        A.CallTo(() => entityRegistryApiClientServiceMock
+                .GetUpstreamEntityRegistryUnitAsync(A<Uri>._))
+            .Returns(Task.FromResult(entityRegistryUnit));
 
         // Act
         var isPublicAgency = await entityRegistryService.IsPublicAgency(organizationNumber);
