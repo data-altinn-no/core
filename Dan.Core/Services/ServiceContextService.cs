@@ -26,7 +26,7 @@ public class ServiceContextService : IServiceContextService
                     },
                     new MaskinportenScopeRequirement()
                     {
-                        RequiredScopes = new List<string> { "dan:altinnstudioapps", "altinn:dataaltinnno/ebevis" }
+                        RequiredScopes = new List<string> { "altinn:dataaltinnno/ebevis" }
                     },
                 },
                 ServiceContextTextTemplate = new EBevisServiceContextTextTemplate()
