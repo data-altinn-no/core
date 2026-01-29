@@ -4,6 +4,7 @@ using Azure.Monitor.Query;
 using Dan.Core.Config;
 using Dan.Core.Models;
 using Dan.Core.Services.Interfaces;
+using Microsoft.Extensions.Options;
 
 namespace Dan.Core.Services;
 
@@ -53,23 +54,29 @@ public class UsageStatisticsService : IUsageStatisticsService
     public async Task<ParquetSource> GetLast24HoursPerServiceContext()
     {
         var query = $$"""
+            let Pepper = "{{Settings.HashPepper}}";
             traces
             | where tostring(customDimensions["action"]) in ("DatasetRetrieved", "ConsentRequested", "NotificationSent", "AccreditationsRetrieved", "ConsentReminderSent")
             | where timestamp between (startofday(ago(1d)) .. startofday(now()))
-            | extend 
-                action = tostring(customDimensions["action"]),
-                dataset = tostring(customDimensions["evidenceCodeName"]),
+            | extend
+                action         = tostring(customDimensions["action"]),
+                dataset_raw    = tostring(customDimensions["evidenceCodeName"]),
                 serviceContext = tostring(customDimensions["serviceContext"]),
-                day = startofday(timestamp)
+                day            = startofday(timestamp),
+                requestor      = tostring(customDimensions["requestor"])
+            | extend
+                Dataset = case(serviceContext == "NSG" and isempty(trim(" ", dataset_raw)), "Registered Organisations", dataset_raw),
+                ConsumerHash = hash_sha256(strcat(Pepper, ":", trim(@" \t\r\n", requestor)))
             | summarize
-                DatasetsRetrieved = countif(action == "DatasetRetrieved"),
-                ConsentsRequested = countif(action == "ConsentRequested"),
-                NotificationsSent = countif(action == "NotificationSent"),
-                AccreditationsRetrieved = countif(action == "AccreditationsRetrieved"),
-                ConsentRemindersSent = countif(action == "ConsentReminderSent"),
-                ApiCalls = count()
-            by serviceContext, day
-            | order by serviceContext asc, day desc          
+                DatasetsRetrieved        = countif(action == "DatasetRetrieved"),
+                ConsentsRequested        = countif(action == "ConsentRequested"),
+                NotificationsSent        = countif(action == "NotificationSent"),
+                AccreditationsRetrieved  = countif(action == "AccreditationsRetrieved"),
+                ConsentRemindersSent     = countif(action == "ConsentReminderSent"),
+                ApiCalls                 = count()
+            by serviceContext, day, Dataset, ConsumerHash
+            | order by serviceContext asc, day desc, Dataset asc, ConsumerHash asc
+                   
             """;
 
         var results = await _logsQueryClient.QueryResourceAsync(
@@ -93,8 +100,9 @@ public class UsageStatisticsService : IUsageStatisticsService
                 Environment = Settings.IsProductionEnvironment ? "prod" : "test",
                 ServiceName = row["serviceContext"].ToString(),
                 NotificationsSent = (long)row["NotificationsSent"] + (long)row["ConsentsRequested"] * 2,
-                ServiceOwner = serviceContexts
-                    .FirstOrDefault(s => s.Name == row["serviceContext"].ToString()).Owner
+                ServiceOwner = serviceContexts.First(s => s.Name == row["serviceContext"].ToString()).Owner,
+                Dataset = row["Dataset"].ToString(),
+                ConsumerHash = row["ConsumerHash"].ToString()
             };
 
             parquetStats.Records.Add(item);
