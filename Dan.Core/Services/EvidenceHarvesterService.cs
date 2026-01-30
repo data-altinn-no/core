@@ -183,7 +183,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         }
         catch (TaskCanceledException)
         {
-            _log.LogError("Harvesting evidence values for open data evidenceCode={evidenceCodeName} and subject {subject} was cancelled", evidenceCode.EvidenceCodeName, accreditation.SubjectParty.GetAsString());
+            _log.LogError("Harvesting evidence values for evidenceCode={evidenceCodeName} and subject {subject} was cancelled", evidenceCode.EvidenceCodeName, accreditation.SubjectParty.GetAsString());
             throw new ServiceNotAvailableException($"The request was cancelled after exceeding max duration of {timeoutSeconds} seconds)");
         }
     }

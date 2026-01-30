@@ -22,5 +22,9 @@ namespace Dan.Core.Models
         public long ConsentRequests { get; set; }
         public long NotificationsSent { get; set; }
         public long DatasetsRetrieved { get; set; }
+
+        public string ConsumerHash { get; set; }
+
+        public string Dataset { get; set; }
     }   
 }

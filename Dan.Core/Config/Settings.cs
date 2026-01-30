@@ -373,6 +373,8 @@ public static class Settings
     public static string ApplicationInsightsResourceId => GetSetting("ApplicationInsightsResourceId");
     public static string ApplicationInsightsCloudRoleName => GetSetting("ApplicationInsightsCloudRoleName");
 
+    public static string HashPepper => GetSetting("HashPepper");
+
     private static string GetSetting(string settingKey)
     {
         var value = ConfigurationHelper.ConfigurationRoot[settingKey];
