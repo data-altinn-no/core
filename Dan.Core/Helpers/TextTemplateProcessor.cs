@@ -16,7 +16,12 @@ public static class TextTemplateProcessor
         return $"<a href =\"{consenturl}\" class=\"a-btn mt-2\">{buttonText}</a>";
     }
 
-    public static IServiceContextTextTemplate<string> GetRenderedTexts(ServiceContext context, Accreditation acc, string requestorName, string subjectName, string? consentUrl)
+    private static string GetConsentButtonMd(string buttonText, string consenturl)
+    {
+        return $"[{buttonText}]({consenturl})";
+    }
+
+    public static IServiceContextTextTemplate<string> GetRenderedTexts(ServiceContext context, Accreditation acc, string requestorName, string subjectName, string? consentUrl, bool useAltinn3 = false)
     {
         var template = context.ServiceContextTextTemplate;
         if (template == null)
@@ -41,7 +46,7 @@ public static class TextTemplateProcessor
             ConsentDeniedReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentDeniedReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
             ConsentGivenReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentGivenReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
             ConsentTitleText = ProcessMacros(GetLocalisedTemplate(template.ConsentTitleText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            CorrespondenceBody = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBody, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
+            CorrespondenceBody = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBody, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
             CorrespondenceSender = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSender, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
             CorrespondenceSummary = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSummary, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
             CorrespondenceTitle = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceTitle, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
@@ -53,7 +58,7 @@ public static class TextTemplateProcessor
         return result;
     }
 
-    private static string ProcessMacros(string? input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "", string consentUrl = "", string buttonText = "")
+    private static string ProcessMacros(string? input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "", string consentUrl = "", string buttonText = "", bool isAltinn3 = false)
     {
         if (input == null) return string.Empty;
 
@@ -64,7 +69,7 @@ public static class TextTemplateProcessor
         input = !string.IsNullOrEmpty(serviceContextName) ? input.Replace(TextMacros.ServiceContextName, serviceContextName, StringComparison.InvariantCultureIgnoreCase) : input;
         input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.ConsentReference, acc.ConsentReference, StringComparison.InvariantCultureIgnoreCase) : input;
         input = !string.IsNullOrEmpty(acc.ExternalReference) ? input.Replace(TextMacros.ExternalReference, acc.ExternalReference, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(buttonText) ? input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(buttonText) ? (isAltinn3 ? input.Replace(TextMacros.Button, GetConsentButtonMd(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : GetConsentButton(buttonText, consentUrl)) : input;
         input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input;
 
         input = input.Replace(TextMacros.ConsentOrExternalReference, acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);

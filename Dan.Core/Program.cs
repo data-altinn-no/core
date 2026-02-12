@@ -1,10 +1,10 @@
-using System.Reflection;
-using Azure.Core;
+using Altinn.ApiClients.Maskinporten.Config;
+using Altinn.Dd.Correspondence.Extensions;
+using Altinn.Dd.Correspondence.Options;
 using Azure.Core.Serialization;
 using Azure.Identity;
 using Dan.Common;
 using Dan.Common.Handlers;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Common.Services;
 using Dan.Core.Attributes;
@@ -29,6 +29,9 @@ using Polly.Caching.Serialization.Json;
 using Polly.Extensions.Http;
 using Polly.Registry;
 using StackExchange.Redis;
+using System.Reflection;
+using System.Runtime.ConstrainedExecution;
+using System.Security.Cryptography.X509Certificates;
 
 IHostEnvironment danHostingEnvironment;
 var host = new HostBuilder()
@@ -154,6 +157,7 @@ var host = new HostBuilder()
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
         services.AddScoped<IConsentService, ConsentService>();
+        services.AddScoped<IAltinn3ConsentService, Altinn3ConsentService>();
         services.AddScoped<IRequirementValidationService, RequirementValidationService>();
         services.AddScoped<IAuthorizationRequestValidatorService, AuthorizationRequestValidatorService>();
         services.AddScoped<IRequestContextService, RequestContextService>();
@@ -161,6 +165,10 @@ var host = new HostBuilder()
         
         services.AddTransient<ExceptionDelegatingHandler>();
         services.AddTransient<PluginAuthorizationMessageHandler>();
+
+        // Altinn 3 messaging
+
+        AddAltinn3Messaging(services);
 
         services.AddPolicyRegistry(new PolicyRegistry()
             {
@@ -249,5 +257,24 @@ var host = new HostBuilder()
 
     })
     .Build();
+
+void AddAltinn3Messaging(IServiceCollection services)
+{
+    X509Certificate2 cert = new X509Certificate2(Settings.AltinnCertificate);
+    var encodedCert = Convert.ToBase64String(cert.GetRawCertData());
+
+    services.AddDdCorrespondenceService(options =>
+    {
+        options.MaskinportenSettings = new MaskinportenSettings
+        {
+            ClientId = Settings.MaskinportenClientId,
+            Environment = Settings.MaskinportenUrl.Contains("test") ? "test" : "prod",
+            EnableDebugLogging = Settings.MaskinportenUrl.Contains("test") ? true : false,
+            EncodedX509 = encodedCert
+        };
+        options.ResourceId = "digdir-data-altinn-no-melding";
+        options.Environment = ApiEnvironment.Staging;
+    });
+}
 
 await host.RunAsync();

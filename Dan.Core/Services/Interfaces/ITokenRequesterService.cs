@@ -6,4 +6,5 @@
 public interface ITokenRequesterService
 {
     Task<string> GetMaskinportenToken(string scopes, string? consumerOrgNo = null);
+    Task<string> GetMaskinportenConsentToken(string consentId, string offeredby);
 }

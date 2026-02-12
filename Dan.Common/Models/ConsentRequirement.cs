@@ -33,4 +33,13 @@ public class ConsentRequirement : Requirement
     [DataMember(Name = "consentPeriodInDays")]
     [Required]
     public int? ConsentPeriodInDays { get; set; }
+
+    /// <summary>
+    /// The consent resource identifier in Altinn 3, used for new consent requests
+    /// </summary>
+    [DataMember(Name = "altinnResource")]
+    [Required]
+    public string? AltinnResource { get; set; }
+
+
 }

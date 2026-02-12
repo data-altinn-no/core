@@ -38,14 +38,87 @@ public class TokenRequesterService : ITokenRequesterService
     {
         var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenTokenInternal(scopes, consumerOrgNo),
-            new Context(GetCacheKey(scopes, consumerOrgNo)));
+            new Context(GetCacheKey(scopes, consumerOrgNo, null)));
     }
 
-    private string GetCacheKey(string scopes, string? consumerOrgNo)
+    public async Task<string> GetMaskinportenConsentToken(string consentId, string offeredBy)
+    {
+        var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
+        return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenConsentTokenInternal(consentId,  offeredBy),
+            new Context(GetCacheKey(consentId, null, offeredBy)));
+    }
+
+    private async Task<string> GetMaskinportenConsentTokenInternal(string consentId, string offeredBy)
+    {
+        X509Certificate2 cert = Settings.AltinnCertificate;
+
+        var securityKey = new X509SecurityKey(cert);
+        var certs = new List<string> { Convert.ToBase64String(cert.GetRawCertData()) };
+        var header = new JwtHeader(new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256))
+            {
+                {"x5c", certs}
+            };
+
+        header.Remove("typ");
+        header.Remove("kid");
+
+        var clientId = Settings.MaskinportenClientId;
+        var audience = Settings.MaskinportenUrl;
+
+        var payload = new JwtPayload
+            {
+                { "aud", audience},
+                { "resource", null},
+                { "scope", "altinn:consentrequests.read" },
+                { "iss",  clientId},
+                { "exp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() + 60 },
+                { "iat", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
+                { "jti", Guid.NewGuid().ToString() },
+            };
+
+        //Add consent-specific information to the assertion
+        List<JwtPayload> authzDetail = new List<JwtPayload>()
+        {
+            new JwtPayload()
+                {
+            //only support power of attourney from organizations for the time being
+                    { "from", $"urn:altinn:organization:identifier-no:{offeredBy}" },
+                    { "id" , $"{consentId}"},
+                    { "type" , "urn:altinn:consent"}
+                }
+        };      
+
+        payload.Add("authorization_details", authzDetail);
+
+        var securityToken = new JwtSecurityToken(header, payload);
+        var handler = new JwtSecurityTokenHandler();
+        var assertion = handler.WriteToken(securityToken);
+
+        var formContent = new FormUrlEncodedContent(new List<KeyValuePair<string, string>>
+        {
+            new("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
+            new("assertion", assertion),
+        });
+
+        var response = await _client.PostAsync("token", formContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        _logger.LogError("Failed getting consent token from maskinporten - response status={statusCode} body={body}",
+            response.StatusCode,
+            await response.Content.ReadAsStringAsync());
+
+        throw new ServiceNotAvailableException("Failed getting consent token from Maskinporten");
+    }
+
+    private string GetCacheKey(string scopes, string? consumerOrgNo, string? offeredby)
     {
         using var hash = MD5.Create();
         var scopeDigest = string.Join("", hash.ComputeHash(Encoding.ASCII.GetBytes(scopes)).Select(x => x.ToString("x2")));
-        return "mpt_" + Settings.MaskinportenClientId + "_" + (consumerOrgNo ?? string.Empty) + "_" + scopeDigest;
+        return "mpt_" + Settings.MaskinportenClientId + "_" + (consumerOrgNo ?? string.Empty) + "_" + (offeredby ?? string.Empty) + "_" + scopeDigest;
     }
 
     private async Task<string> GetMaskinportenTokenInternal(string scopes, string? consumerOrgNo)
