@@ -41,8 +41,8 @@ public class CoreKeyVault
     {
         var base64Certificate = await Get(key);
         var certBytes = Convert.FromBase64String(base64Certificate);
-
-        var cert = new X509Certificate2(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet);
+        
+        var cert = X509CertificateLoader.LoadPkcs12(certBytes, string.Empty, X509KeyStorageFlags.EphemeralKeySet);
 
         if (X509CertificateHelper.GetValidOrgNumberFromCertificate(cert) == null)
         {
@@ -50,5 +50,17 @@ public class CoreKeyVault
         }
 
         return await Task.FromResult(cert);
+    }
+
+    /// <summary>
+    /// Get a certificate from the key vault
+    /// </summary>
+    /// <param name="key">Certificate name</param>
+    /// <returns>The certificate</returns>
+    public async Task<string> GetCertificateBase64(string key)
+    {
+        var base64Certificate = await Get(key);       
+
+        return await Task.FromResult(base64Certificate);
     }
 }

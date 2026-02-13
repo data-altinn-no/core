@@ -12,6 +12,8 @@ public class RenderedServiceContextTexts : IServiceContextTextTemplate<string>
 
     public string CorrespondenceBody { get; set; } = string.Empty;
 
+    public string CorrespondenceBodyA3 { get; set; } = string.Empty;
+
     public string CorrespondenceSender { get; set; } = string.Empty;
 
     public string CorrespondenceSummary { get; set; } = string.Empty;

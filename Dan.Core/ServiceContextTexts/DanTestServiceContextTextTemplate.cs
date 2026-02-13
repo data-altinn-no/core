@@ -21,6 +21,10 @@ public class DanTestServiceContextTextTemplate : IServiceContextTextTemplate<Loc
         NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre testprosessen må det utstedes fullmakt for {TextMacros.SubjectName}."
     };
 
+    public LocalizedString CorrespondenceBodyA3 => new()
+    {
+        NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre testprosessen må det utstedes fullmakt for {TextMacros.SubjectName}."
+    };
     public LocalizedString CorrespondenceSender => new()
     {
         NoNb = "DAN-test"

@@ -104,6 +104,11 @@ public static class Settings
             : _altinnCertificate ??= KeyVault.GetCertificate(KeyVaultSslCertificate).Result;
 
     /// <summary>
+    /// Altinn EC Certificate in base64
+    /// </summary>
+    public static string AltinnCertificateb64 => KeyVault.GetCertificateBase64(KeyVaultSslCertificate).Result;
+
+    /// <summary>
     /// API-key for consent request / token
     /// </summary>
     public static string AltinnApiKey => 

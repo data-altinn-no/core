@@ -1,5 +1,6 @@
 ﻿using Altinn.Dd.Correspondence.Models;
 using Altinn.Dd.Correspondence.Services;
+using Azure.Core;
 using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
@@ -28,9 +29,6 @@ namespace Dan.Core.Services
         private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
         private readonly IRequestContextService _requestContextService;
         private readonly ITokenRequesterService _tokenRequesterService;
-
-        private const string AltinnResourcePrefixOrg = "urn:altinn:organization:identifier-no";
-        private const string AltinnResourcePrefixPerson = "urn:altinn:person:identifier-no";
 
         /// <summary>
         /// Magic string used as authorization code when the user has actively denied a consent request
@@ -222,8 +220,8 @@ namespace Dan.Core.Services
 
             if (!skipAltinnNotification)
             {
-                _logger.DanLog(accreditation, LogAction.CorrespondenceSent);
                 await SendCorrespondence(accreditation, renderedTexts);
+                _logger.DanLog(accreditation, LogAction.CorrespondenceSent);
             }
         }
 
@@ -286,11 +284,23 @@ namespace Dan.Core.Services
             DdCorrespondenceDetails correspondence = CreateCorrespondence(accreditation, renderedTexts);
             try
             {
-                await _correspondenceService.SendCorrespondence(correspondence);
+                var result = await _correspondenceService.SendCorrespondence(correspondence);                
+
+                if (!result.IsSuccess || result.IsFailure)
+                {
+                    _logger.LogError("Failed to send consent correspondence for AccreditationId={accreditationId}, Subject={subject}, IsFailure={isFailure}, Error={error}",
+                       accreditation.AccreditationId, accreditation.SubjectParty, result.IsFailure, result.Error);
+
+                    throw new Exception();
+                } else
+                {   _logger.LogInformation("Successfully sent consent correspondence for AccreditationId={accreditationId}, Subject={subject}, CorrespondenceId={correspondenceId}",
+                        accreditation.AccreditationId, accreditation.SubjectParty.GetAsString(), result.Receipt?.IdempotencyKey);
+                }
+
             }
-            catch (AltinnServiceException ex)
+            catch (Exception ex)
             {
-                throw new ServiceNotAvailableException($"Failed to send correspondence to {accreditation.Subject}", ex);
+                throw new ServiceNotAvailableException($"Failed to send correspondence to {accreditation.SubjectParty.GetAsString()}", ex);
             }
         }
 
@@ -302,7 +312,7 @@ namespace Dan.Core.Services
                 Sender = renderedTexts.CorrespondenceSender,
                 Title = renderedTexts.CorrespondenceTitle,
                 Summary = renderedTexts.CorrespondenceSummary,
-                Body = renderedTexts.CorrespondenceBody,
+                Body = renderedTexts.CorrespondenceBodyA3,
                 AllowForwarding = false,
                 IdempotencyKey = Guid.NewGuid(),
                 IgnoreReservation = false,
@@ -331,19 +341,18 @@ namespace Dan.Core.Services
 
             //var requestorName = await GetPartyDisplayName(accreditation.RequestorParty);
             //var subjectName = await GetPartyDisplayName(accreditation.SubjectParty, useAltinn: true);;
-            
-            var fromPrefix = accreditation.SubjectParty.GetAsString(false).Length == 11 ? AltinnResourcePrefixPerson : AltinnResourcePrefixOrg;
-            var toPrefix = accreditation.RequestorParty.GetAsString(false).Length == 11 ? AltinnResourcePrefixPerson : AltinnResourcePrefixOrg;
 
-            var consentRequest = new Altinn3ConsentRequest();
 
-            consentRequest.ConsentRights = new List<ConsentRight>();
-            consentRequest.Id = Guid.NewGuid().ToString();
-            consentRequest.From = $"{fromPrefix}:{accreditation.SubjectParty.GetAsString(false)}";
-            consentRequest.To = $"{toPrefix}:{accreditation.RequestorParty.GetAsString(false)}";
-            consentRequest.RedirectUrl = Settings.GetConsentRedirectUrl(accreditation.AccreditationId, accreditation.GetHmac());
-            consentRequest.ValidTo = accreditation.ValidTo;
-            consentRequest.PortalViewMode = "show";
+            var consentRequest = new Altinn3ConsentRequest()
+            {
+                ConsentRights = new List<ConsentRight>(),
+                Id = Guid.NewGuid().ToString(),
+                From = accreditation.SubjectParty.GetAltinnFormat(),
+                To = accreditation.RequestorParty.GetAltinnFormat(),
+                RedirectUrl = Settings.GetConsentRedirectUrl(accreditation.AccreditationId, accreditation.GetHmac()),
+                ValidTo = accreditation.ValidTo,
+                PortalViewMode = "show"
+            };
 
             foreach (var ec in evidenceCodesRequiringConsent)
             {

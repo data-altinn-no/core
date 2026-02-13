@@ -21,6 +21,11 @@ public class SeriositetServiceContextTextTemplate : IServiceContextTextTemplate<
         NoNb = $"I forbindelse med et prøveprosjekt (pilot) trenger {TextMacros.RequestorName} fullmakt for å få tilgang til informasjon fra Skatteetaten.<br> Ved å gi fullmakt godtar du at opplysninger om {TextMacros.SubjectName} fra Skatteetaten presenteres sammen med opplysninger fra Brønnøysundregistrene og sendes til {TextMacros.RequestorName}. Dette prøveprosjektet er del av regjeringens strategi mot arbeidslivskriminalitet.<br><br>For at {TextMacros.RequestorName} skal kunne motta de aktuelle opplysningene, må du gi fullmakt til {TextMacros.RequestorName} på vegne av {TextMacros.SubjectName}. <br><br>Klikk på knappen under for å se hvilke opplysninger som hentes inn fra Skatteetaten når du gir fullmakt. {TextMacros.Button}"
     };
 
+    public LocalizedString CorrespondenceBodyA3 => new()
+    {
+        NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre en kvalifiseringsprosess må det utstedes fullmakt til å hente ut opplysninger om {TextMacros.SubjectName}.<br><br>Referanse: {TextMacros.EbevisReference} <br><br>Klikk på knappen under for å vite mer om hvilke opplysninger som er forespurt før du eventuelt gir fullmakten.<br> {TextMacros.Button}"
+    };
+
     public LocalizedString CorrespondenceSender => new()
     {
         NoNb = $"{TextMacros.RequestorName}"

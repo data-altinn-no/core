@@ -43,16 +43,17 @@ public static class TextTemplateProcessor
             ConsentButtonText = buttonText,
             ConsentDelegationContexts = ProcessConsentRequestMacros(template.ConsentDelegationContexts, acc, requestorName, subjectName, context.Name),
 
-            ConsentDeniedReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentDeniedReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            ConsentGivenReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentGivenReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            ConsentTitleText = ProcessMacros(GetLocalisedTemplate(template.ConsentTitleText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
+            ConsentDeniedReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentDeniedReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            ConsentGivenReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentGivenReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            ConsentTitleText = ProcessMacros(GetLocalisedTemplate(template.ConsentTitleText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
             CorrespondenceBody = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBody, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
-            CorrespondenceSender = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSender, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            CorrespondenceSummary = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSummary, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            CorrespondenceTitle = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceTitle, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            EmailNotificationContent = ProcessMacros(GetLocalisedTemplate(template.EmailNotificationContent, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            EmailNotificationSubject = ProcessMacros(GetLocalisedTemplate(template.EmailNotificationSubject, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText),
-            SMSNotificationContent = ProcessMacros(GetLocalisedTemplate(template.SMSNotificationContent, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText)
+            CorrespondenceBodyA3 = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBodyA3, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            CorrespondenceSender = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSender, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            CorrespondenceSummary = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSummary, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            CorrespondenceTitle = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceTitle, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            EmailNotificationContent = ProcessMacros(GetLocalisedTemplate(template.EmailNotificationContent, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            EmailNotificationSubject = ProcessMacros(GetLocalisedTemplate(template.EmailNotificationSubject, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            SMSNotificationContent = ProcessMacros(GetLocalisedTemplate(template.SMSNotificationContent, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3)
         };
 
         return result;

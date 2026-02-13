@@ -259,9 +259,8 @@ var host = new HostBuilder()
     .Build();
 
 void AddAltinn3Messaging(IServiceCollection services)
-{
-    X509Certificate2 cert = new X509Certificate2(Settings.AltinnCertificate);
-    var encodedCert = Convert.ToBase64String(cert.GetRawCertData());
+{    
+    var encodedCert = Settings.AltinnCertificateb64;
 
     services.AddDdCorrespondenceService(options =>
     {
@@ -273,7 +272,7 @@ void AddAltinn3Messaging(IServiceCollection services)
             EncodedX509 = encodedCert
         };
         options.ResourceId = "digdir-data-altinn-no-melding";
-        options.Environment = ApiEnvironment.Staging;
+        options.Environment = Settings.MaskinportenUrl.Contains("test") ? ApiEnvironment.Staging : ApiEnvironment.Production;
     });
 }
 

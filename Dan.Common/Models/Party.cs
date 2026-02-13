@@ -51,6 +51,25 @@ public class Party
 
         return Scheme + "::" + Id;
     }
+
+    /// <summary>
+    /// Returns norwegian organisation number if set, else norwegian social security if set, prefixed with altinn urn, if none are set scheme and id are returned
+    /// </summary>  
+
+    public string GetAltinnFormat()
+    {
+        if (NorwegianOrganizationNumber != null)
+        {
+            return "urn:altinn:organization:identifier-no:" + NorwegianOrganizationNumber;
+        }
+
+        if (NorwegianSocialSecurityNumber != null)
+        {
+            return "urn:altinn:person:identifier-no:"+ NorwegianSocialSecurityNumber;
+        }
+
+        return Scheme + "::" + Id;
+    }
     
     /// <summary>
     /// Returns norwegian organisation number if set, else norwegian social security if set,
