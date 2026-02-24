@@ -113,7 +113,6 @@ public class ServiceContextService : IServiceContextService
                     {
                         AllowedPartyTypes = new AllowedPartyTypesList()
                         {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Subject,PartyTypeConstraint.PrivatePerson),
                             new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor, PartyTypeConstraint.PublicAgency)
                         }
                     },
