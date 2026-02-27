@@ -23,7 +23,7 @@ public class EBevisServiceContextTextTemplate : IServiceContextTextTemplate<Loca
 
     public LocalizedString CorrespondenceBodyA3 => new()
     {
-        NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre en kvalifiseringsprosess må det utstedes fullmakt til å hente ut opplysninger om {TextMacros.SubjectName}. \n \n Referanse: {TextMacros.EbevisReference} \n \n Klikk på lenken under for å vite mer om hvilke opplysninger som er forespurt før du eventuelt gir fullmakten. \n {TextMacros.Button}"
+        NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre en kvalifiseringsprosess må det utstedes fullmakt til å hente ut opplysninger om {TextMacros.SubjectName}. \n \n Referanse: {TextMacros.EbevisReference} \n \n Klikk på lenken under for å vite mer om hvilke opplysninger som er forespurt før du eventuelt gir fullmakten. \n\n {TextMacros.Button}"
     };
 
     public LocalizedString CorrespondenceSender => new()

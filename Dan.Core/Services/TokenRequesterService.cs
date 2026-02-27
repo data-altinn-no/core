@@ -68,7 +68,6 @@ public class TokenRequesterService : ITokenRequesterService
         var payload = new JwtPayload
             {
                 { "aud", audience},
-                { "resource", null},
                 { "scope", "altinn:consentrequests.read" },
                 { "iss",  clientId},
                 { "exp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() + 60 },
@@ -82,7 +81,7 @@ public class TokenRequesterService : ITokenRequesterService
             new JwtPayload()
                 {
             //only support power of attourney from organizations for the time being
-                    { "from", $"urn:altinn:organization:identifier-no:{offeredBy}" },
+                    { "from", $"urn:altinn:organization:identifier-no:{offeredBy}" },                  
                     { "id" , $"{consentId}"},
                     { "type" , "urn:altinn:consent"}
                 }
@@ -105,13 +104,14 @@ public class TokenRequesterService : ITokenRequesterService
         if (response.IsSuccessStatusCode)
         {
             return await response.Content.ReadAsStringAsync();
+        } else
+        {
+            _logger.LogError("Failed getting consent token from maskinporten - response status={statusCode} body={body}", response.StatusCode, await response.Content.ReadAsStringAsync());
+            throw new ServiceNotAvailableException("Failed getting consent token from Maskinporten");
         }
 
-        _logger.LogError("Failed getting consent token from maskinporten - response status={statusCode} body={body}",
-            response.StatusCode,
-            await response.Content.ReadAsStringAsync());
 
-        throw new ServiceNotAvailableException("Failed getting consent token from Maskinporten");
+
     }
 
     private string GetCacheKey(string scopes, string? consumerOrgNo, string? offeredby)

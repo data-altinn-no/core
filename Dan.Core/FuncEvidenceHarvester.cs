@@ -102,7 +102,8 @@ namespace Dan.Core
                 }
             }
 
-            if (_consentService.EvidenceCodeRequiresConsent(evidenceCodeForHarvest))
+            //Altinn 3 has not implemented logging of consent use
+            if (_consentService.EvidenceCodeRequiresConsent(evidenceCodeForHarvest) && accreditation.Altinn3ConsentId == null)
             {
                 using (var t = _logger.Timer("consent-log-usage"))
                 {

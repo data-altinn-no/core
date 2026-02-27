@@ -26,7 +26,8 @@ namespace Dan.Core
         private readonly IServiceContextService _serviceContextService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly ILogger<FuncConsentReceipt> _logger;
-
+        private readonly IConsentService _consentService;
+        private readonly IAltinn3ConsentService _altinn3ConsentService;
         private const string AboutUrl = "https:/docs.data.altinn.no/";
 
         /// <summary>
@@ -40,12 +41,14 @@ namespace Dan.Core
             Services.Interfaces.IEntityRegistryService entityRegistryService,
             IServiceContextService serviceContextService,
             IAccreditationRepository accreditationRepository,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory, IAltinn3ConsentService altinn3ConsentService)
         {
             _entityRegistryService = entityRegistryService;
             _serviceContextService = serviceContextService;
             _accreditationRepository = accreditationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
+            _altinn3ConsentService = altinn3ConsentService;
+            
         }
 
         /// <summary>
@@ -72,7 +75,8 @@ namespace Dan.Core
                 throw new ExpiredAccreditationException();
             }
 
-            if (!req.HasQueryParam("hmac") || !req.HasQueryParam("status"))
+            //status will be available on altinn 3 soon
+            if (!req.HasQueryParam("hmac") || (!req.HasQueryParam("status") && accreditation.Altinn3ConsentId == null))
             {
                 var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Missing hmac/status", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
                 response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");
@@ -93,7 +97,7 @@ namespace Dan.Core
 
             var serviceContexts = await _serviceContextService.GetRegisteredServiceContexts();
             var currentServiceContext = serviceContexts.First(x => x.Name == accreditation.ServiceContext);
-            var renderedTexts = TextTemplateProcessor.GetRenderedTexts(currentServiceContext, accreditation, requestorName, subjectName, "");
+            var renderedTexts = TextTemplateProcessor.GetRenderedTexts(currentServiceContext, accreditation, requestorName, subjectName, "", accreditation.Altinn3ConsentId != null);
 
 
             var serviceContextName = !string.IsNullOrEmpty(accreditation.ServiceContext) 
@@ -103,13 +107,14 @@ namespace Dan.Core
             if (IsStatusAccepted(req.GetQueryParam("status")))
             {
                 accreditation.AuthorizationCode = req.GetQueryParam("authorizationcode");
-                if (accreditation.AuthorizationCode == null)
+                accreditation.Altinn3ConsentStatus = req.GetQueryParam("status");
+                if (accreditation.AuthorizationCode == null && accreditation.Altinn3ConsentId == null)
                 {
-                    var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Missing authorization code", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
+                    var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Missing authorization code or invalid consentid", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
                     response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");
                     return response;
                 }
-
+                
                 await _accreditationRepository.UpdateAccreditationAsync(accreditation);
                 _logger.DanLog(accreditation, LogAction.ConsentGiven);
 

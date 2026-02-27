@@ -68,12 +68,12 @@ namespace Dan.Core.Services
                 _logger.LogError("Expected at least one evidencecode in the accreditation requiring consent in accredition {accreditationId}", accreditation.AccreditationId);
             }
 
-            if (accreditation.AuthorizationCode == null)
+            if (accreditation.Altinn3ConsentStatus == null)
             {
                 return ConsentStatus.Pending;
             }
 
-            if (accreditation.AuthorizationCode == ConsentDenied)
+            if (accreditation.Altinn3ConsentStatus == ConsentDenied)
             {
                 return ConsentStatus.Denied;
             }
@@ -85,6 +85,7 @@ namespace Dan.Core.Services
 
             if (!onlyLocalCheck)
             {
+                //TODO implement request to maskinporten
                 var claims = await GetClaims(accreditation);
 
                 if (claims == null)
