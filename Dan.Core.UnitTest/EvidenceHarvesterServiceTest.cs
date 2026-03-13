@@ -23,6 +23,8 @@ namespace Dan.Core.UnitTest
         private readonly ITokenRequesterService _mockTokenRequesterService = A.Fake<ITokenRequesterService>();
         private readonly IRequestContextService _mockRequestContextService = A.Fake<IRequestContextService>();
         private readonly IAvailableEvidenceCodesService _mockAvailableEvidenceCodesService = A.Fake<IAvailableEvidenceCodesService>();
+        private readonly IAltinn3ConsentService _mockA3ConsentService = A.Fake<IAltinn3ConsentService>();
+
 
         private const string CONSENT_DENIED = "denied";
 
@@ -65,7 +67,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var response = await evidenceHarvesterService.Harvest(EVIDENCECODE_OPEN, accreditation);
 
@@ -85,7 +88,7 @@ namespace Dan.Core.UnitTest
                     }
                 )
             );
-            A.CallTo(() => _mockConsentService.GetJwt(A<Accreditation>._)).Returns(Task.FromResult("somejwt"));
+            A.CallTo(() => _mockConsentService.GetJwt(A<Accreditation>._, A<List<EvidenceCode>>._)).Returns(Task.FromResult("somejwt"));
 
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
             var evidenceHarvesterService = new EvidenceHarvesterService(
@@ -95,7 +98,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var response = await evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation);
 
@@ -124,7 +128,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var actual =  Assert.ThrowsAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
             StringAssert.Contains(actual.Result.Message, "pending a reply to the consent request");
@@ -151,7 +156,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var actual = Assert.ThrowsAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
             StringAssert.Contains(actual.Result.Message, "evidence code has been denied or revoked");
@@ -178,7 +184,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var actual = Assert.ThrowsAsync<RequiresConsentException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_CONSENT, accreditation));
             StringAssert.Contains(actual.Result.Message, "evidence code has expired");
@@ -206,7 +213,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var actual = Assert.ThrowsAsync<AsyncEvidenceStillWaitingException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation));
             StringAssert.Contains(actual.Result.Message, "The data for the requested evidence is not yet available");
@@ -237,7 +245,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var actual = Assert.ThrowsAsync<ServiceNotAvailableException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_OPEN, accreditation));
             StringAssert.Contains(actual.Result.Message, "unable to retrieve authentication token");
@@ -269,7 +278,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
 
             var actual = Assert.ThrowsAsync<AsyncEvidenceStillWaitingException>(() => evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation));
             StringAssert.Contains(actual.Result.Message, "The data for the requested evidence is not yet available");
@@ -297,7 +307,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
             var response = await evidenceHarvesterService.Harvest(EVIDENCECODE_ASYNC, accreditation);
 
             Assert.AreEqual((int)StatusCodeId.Available, response.EvidenceStatus.Status.Code);
@@ -326,7 +337,8 @@ namespace Dan.Core.UnitTest
                 _mockEvidenceStatusService, 
                 _mockTokenRequesterService, 
                 _mockRequestContextService,
-                _mockAvailableEvidenceCodesService);
+                _mockAvailableEvidenceCodesService,
+                _mockA3ConsentService);
             var response = await evidenceHarvesterService.HarvestStream(EVIDENCECODE_STREAM, accreditation);
 
             var sr = new StreamReader(response);

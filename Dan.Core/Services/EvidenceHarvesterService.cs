@@ -21,8 +21,11 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
     private readonly ITokenRequesterService _tokenRequesterService;
     private readonly IRequestContextService _requestContextService;
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
+    private readonly IAltinn3ConsentService _a3ConsentService;
 
-    public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService, IAvailableEvidenceCodesService availableEvidenceCodesService)
+    public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, 
+        IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService, 
+        IAvailableEvidenceCodesService availableEvidenceCodesService, IAltinn3ConsentService a3ConsentService)
     {
         _log = loggerFactory.CreateLogger<EvidenceHarvesterService>();
         _httpClientFactory = httpClientFactory;
@@ -31,6 +34,7 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         _tokenRequesterService = tokenRequesterService;
         _requestContextService = requestContextService;
         _availableEvidenceCodesService = availableEvidenceCodesService;
+        _a3ConsentService = a3ConsentService;
     }
 
     public async Task<Evidence> Harvest(string evidenceCodeName, Accreditation accreditation, EvidenceHarvesterOptions? evidenceHarvesterOptions = default)
@@ -216,7 +220,10 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
         if (_consentService.EvidenceCodeRequiresConsent(evidenceCode))
         {
-            evidenceHarvesterRequest.JWT = await GetConsentToken(evidenceCode, accreditation);
+            if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
+                evidenceHarvesterRequest.JWT = await GetConsentToken(evidenceCode, accreditation);
+            else
+                evidenceHarvesterRequest.JWT = await GetMaskinportenConsentToken(evidenceCode, accreditation);
         }
 
         if (evidenceCode.IsAsynchronous)
@@ -300,9 +307,28 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         {
             _log.LogInformation(
                 "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode);            
+
+            string jwt = await _a3ConsentService.GetJwt(accreditation, new List<EvidenceCode> { evidenceCode });
+
+            _log.LogInformation(
+                "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, jwt={jwt}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode,
+                jwt);
+
+            return jwt;
+        }
+    }
+
+    private async Task<string> GetMaskinportenConsentToken(EvidenceCode evidenceCode, Accreditation accreditation)
+    {
+        using (var _ = _log.Timer("jwt-fetch"))
+        {
+            _log.LogInformation(
+                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}",
                 accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode);
 
-            string jwt = await _consentService.GetJwt(accreditation);
+            string jwt = await _a3ConsentService.GetJwt(accreditation, new List<EvidenceCode> { evidenceCode });
 
             _log.LogInformation(
                 "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, jwt={jwt}",

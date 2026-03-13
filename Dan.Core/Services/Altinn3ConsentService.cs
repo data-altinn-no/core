@@ -38,7 +38,7 @@ namespace Dan.Core.Services
         /// <summary>
         /// Magic string for claim name for validTo
         /// </summary>
-        public const string ConsentJwtValidtoKey = "ValidToDate";
+        public const string ConsentJwtValidtoKey = "exp";
 
         public Altinn3ConsentService(
             HttpClient httpClient,
@@ -84,9 +84,8 @@ namespace Dan.Core.Services
             }
 
             if (!onlyLocalCheck)
-            {
-                //TODO implement request to maskinporten
-                var claims = await GetClaims(accreditation);
+            {               
+                var claims = await GetClaims(accreditation, evidenceCodesRequiringConsent);
 
                 if (claims == null)
                 {
@@ -105,9 +104,9 @@ namespace Dan.Core.Services
             return ConsentStatus.Granted;
         }
 
-        private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)
+        private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation, List<EvidenceCode> evidenceCodes)
         {
-            var jwt = await GetJwt(accreditation);           
+            var jwt = await GetJwt(accreditation, evidenceCodes);           
 
             var payload = jwt.Split('.')[1];
             var token = Base64Url.Decode(payload);
@@ -146,16 +145,19 @@ namespace Dan.Core.Services
         }
 
 
-        public async Task<string> GetJwt(Accreditation accreditation)
+        public async Task<string> GetJwt(Accreditation accreditation, List<EvidenceCode> evidenceCodes)
         {
-            if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
+            if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId) && string.IsNullOrEmpty(accreditation.AuthorizationCode))
             {
-                throw new RequiresConsentException("The accreditation is missing a valid altinn 3 consent id.");
+                throw new RequiresConsentException("The accreditation is missing a valid Altinn consent id.");
             }
     
             try
             {
-                var token = await _tokenRequesterService.GetMaskinportenConsentToken(accreditation.Altinn3ConsentId, accreditation.SubjectParty.GetAsString(false));
+                // The consentId can be either the Altinn3ConsentId or the old AuthorizationCode which is migrated over to Altinn 3 for retrieval
+                var consentId = !string.IsNullOrEmpty(accreditation.Altinn3ConsentId) ? accreditation.Altinn3ConsentId : accreditation.AuthorizationCode;
+
+                var token = await _tokenRequesterService.GetMaskinportenConsentToken(consentId, accreditation.SubjectParty.GetAsString(false), evidenceCodes);
                 
                 if (token == null)
                 {

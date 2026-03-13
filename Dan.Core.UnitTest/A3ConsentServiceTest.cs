@@ -74,7 +74,7 @@ namespace Dan.Core.UnitTest
                 A.CallTo(() => _mockTokenRequesterService.GetMaskinportenToken(A<string>._, A<string>._))
                     .Returns(Task.FromResult("{\"access_token\":\"\"}"));
 
-                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._))
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<List<EvidenceCode>>._))
                     .Returns(Task.FromResult("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJWYWxpZFRvRGF0ZSI6IjE3MDAwMDAwMDAiLCJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."));
 
                 A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
@@ -384,7 +384,7 @@ namespace Dan.Core.UnitTest
                 var noCertHttpClient = TestHelpers.GetHttpClientMock("[{}]");
                 
                 var expectedToken = "test-jwt-token-123";
-                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._))
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<List<EvidenceCode>>._))
                     .Returns(Task.FromResult(expectedToken));
 
                 var consentService = new Altinn3ConsentService(
@@ -399,13 +399,14 @@ namespace Dan.Core.UnitTest
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentId = "consent-id-456";
+                var evidenceCodes = testAccreditation.EvidenceCodes;
 
                 // Act
-                var result = await consentService.GetJwt(testAccreditation);
+                var result = await consentService.GetJwt(testAccreditation, evidenceCodes);
 
                 // Assert
                 Assert.AreEqual(expectedToken, result);
-                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken("consent-id-456", "910402021"))
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken("consent-id-456", "910402021", A<List<EvidenceCode>>._))
                     .MustHaveHappenedOnceExactly();
             }
 
@@ -428,10 +429,11 @@ namespace Dan.Core.UnitTest
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentId = null;
+                var evidenceCodes = testAccreditation.EvidenceCodes;
 
                 // Act & Assert
                 var exception = await Assert.ThrowsAsync<RequiresConsentException>(
-                    async () => await consentService.GetJwt(testAccreditation));
+                    async () => await consentService.GetJwt(testAccreditation, evidenceCodes));
                 
                 Assert.IsNotNull(exception);
             }

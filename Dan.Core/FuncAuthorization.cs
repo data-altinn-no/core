@@ -115,6 +115,7 @@ public class FuncAuthorization
                 {
                     cr.AltinnResource = "digdir-restanser-skatteetaten"; // Temporary hardcoding of resource until we have a way to lookup based on service code/edition
                     cr.ServiceCode = null;
+                    cr.Scope = "skatteetaten:restanser";
                 }
 
 

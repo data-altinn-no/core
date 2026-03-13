@@ -10,6 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Dan.Core.Exceptions;
 using Microsoft.IdentityModel.Tokens;
+using Dan.Common.Models;
 
 namespace Dan.Core.Services;
 
@@ -41,14 +42,30 @@ public class TokenRequesterService : ITokenRequesterService
             new Context(GetCacheKey(scopes, consumerOrgNo, null)));
     }
 
-    public async Task<string> GetMaskinportenConsentToken(string consentId, string offeredBy)
+    public async Task<string> GetMaskinportenConsentToken(string consentId, string offeredBy, List<EvidenceCode> evidenceCodes)
     {
+        var consentScopes = evidenceCodes
+            .SelectMany(code => code.AuthorizationRequirements)
+            .OfType<ConsentRequirement>()
+            .Where(cr => !string.IsNullOrEmpty(cr.Scope))
+            .Select(cr => cr.Scope!)
+            .Distinct()
+            .ToList();
+
+        if (consentScopes.Count == 0)
+        {
+            _logger.LogError("No consent scopes found in evidence codes");
+            throw new InvalidOperationException("No consent scopes found in evidence codes");
+        }
+
+        var consentScope = string.Join(" ", consentScopes);
+
         var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
-        return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenConsentTokenInternal(consentId,  offeredBy),
+        return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenConsentTokenInternal(consentId, offeredBy, consentScope),
             new Context(GetCacheKey(consentId, null, offeredBy)));
     }
 
-    private async Task<string> GetMaskinportenConsentTokenInternal(string consentId, string offeredBy)
+    private async Task<string> GetMaskinportenConsentTokenInternal(string consentId, string offeredBy, string scope)
     {
         X509Certificate2 cert = Settings.AltinnCertificate;
 
@@ -68,7 +85,7 @@ public class TokenRequesterService : ITokenRequesterService
         var payload = new JwtPayload
             {
                 { "aud", audience},
-                { "scope", "altinn:consentrequests.read" },
+                { "scope", scope },
                 { "iss",  clientId},
                 { "exp", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() + 60 },
                 { "iat", new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() },
@@ -98,6 +115,8 @@ public class TokenRequesterService : ITokenRequesterService
             new("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
             new("assertion", assertion),
         });
+
+        var test = await formContent.ReadAsStringAsync();
 
         var response = await _client.PostAsync("token", formContent);
 

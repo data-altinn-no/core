@@ -41,5 +41,12 @@ public class ConsentRequirement : Requirement
     [Required]
     public string? AltinnResource { get; set; }
 
+    /// <summary>
+    /// The scope for the api that requires consent. This is used for maskinporten consent token requests and subsequently against the external api
+    /// </summary>
+    [DataMember(Name = "consentTokenScope")]
+    [Required]
+    public string? Scope { get; set; }
+
 
 }

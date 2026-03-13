@@ -106,7 +106,7 @@ namespace Dan.Core
 
             if (IsStatusAccepted(req.GetQueryParam("status")))
             {
-                accreditation.AuthorizationCode = req.GetQueryParam("authorizationcode");
+                accreditation.AuthorizationCode = req.GetQueryParam("authorizationcode"); //remove after switch to altinn3
                 accreditation.Altinn3ConsentStatus = req.GetQueryParam("status");
                 if (accreditation.AuthorizationCode == null && accreditation.Altinn3ConsentId == null)
                 {
