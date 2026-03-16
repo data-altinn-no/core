@@ -162,4 +162,18 @@ public class Accreditation
     [DataMember(Name = "altinnConsentUrl")]
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public string? AltinnConsentUrl { get; set; }
+
+    /// <summary>
+    /// The id of the consent request in Altinn 3, replaces the authorization code used in Altinn 2. Placed in separate field to make the distinction easier.
+    /// </summary>
+    [DataMember(Name = "altinn3ConsentId")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? Altinn3ConsentId { get; set; }
+
+    /// <summary>
+    /// The status of the consent request in Altinn 3, replaces the authorization code used in Altinn 2. Placed in separate field to make the distinction easier.
+    /// </summary>
+    [DataMember(Name = "altinn3ConsentStatus")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string? Altinn3ConsentStatus { get; set; }
 }

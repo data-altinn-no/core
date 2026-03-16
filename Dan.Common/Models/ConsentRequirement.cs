@@ -33,4 +33,18 @@ public class ConsentRequirement : Requirement
     [DataMember(Name = "consentPeriodInDays")]
     [Required]
     public int? ConsentPeriodInDays { get; set; }
+
+    /// <summary>
+    /// The consent resource identifier in Altinn 3, used for new consent requests
+    /// </summary>
+    [DataMember(Name = "altinnResource")]
+    [Required]
+    public string? AltinnResource { get; set; }
+
+    /// <summary>
+    /// The scope for the api that requires consent. This is used for maskinporten consent token requests and subsequently against the external api
+    /// </summary>
+    [DataMember(Name = "consentTokenScope")]
+    [Required]
+    public string? Scope { get; set; }
 }
