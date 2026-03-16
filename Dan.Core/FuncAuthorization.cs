@@ -111,13 +111,6 @@ public class FuncAuthorization
                 //Ideally this is either/or, but could theoretically be both
 
                 var consentRequirementsA3 = evidenceCodes.SelectMany(x => x.AuthorizationRequirements.Where(r => r is ConsentRequirement && string.IsNullOrEmpty(((ConsentRequirement)r).AltinnResource)).ToList()).ToList();
-                foreach (ConsentRequirement cr in consentRequirementsA3)
-                {
-                    cr.AltinnResource = "digdir-restanser-skatteetaten"; // Temporary hardcoding of resource until we have a way to lookup based on service code/edition
-                    cr.ServiceCode = null;
-                    cr.Scope = "skatteetaten:restanser";
-                }
-
 
                 if (consentRequirementsA3.Any())
                 {
