@@ -60,6 +60,9 @@ namespace Dan.Core.Services
             _tokenRequesterService = tokenRequesterService;
         }
 
+        /// <summary>
+        /// Check consent status for the given accreditation. If onlyLocalCheck is true, only check the local status of the consent request (i.e. whether it has been marked as denied or expired locally), and do not call Altinn to check the status of the consent request there. This is useful for scenarios where we want to avoid calling Altinn (e.g. when processing a batch of accreditations) and can accept a potentially stale consent status. If onlyLocalCheck is false, the method will call Altinn to check the status of the consent request there, which will give the most up-to-date status but will also be slower and put more load on Altinn.
+        /// </summary>
         public async Task<ConsentStatus> Check(Accreditation accreditation, bool onlyLocalCheck)
         {
             var evidenceCodesRequiringConsent = GetEvidenceCodesRequiringConsentForActiveContext(accreditation);
@@ -85,7 +88,7 @@ namespace Dan.Core.Services
 
             if (!onlyLocalCheck)
             {               
-                var claims = await GetClaims(accreditation, evidenceCodesRequiringConsent);
+                var claims = await GetClaims(accreditation);
 
                 if (claims == null)
                 {
@@ -104,9 +107,16 @@ namespace Dan.Core.Services
             return ConsentStatus.Granted;
         }
 
-        private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation, List<EvidenceCode> evidenceCodes)
+        private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)
         {
-            var jwt = await GetJwt(accreditation, evidenceCodes);           
+            var evidenceCodeWithConsent = accreditation.EvidenceCodes
+               .FirstOrDefault(x => x.AuthorizationRequirements.OfType<ConsentRequirement>().Any());
+
+            if (evidenceCodeWithConsent == null)
+            {
+                return null;
+            }
+            var jwt = await GetJwt(accreditation, evidenceCodeWithConsent);
 
             var payload = jwt.Split('.')[1];
             var token = Base64Url.Decode(payload);
@@ -127,7 +137,9 @@ namespace Dan.Core.Services
             return claimsIdentity;
         }
 
-
+        /// <summary>
+        /// Returns whether or not an evidence code has a consent requirement that applies to the current service context. If an evidence code has multiple consent requirements for different service contexts, it is sufficient that one of them applies to the current service context for the evidence code to require consent. If an evidence code has no consent requirements, it does not require consent.
+        /// </summary>
         public bool EvidenceCodeRequiresConsent(EvidenceCode evidenceCode)
         {
             if (!evidenceCode.AuthorizationRequirements.OfType<ConsentRequirement>().Any())
@@ -139,13 +151,18 @@ namespace Dan.Core.Services
                 x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name));
         }
 
+        /// <summary>
+        /// Returns all evidence codes on an accreditation that require consent for the active service context. If an evidence code has multiple consent requirements for different service contexts, it is sufficient that one of them applies to the current service context for the evidence code to be included in the result. If an evidence code has no consent requirements, it is not included in the result.
+        /// </summary>
         public List<EvidenceCode> GetEvidenceCodesRequiringConsentForActiveContext(Accreditation accreditation)
         {
             return accreditation.EvidenceCodes.Where(EvidenceCodeRequiresConsent).ToList();
         }
 
-
-        public async Task<string> GetJwt(Accreditation accreditation, List<EvidenceCode> evidenceCodes)
+        /// <summary>
+        /// Attempts to retrieve a consent token (Jwt) from maskinporten for the current accreditation and evidence code.
+        /// </summary>
+        public async Task<string> GetJwt(Accreditation accreditation, EvidenceCode evidenceCode)
         {
             if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId) && string.IsNullOrEmpty(accreditation.AuthorizationCode))
             {
@@ -157,7 +174,7 @@ namespace Dan.Core.Services
                 // The consentId can be either the Altinn3ConsentId or the old AuthorizationCode which is migrated over to Altinn 3 for retrieval
                 var consentId = !string.IsNullOrEmpty(accreditation.Altinn3ConsentId) ? accreditation.Altinn3ConsentId : accreditation.AuthorizationCode;
 
-                var token = await _tokenRequesterService.GetMaskinportenConsentToken(consentId, accreditation.SubjectParty.GetAsString(false), evidenceCodes);
+                var token = await _tokenRequesterService.GetMaskinportenConsentToken(consentId, accreditation.SubjectParty.GetAsString(false), evidenceCode);
                 
                 if (token == null)
                 {
@@ -228,11 +245,6 @@ namespace Dan.Core.Services
             }
         }
 
-        private string? GetConsentRequestUrl(Altinn3ConsentResponse consentRequest)
-        {
-            throw new NotImplementedException();
-        }
-
         public Task<bool> LogUse(Accreditation accreditation, EvidenceCode evidence, DateTime? dateTime)
         {
             //Not yet implemented in altinn3
@@ -294,12 +306,18 @@ namespace Dan.Core.Services
                     _logger.LogError("Failed to send consent correspondence for AccreditationId={accreditationId}, Subject={subject}, IsFailure={isFailure}, Error={error}",
                        accreditation.AccreditationId, accreditation.SubjectParty, result.IsFailure, result.Error);
 
-                    throw new Exception();
-                } else
+                    throw new ServiceNotAvailableException($"Failed to send correspondence to {accreditation.SubjectParty.GetAsString()}: {result.Error}");
+
+                }
+                else
                 {   _logger.LogInformation("Successfully sent consent correspondence for AccreditationId={accreditationId}, Subject={subject}, CorrespondenceId={correspondenceId}",
                         accreditation.AccreditationId, accreditation.SubjectParty.GetAsString(), result.Receipt?.IdempotencyKey);
                 }
 
+            }
+            catch (ServiceNotAvailableException ex)
+            {
+                throw;
             }
             catch (Exception ex)
             {

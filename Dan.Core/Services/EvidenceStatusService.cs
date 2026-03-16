@@ -49,7 +49,7 @@ public class EvidenceStatusService : IEvidenceStatusService
         {
             if (accreditation.Altinn3ConsentId != null)
             {
-                var consentStatus = await _consentServiceA3.Check(accreditation, false);
+                var consentStatus = await _consentServiceA3.Check(accreditation, onlyLocalChecks);
                 status = MapConsentStatusToEvidenceStatusCode(consentStatus);
                 isConsentRequest = true;
 

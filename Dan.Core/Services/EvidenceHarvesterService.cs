@@ -212,18 +212,15 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
             Parameters = evidenceCode.Parameters,
             AccreditationId = accreditation.AccreditationId,
         };
-
-        if (!string.IsNullOrEmpty(evidenceCode.RequiredScopes))
+        //for altinn3 consenttokens and access tokens are combined
+        if (!string.IsNullOrEmpty(evidenceCode.RequiredScopes) && !_consentService.EvidenceCodeRequiresConsent(evidenceCode))
         {
             evidenceHarvesterRequest.MPToken = await GetAccessToken(evidenceCode, accreditation, evidenceHarvesterOptions ?? new EvidenceHarvesterOptions());
         }
 
         if (_consentService.EvidenceCodeRequiresConsent(evidenceCode))
         {
-            if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
-                evidenceHarvesterRequest.JWT = await GetConsentToken(evidenceCode, accreditation);
-            else
-                evidenceHarvesterRequest.JWT = await GetMaskinportenConsentToken(evidenceCode, accreditation);
+            evidenceHarvesterRequest.JWT = await GetMaskinportenConsentToken(evidenceCode, accreditation);
         }
 
         if (evidenceCode.IsAsynchronous)
@@ -309,8 +306,8 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
                 "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}",
                 accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode);            
 
-            string jwt = await _a3ConsentService.GetJwt(accreditation, new List<EvidenceCode> { evidenceCode });
-
+            string jwt = await _a3ConsentService.GetJwt(accreditation, evidenceCode);
+            var response = JsonConvert.DeserializeObject<Dictionary<string, string>>(jwt);
             _log.LogInformation(
                 "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, jwt={jwt}",
                 accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode,
@@ -325,17 +322,18 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         using (var _ = _log.Timer("jwt-fetch"))
         {
             _log.LogInformation(
-                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}",
-                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode);
+                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, a3consentid={a3consentid}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode, accreditation.Altinn3ConsentId);
 
-            string jwt = await _a3ConsentService.GetJwt(accreditation, new List<EvidenceCode> { evidenceCode });
+            string response = await _a3ConsentService.GetJwt(accreditation, evidenceCode);
+            var jwt = JsonConvert.DeserializeObject<Dictionary<string, string>>(response);
 
-            _log.LogInformation(
+            if (jwt?["access_token"] == null)
+                _log.LogInformation(
                 "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, jwt={jwt}",
-                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode,
-                jwt);
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode, jwt);
 
-            return jwt;
+            return jwt["access_token"];
         }
     }
 

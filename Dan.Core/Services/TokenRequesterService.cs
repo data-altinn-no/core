@@ -39,30 +39,24 @@ public class TokenRequesterService : ITokenRequesterService
     {
         var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenTokenInternal(scopes, consumerOrgNo),
-            new Context(GetCacheKey(scopes, consumerOrgNo, null)));
+            new Context(GetCacheKey(scopes, consumerOrgNo, null, null)));
     }
 
-    public async Task<string> GetMaskinportenConsentToken(string consentId, string offeredBy, List<EvidenceCode> evidenceCodes)
+    public async Task<string> GetMaskinportenConsentToken(string consentId, string offeredBy, EvidenceCode evidenceCode)
     {
-        var consentScopes = evidenceCodes
-            .SelectMany(code => code.AuthorizationRequirements)
+        var consentScope = evidenceCode.AuthorizationRequirements
             .OfType<ConsentRequirement>()
-            .Where(cr => !string.IsNullOrEmpty(cr.Scope))
-            .Select(cr => cr.Scope!)
-            .Distinct()
-            .ToList();
+            .Select(x => x.Scope)
+            .FirstOrDefault(x => !string.IsNullOrEmpty(x));
 
-        if (consentScopes.Count == 0)
+        if (string.IsNullOrEmpty(consentScope))
         {
-            _logger.LogError("No consent scopes found in evidence codes");
-            throw new InvalidOperationException("No consent scopes found in evidence codes");
+            throw new InvalidOperationException($"No consent scope found for evidence code {evidenceCode.EvidenceCodeName}");
         }
-
-        var consentScope = string.Join(" ", consentScopes);
 
         var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenConsentTokenInternal(consentId, offeredBy, consentScope),
-            new Context(GetCacheKey(consentId, null, offeredBy)));
+            new Context(GetCacheKey(consentId, null, offeredBy, evidenceCode.EvidenceCodeName)));
     }
 
     private async Task<string> GetMaskinportenConsentTokenInternal(string consentId, string offeredBy, string scope)
@@ -116,28 +110,24 @@ public class TokenRequesterService : ITokenRequesterService
             new("assertion", assertion),
         });
 
-        var test = await formContent.ReadAsStringAsync();
-
         var response = await _client.PostAsync("token", formContent);
 
         if (response.IsSuccessStatusCode)
         {
-            return await response.Content.ReadAsStringAsync();
+            var token = await response.Content.ReadAsStringAsync();
+            return token;
         } else
         {
             _logger.LogError("Failed getting consent token from maskinporten - response status={statusCode} body={body}", response.StatusCode, await response.Content.ReadAsStringAsync());
             throw new ServiceNotAvailableException("Failed getting consent token from Maskinporten");
         }
-
-
-
     }
 
-    private string GetCacheKey(string scopes, string? consumerOrgNo, string? offeredby)
+    private string GetCacheKey(string scopes, string? consumerOrgNo, string? offeredby, string? evidenceCodeName)
     {
         using var hash = MD5.Create();
         var scopeDigest = string.Join("", hash.ComputeHash(Encoding.ASCII.GetBytes(scopes)).Select(x => x.ToString("x2")));
-        return "mpt_" + Settings.MaskinportenClientId + "_" + (consumerOrgNo ?? string.Empty) + "_" + (offeredby ?? string.Empty) + "_" + scopeDigest;
+        return "mpt_" + Settings.MaskinportenClientId + "_" + (consumerOrgNo ?? string.Empty) + "_" + (offeredby ?? string.Empty) + "_" + (evidenceCodeName ?? string.Empty) +  scopeDigest;
     }
 
     private async Task<string> GetMaskinportenTokenInternal(string scopes, string? consumerOrgNo)

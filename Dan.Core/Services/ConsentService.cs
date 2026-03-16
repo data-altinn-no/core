@@ -187,7 +187,7 @@ public class ConsentService : IConsentService
     /// <param name="accreditation">Accreditation containing an authorization code</param>
     /// <param name="evidenceCodes">Evidence codes requiring consent</param>
     /// <returns>A JWT</returns>
-    public async Task<string> GetJwt(Accreditation accreditation, List<EvidenceCode> evidenceCodes)
+    public async Task<string> GetJwt(Accreditation accreditation, EvidenceCode evidenceCode)
     {
         if (accreditation.AuthorizationCode is null or ConsentDenied)
         {
@@ -289,7 +289,7 @@ public class ConsentService : IConsentService
 
     private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)
     {
-        var jwt = await GetJwt(accreditation, accreditation.EvidenceCodes);
+        var jwt = await GetJwt(accreditation, accreditation.EvidenceCodes.First()); //evidencecode is not needed for getting the JWT, so we can just pass one of them in
 
         if (string.IsNullOrEmpty(jwt))
         {

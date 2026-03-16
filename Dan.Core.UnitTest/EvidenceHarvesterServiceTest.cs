@@ -88,7 +88,7 @@ namespace Dan.Core.UnitTest
                     }
                 )
             );
-            A.CallTo(() => _mockConsentService.GetJwt(A<Accreditation>._, A<List<EvidenceCode>>._)).Returns(Task.FromResult("somejwt"));
+            A.CallTo(() => _mockConsentService.GetJwt(A<Accreditation>._, A<EvidenceCode>._)).Returns(Task.FromResult("somejwt"));
 
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
             var evidenceHarvesterService = new EvidenceHarvesterService(

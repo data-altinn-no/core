@@ -110,7 +110,7 @@ public class FuncAuthorization
                 //Check for altinn 3 consent requirements, and initiate if any found. 
                 //Ideally this is either/or, but could theoretically be both
 
-                var consentRequirementsA3 = evidenceCodes.SelectMany(x => x.AuthorizationRequirements.Where(r => r is ConsentRequirement && string.IsNullOrEmpty(((ConsentRequirement)r).AltinnResource)).ToList()).ToList();
+                var consentRequirementsA3 = evidenceCodes.SelectMany(x => x.AuthorizationRequirements.Where(r => r is ConsentRequirement && !string.IsNullOrEmpty(((ConsentRequirement)r).AltinnResource)).ToList()).ToList();
 
                 if (consentRequirementsA3.Any())
                 {
@@ -119,7 +119,7 @@ public class FuncAuthorization
                     _logger.LogInformation("Completed initiating Altinn3 consent for aid={accreditationId}", accreditation.AccreditationId);
                 }
 
-                var consentRequirementsA2 = evidenceCodes.SelectMany(x => x.AuthorizationRequirements.Where(r => r is ConsentRequirement && !string.IsNullOrEmpty(((ConsentRequirement)r).ServiceCode)).ToList()).ToList();
+                var consentRequirementsA2 = evidenceCodes.SelectMany(x => x.AuthorizationRequirements.Where(r => r is ConsentRequirement && string.IsNullOrEmpty(((ConsentRequirement)r).AltinnResource)).ToList()).ToList();
 
                 if (consentRequirementsA2.Any())
                 {

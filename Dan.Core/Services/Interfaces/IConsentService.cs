@@ -35,9 +35,9 @@ public interface IConsentService
     /// Uses Altinn API to get a JWT token for the authorization code in the accreditation
     /// </summary>
     /// <param name="accreditation">Accreditation containing an authorization code</param>
-    /// <param name="evidenceCodes">Evidence codes requiring consent</param>
+    /// <param name="evidenceCodes">Evidence code requiring consent</param>
     /// <returns>A JWT</returns>
-    Task<string> GetJwt(Accreditation accreditation, List<EvidenceCode> evidenceCodes);
+    Task<string> GetJwt(Accreditation accreditation, EvidenceCode evidenceCode);
 
     /// <summary>
     /// Uses Altinn API to log the use of a consent

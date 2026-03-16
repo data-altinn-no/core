@@ -8,5 +8,5 @@ namespace Dan.Core.Services.Interfaces;
 public interface ITokenRequesterService
 {
     Task<string> GetMaskinportenToken(string scopes, string? consumerOrgNo = null);
-    Task<string> GetMaskinportenConsentToken(string consentId, string offeredby, List<EvidenceCode> evidenceCodes);
+    Task<string> GetMaskinportenConsentToken(string consentId, string offeredby, EvidenceCode evidenceCodes);
 }
