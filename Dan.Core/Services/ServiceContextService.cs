@@ -79,14 +79,6 @@ public class ServiceContextService : IServiceContextService
                 Owner = "Digitaliseringsdirektoratet",
                 ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
                 AuthorizationRequirements = new List<Requirement>() {
-                    new PartyTypeRequirement()
-                    {
-                        AllowedPartyTypes = new AllowedPartyTypesList()
-                        {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Subject,PartyTypeConstraint.PrivatePerson)
-
-                        }
-                    },
                     new MaskinportenScopeRequirement()
                     {
                         RequiredScopes = new List<string>() { "altinn:dataaltinnno/oed" }
@@ -121,7 +113,6 @@ public class ServiceContextService : IServiceContextService
                     {
                         AllowedPartyTypes = new AllowedPartyTypesList()
                         {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Subject,PartyTypeConstraint.PrivatePerson),
                             new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor, PartyTypeConstraint.PublicAgency)
                         }
                     },

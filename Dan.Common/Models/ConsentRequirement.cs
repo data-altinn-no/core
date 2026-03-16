@@ -47,6 +47,4 @@ public class ConsentRequirement : Requirement
     [DataMember(Name = "consentTokenScope")]
     [Required]
     public string? Scope { get; set; }
-
-
 }

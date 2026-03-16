@@ -216,8 +216,8 @@ namespace Dan.Core.Services
                 _logger.DanLog(accreditation, LogAction.DatasetRequiringConsentRequested, ec.EvidenceCodeName);
             }
 
-            accreditation.AltinnConsentUrl = consentresponse.viewUri;
-            accreditation.Altinn3ConsentId = consentresponse.id;
+            accreditation.AltinnConsentUrl = consentresponse.ViewUri;
+            accreditation.Altinn3ConsentId = consentresponse.Id;
 
             var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl, true);
 
@@ -228,7 +228,7 @@ namespace Dan.Core.Services
             }
         }
 
-        private string? GetConsentRequestUrl(Altinn3ConsentRequestResponse consentRequest)
+        private string? GetConsentRequestUrl(Altinn3ConsentResponse consentRequest)
         {
             throw new NotImplementedException();
         }
@@ -334,7 +334,7 @@ namespace Dan.Core.Services
             return result;
         }
 
-        private async Task<Altinn3ConsentRequestResponse> CreateConsentRequest(Accreditation accreditation, List<EvidenceCode> evidenceCodesRequiringConsent, LocalizedString consentRequestStrings)
+        private async Task<Altinn3ConsentResponse> CreateConsentRequest(Accreditation accreditation, List<EvidenceCode> evidenceCodesRequiringConsent, LocalizedString consentRequestStrings)
         {
             // At this point we can assume that both the subject and party are norwegian as this is enforced by RequirementValidatorService.ValidateConsent
             // In order to make the subjectName identical to Altinns version (particularly in tt02 cases), we get the subjectName from Altinn Serviceowner API
@@ -370,9 +370,9 @@ namespace Dan.Core.Services
                 consentRequest.ConsentRights.Add(new ConsentRight()
                 {
                     Action = new List<string>() { "consent" },
-                    Resource = new List<Resource>()
+                    Resource = new List<ConsentResource>()
                     {
-                        new Resource()
+                        new ConsentResource()
                         {
                             Type = "urn:altinn:resource",
                             Value = resourceIdentifier
@@ -403,7 +403,7 @@ namespace Dan.Core.Services
                     {
                         foreach (var e in errors)
                         {
-                            errorString += "ErrorCode:" + e.title + " ErrorMessage:" + e.detail + " ";
+                            errorString += "ErrorCode:" + e.Title + " ErrorMessage:" + e.Detail + " ";
                         }
                     }
 
@@ -412,7 +412,7 @@ namespace Dan.Core.Services
                     throw new ServiceNotAvailableException("Altinn denied the consent request. This is an internal error, please contact support");
                 }
 
-                var cr = JsonConvert.DeserializeObject<Altinn3ConsentRequestResponse>(await response.Content.ReadAsStringAsync());
+                var cr = JsonConvert.DeserializeObject<Altinn3ConsentResponse>(await response.Content.ReadAsStringAsync());
                 if (cr == null)
                 {
                     throw new Exception("Deserialize returned null");
