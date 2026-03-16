@@ -63,12 +63,12 @@ public class Party
     /// </summary>
     public string GetAltinnFormat()
     {
-        if (NorwegianOrganizationNumber != null)
+        if (!string.IsNullOrWhiteSpace(NorwegianOrganizationNumber))
         {
             return $"urn:altinn:organization:identifier-no:{NorwegianOrganizationNumber}";
         }
 
-        if (NorwegianSocialSecurityNumber != null)
+        if (!string.IsNullOrWhiteSpace(NorwegianSocialSecurityNumber))
         {
             return $"urn:altinn:person:identifier-no:{NorwegianSocialSecurityNumber}";
         }
