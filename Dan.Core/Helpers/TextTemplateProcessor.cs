@@ -70,7 +70,7 @@ public static class TextTemplateProcessor
         input = !string.IsNullOrEmpty(serviceContextName) ? input.Replace(TextMacros.ServiceContextName, serviceContextName, StringComparison.InvariantCultureIgnoreCase) : input;
         input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.ConsentReference, acc.ConsentReference, StringComparison.InvariantCultureIgnoreCase) : input;
         input = !string.IsNullOrEmpty(acc.ExternalReference) ? input.Replace(TextMacros.ExternalReference, acc.ExternalReference, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(buttonText) ? (isAltinn3 ? input.Replace(TextMacros.Button, GetConsentButtonMd(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : GetConsentButton(buttonText, consentUrl)) : input;
+        input = !string.IsNullOrEmpty(buttonText) ? (isAltinn3 ? input.Replace(TextMacros.Button, GetConsentButtonMd(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl))) : input;
         input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input;
 
         input = input.Replace(TextMacros.ConsentOrExternalReference, acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);

@@ -49,6 +49,10 @@ public class TokenRequesterService : ITokenRequesterService
             .Select(x => x.Scope)
             .FirstOrDefault(x => !string.IsNullOrEmpty(x));
 
+        //if consentScope is empty, it means this is an altinn 2 consent requirement and we can just set the required scope from the actual api, should not happen
+        consentScope = consentScope ?? evidenceCode.RequiredScopes;
+
+
         if (string.IsNullOrEmpty(consentScope))
         {
             throw new InvalidOperationException($"No consent scope found for evidence code {evidenceCode.EvidenceCodeName}");

@@ -116,7 +116,7 @@ public class ConsentService : IConsentService
 
         accreditation.AltinnConsentUrl = GetConsentRequestUrl(consentRequest);
 
-        var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl);
+        var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl, false);
 
         if (!skipAltinnNotification)
         {

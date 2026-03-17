@@ -137,7 +137,7 @@ public class EvidenceStatusService : IEvidenceStatusService
         // In case the evidence code has been move to a new source, we need to update the evidence code EvidenceSource
         // to reflect that of the availableEvidenceCode, so that requests are routed correctly
         evidenceCode.EvidenceSource = availableEvidenceCode.EvidenceSource;
-
+        evidenceCode.RequiredScopes = availableEvidenceCode.RequiredScopes;
         evidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements.Where(
             x => x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
 

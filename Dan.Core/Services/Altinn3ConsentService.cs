@@ -233,7 +233,8 @@ namespace Dan.Core.Services
                 _logger.DanLog(accreditation, LogAction.DatasetRequiringConsentRequested, ec.EvidenceCodeName);
             }
 
-            accreditation.AltinnConsentUrl = consentresponse.ViewUri;
+            //to avoid user being logged out after consenting in altinn 3 
+            accreditation.AltinnConsentUrl = consentresponse.ViewUri + "&skiplogout=true";
             accreditation.Altinn3ConsentId = consentresponse.Id;
 
             var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl, true);
