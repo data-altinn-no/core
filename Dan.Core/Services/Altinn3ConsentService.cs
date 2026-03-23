@@ -234,15 +234,23 @@ namespace Dan.Core.Services
             }
 
             //to avoid user being logged out after consenting in altinn 3 
-            accreditation.AltinnConsentUrl = consentresponse.ViewUri + "&skiplogout=true";
+            accreditation.AltinnConsentUrl = consentresponse.ViewUri;
             accreditation.Altinn3ConsentId = consentresponse.Id;
 
             var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl, true);
 
             if (!skipAltinnNotification)
             {
-                await SendCorrespondence(accreditation, renderedTexts);
-                _logger.DanLog(accreditation, LogAction.CorrespondenceSent);
+                try
+                {
+                    await SendCorrespondence(accreditation, renderedTexts);
+                    _logger.DanLog(accreditation, LogAction.CorrespondenceSent);
+                } catch(Exception ex)
+                {                   
+                    _logger.LogInformation("Correspondejce failed to send for AccreditationId={accreditationId}, Subject={subject}. Removing consent request in Altinn, consentid={id}. Exception: {ex}",
+                        accreditation.AccreditationId, accreditation.SubjectParty.GetAsString(), consentresponse.Id, ex.Message);
+                }
+
             }
         }
 
@@ -304,9 +312,8 @@ namespace Dan.Core.Services
 
                 if (!result.IsSuccess || result.IsFailure)
                 {
-                    _logger.LogError("Failed to send consent correspondence for AccreditationId={accreditationId}, Subject={subject}, IsFailure={isFailure}, Error={error}",
-                       accreditation.AccreditationId, accreditation.SubjectParty, result.IsFailure, result.Error);
-
+                    _logger.LogError("Failed to send consent correspondence for AccreditationId={accreditationId}, Subject={subject}, IsFailure={isFailure}, Error={error}, SendersReference={sendersReference}",
+                       accreditation.AccreditationId, accreditation.SubjectParty, result.IsFailure, result.Error, correspondence.SendersReference);               
                     throw new ServiceNotAvailableException($"Failed to send correspondence to {accreditation.SubjectParty.GetAsString()}: {result.Error}");
 
                 }
