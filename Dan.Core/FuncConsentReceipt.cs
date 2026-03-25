@@ -26,8 +26,6 @@ namespace Dan.Core
         private readonly IServiceContextService _serviceContextService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly ILogger<FuncConsentReceipt> _logger;
-        private readonly IConsentService _consentService;
-        private readonly IAltinn3ConsentService _altinn3ConsentService;
         private const string AboutUrl = "https:/docs.data.altinn.no/";
 
         /// <summary>
@@ -41,13 +39,13 @@ namespace Dan.Core
             Services.Interfaces.IEntityRegistryService entityRegistryService,
             IServiceContextService serviceContextService,
             IAccreditationRepository accreditationRepository,
-            ILoggerFactory loggerFactory, IAltinn3ConsentService altinn3ConsentService)
+            ILoggerFactory loggerFactory)
         {
             _entityRegistryService = entityRegistryService;
             _serviceContextService = serviceContextService;
             _accreditationRepository = accreditationRepository;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
-            _altinn3ConsentService = altinn3ConsentService;
+            
             
         }
 
