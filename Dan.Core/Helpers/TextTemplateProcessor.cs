@@ -71,7 +71,7 @@ public static class TextTemplateProcessor
         input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.ConsentReference, acc.ConsentReference, StringComparison.InvariantCultureIgnoreCase) : input;
         input = !string.IsNullOrEmpty(acc.ExternalReference) ? input.Replace(TextMacros.ExternalReference, acc.ExternalReference, StringComparison.InvariantCultureIgnoreCase) : input;
         input = !string.IsNullOrEmpty(buttonText) ? (isAltinn3 ? input.Replace(TextMacros.Button, GetConsentButtonMd(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl))) : input;
-        input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input;
+        input = !string.IsNullOrEmpty(acc.ConsentReference) ? (isAltinn3 ? input.Replace(TextMacros.EbevisReference, GetEbevisRefMd(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase)) : input;
 
         input = input.Replace(TextMacros.ConsentOrExternalReference, acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);
         input = input.Replace(TextMacros.ConsentAndExternalReference, acc.ConsentReference + acc.ExternalReference != "" ? ", " + acc.ExternalReference : "");
@@ -123,6 +123,38 @@ public static class TextTemplateProcessor
         }
 
         return caseReferenceBody;
+    }
+
+    private static string GetEbevisRefMd(string consentReference)
+    {
+        string result;        
+
+        if (IsDoffinReference(consentReference))
+        {
+            result = HtmlToMarkdown(string.Format(Settings.GetDoffinLinkTemplate(), consentReference));
+
+           
+        }
+        else if (IsTedReference(consentReference))
+        {
+            result = HtmlToMarkdown(string.Format(Settings.GetTedLinkTemplate(), consentReference));           
+        }
+        else
+        {
+            result = consentReference;
+        }
+
+        return result;
+    }
+
+    public static string HtmlToMarkdown(string input)
+    {
+        return Regex.Replace(
+            input,
+            @"<a\s+href\s*=\s*\\""([^\""]+)\\""\s*>(.*?)</a>",
+            "[$2]($1)",
+            RegexOptions.IgnoreCase | RegexOptions.Singleline
+        );
     }
 
     private static bool IsTedReference(string consentReference)
