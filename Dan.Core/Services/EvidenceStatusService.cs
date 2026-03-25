@@ -12,6 +12,7 @@ public class EvidenceStatusService : IEvidenceStatusService
 {
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly IConsentService _consentService;
+    private readonly IAltinn3ConsentService _consentServiceA3;
     private readonly IRequestContextService _requestContextService;
     private readonly ILogger<EvidenceStatusService> _logger;
     private readonly IHttpClientFactory _clientFactory;
@@ -19,12 +20,14 @@ public class EvidenceStatusService : IEvidenceStatusService
     public EvidenceStatusService(
         IAvailableEvidenceCodesService availableEvidenceCodesService, 
         IConsentService consentService,
+        IAltinn3ConsentService consentServiceA3,
         IRequestContextService requestContextService,
         IHttpClientFactory clientFactory, 
         ILoggerFactory loggerFactory)
     {
         _availableEvidenceCodesService = availableEvidenceCodesService;
         _consentService = consentService;
+        _consentServiceA3 = consentServiceA3;
         _requestContextService = requestContextService;
         _logger = loggerFactory.CreateLogger<EvidenceStatusService>();
         _clientFactory = clientFactory;
@@ -44,9 +47,18 @@ public class EvidenceStatusService : IEvidenceStatusService
         }
         else if (_consentService.EvidenceCodeRequiresConsent(evidenceCode))
         {
-            var consentStatus = await _consentService.Check(accreditation, onlyLocalChecks);
-            status = MapConsentStatusToEvidenceStatusCode(consentStatus);
-            isConsentRequest = true;
+            if (accreditation.Altinn3ConsentId != null)
+            {
+                var consentStatus = await _consentServiceA3.Check(accreditation, onlyLocalChecks);
+                status = MapConsentStatusToEvidenceStatusCode(consentStatus);
+                isConsentRequest = true;
+
+            } else
+            {
+                var consentStatus = await _consentService.Check(accreditation, onlyLocalChecks);
+                status = MapConsentStatusToEvidenceStatusCode(consentStatus);
+                isConsentRequest = true;
+            }
         }
         else
         {
@@ -125,7 +137,7 @@ public class EvidenceStatusService : IEvidenceStatusService
         // In case the evidence code has been move to a new source, we need to update the evidence code EvidenceSource
         // to reflect that of the availableEvidenceCode, so that requests are routed correctly
         evidenceCode.EvidenceSource = availableEvidenceCode.EvidenceSource;
-
+        evidenceCode.RequiredScopes = availableEvidenceCode.RequiredScopes;
         evidenceCode.AuthorizationRequirements = evidenceCode.AuthorizationRequirements.Where(
             x => x.AppliesToServiceContext.Count == 0 || x.AppliesToServiceContext.Contains(_requestContextService.ServiceContext.Name)).ToList();
 

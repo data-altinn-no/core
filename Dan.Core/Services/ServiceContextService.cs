@@ -126,33 +126,7 @@ public class ServiceContextService : IServiceContextService
                         RequiredScopes = new List<string>() { "altinn:dataaltinnno/dihe" }
                     }
                 }
-            },            
-            new ServiceContext()
-            {
-                Name = "Økonomisk informasjon",
-                Id = "okinfo-product",
-                Owner = "Brønnøysundregistrene",
-                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB },
-                AuthorizationRequirements = new List<Requirement>() {
-                    new MaskinportenScopeRequirement()
-                    {
-                        RequiredScopes = new List<string>() { "altinn:dataaltinnno/okinfo" }
-                    },
-                    new PartyTypeRequirement()
-                    {
-                        AllowedPartyTypes = new AllowedPartyTypesList()
-                        {
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Subject,PartyTypeConstraint.PrivateEnterprise),
-                            new KeyValuePair<AccreditationPartyTypes, PartyTypeConstraint>(AccreditationPartyTypes.Requestor, PartyTypeConstraint.PublicAgency)
-                        }
-                    },
-                    new AccreditationPartyRequirement()
-                    {
-                        PartyRequirements = new List<AccreditationPartyRequirementType>() { AccreditationPartyRequirementType.RequestorAndOwnerAreEqual }
-                    }
-                },
-                ServiceContextTextTemplate = new OkinfoServiceContextTextTemplate()
-            },
+            },  
             new ServiceContext()
             {
                 Name = "Reelle rettighetshavere",
@@ -245,13 +219,7 @@ public class ServiceContextService : IServiceContextService
                         PartyRequirements = new List<AccreditationPartyRequirementType>() { AccreditationPartyRequirementType.RequestorAndOwnerAreEqual }
                     }
                 }
-            },                    
-            new ServiceContext() {
-                Name = "Digøk-friv",
-                Id = "digokfriv-product", 
-                Owner = "Brønnøysundregistrene",
-                ValidLanguages = new List<string>() {Constants.LANGUAGE_CODE_NORWEGIAN_NB }                
-            },
+            }, 
             new ServiceContext() {
                 Name = "NSG",
                 Id = "nsg-product",

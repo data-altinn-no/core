@@ -1,4 +1,6 @@
-﻿namespace Dan.Core.Services.Interfaces;
+﻿using Dan.Common.Models;
+
+namespace Dan.Core.Services.Interfaces;
 
 /// <summary>
 /// Interface for Token Requester
@@ -6,4 +8,5 @@
 public interface ITokenRequesterService
 {
     Task<string> GetMaskinportenToken(string scopes, string? consumerOrgNo = null);
+    Task<string> GetMaskinportenConsentToken(string consentId, string offeredby, EvidenceCode evidenceCodes);
 }

@@ -47,6 +47,11 @@ public interface IServiceContextTextTemplate<out T>
     public T CorrespondenceBody { get; }
 
     /// <summary>
+    /// Correspondence body for Altinn 3 - no HTML
+    /// </summary>
+    public T CorrespondenceBodyA3 { get; }
+
+    /// <summary>
     /// Button text for giving consent
     /// </summary>
     public T ConsentButtonText { get; }

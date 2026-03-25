@@ -116,7 +116,7 @@ public class ConsentService : IConsentService
 
         accreditation.AltinnConsentUrl = GetConsentRequestUrl(consentRequest);
 
-        var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl);
+        var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl, false);
 
         if (!skipAltinnNotification)
         {
@@ -185,8 +185,9 @@ public class ConsentService : IConsentService
     /// Uses Altinn API to get a JWT token for the authorization code in the accreditation
     /// </summary>
     /// <param name="accreditation">Accreditation containing an authorization code</param>
+    /// <param name="evidenceCodes">Evidence codes requiring consent</param>
     /// <returns>A JWT</returns>
-    public async Task<string> GetJwt(Accreditation accreditation)
+    public async Task<string> GetJwt(Accreditation accreditation, EvidenceCode evidenceCode)
     {
         if (accreditation.AuthorizationCode is null or ConsentDenied)
         {
@@ -288,7 +289,7 @@ public class ConsentService : IConsentService
 
     private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)
     {
-        var jwt = await GetJwt(accreditation);
+        var jwt = await GetJwt(accreditation, accreditation.EvidenceCodes.First()); //evidencecode is not needed for getting the JWT, so we can just pass one of them in
 
         if (string.IsNullOrEmpty(jwt))
         {

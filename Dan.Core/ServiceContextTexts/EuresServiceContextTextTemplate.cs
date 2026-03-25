@@ -21,7 +21,11 @@ public class EuresServiceContextTextTemplate : IServiceContextTextTemplate<Local
     {
         NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre en kvalifiseringsprosess må det utstedes fullmakt til å hente ut opplysninger om {TextMacros.SubjectName}.<br><br>Referanse: {TextMacros.EbevisReference} <br><br>Klikk på knappen under for å vite mer om hvilke opplysninger som er forespurt før du eventuelt gir fullmakten.<br> {TextMacros.Button}"
     };
-
+    
+    public LocalizedString CorrespondenceBodyA3 => new()
+    {
+        NoNb = $"For at {TextMacros.RequestorName} skal kunne gjennomføre en kvalifiseringsprosess må det utstedes fullmakt til å hente ut opplysninger om {TextMacros.SubjectName}.<br><br>Referanse: {TextMacros.EbevisReference} <br><br>Klikk på knappen under for å vite mer om hvilke opplysninger som er forespurt før du eventuelt gir fullmakten.<br> {TextMacros.Button}"
+    };
 
     public LocalizedString CorrespondenceSender => new()
     {

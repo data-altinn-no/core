@@ -104,6 +104,11 @@ public static class Settings
             : _altinnCertificate ??= KeyVault.GetCertificate(KeyVaultSslCertificate).Result;
 
     /// <summary>
+    /// Altinn EC Certificate in base64
+    /// </summary>
+    public static string AltinnCertificateb64 => KeyVault.GetCertificateBase64(KeyVaultSslCertificate).Result;
+
+    /// <summary>
     /// API-key for consent request / token
     /// </summary>
     public static string AltinnApiKey => 
@@ -310,6 +315,13 @@ public static class Settings
     public static string GetConsentStatusUrl(string authCode) =>string.Format(GetSetting("ConsentStatusURLPattern"), authCode);
 
     /// <summary>
+    /// Gets the consent status url for Altinn 3 consents (maskinporten)
+    /// </summary>
+    /// <param name="authCode">The authCode</param>
+    /// <returns>The url</returns>
+    public static string GetA3ConsentStatusUrl(string consentId) => string.Format(GetSetting("A3ConsentStatusURLPattern"), consentId);
+
+    /// <summary>
     /// The condition string to use as condition when creating SRR rights.
     /// </summary>
     public static string SrrRightsCondition => GetSetting("SrrRightsCondition");
@@ -374,6 +386,8 @@ public static class Settings
     public static string ApplicationInsightsCloudRoleName => GetSetting("ApplicationInsightsCloudRoleName");
 
     public static string HashPepper => GetSetting("HashPepper");
+
+    public static string Altinn3ConsentUrl => GetSetting("Altinn3ConsentUrl");
 
     private static string GetSetting(string settingKey)
     {

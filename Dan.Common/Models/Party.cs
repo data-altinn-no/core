@@ -51,7 +51,7 @@ public class Party
 
         return Scheme + "::" + Id;
     }
-    
+
     /// <summary>
     /// Returns norwegian organisation number if set, else norwegian social security if set,
     /// if not returns scheme plus id.
