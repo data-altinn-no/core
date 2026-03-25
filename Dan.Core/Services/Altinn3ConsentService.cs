@@ -240,17 +240,9 @@ namespace Dan.Core.Services
             var renderedTexts = TextTemplateProcessor.GetRenderedTexts(_requestContextService.ServiceContext, accreditation, requestorName, subjectName, accreditation.AltinnConsentUrl, true);
 
             if (!skipAltinnNotification)
-            {
-                try
-                {
+            {               
                     await SendCorrespondence(accreditation, renderedTexts);
                     _logger.DanLog(accreditation, LogAction.CorrespondenceSent);
-                } catch(Exception ex)
-                {                   
-                    _logger.LogInformation("Correspondejce failed to send for AccreditationId={accreditationId}, Subject={subject}. Removing consent request in Altinn, consentid={id}. Exception: {ex}",
-                        accreditation.AccreditationId, accreditation.SubjectParty.GetAsString(), consentresponse.Id, ex.Message);
-                }
-
             }
         }
 
