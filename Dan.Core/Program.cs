@@ -260,7 +260,10 @@ var host = new HostBuilder()
 
 void AddAltinn3Messaging(IServiceCollection services)
 {    
-    var encodedCert = Settings.AltinnCertificateb64;
+    // Load cert via our working code path and re-export as passwordless PKCS#12
+    // to avoid CryptographicException in Maskinporten library on Azure
+    var cert = Settings.AltinnCertificate;
+    var encodedCert = Convert.ToBase64String(cert.Export(X509ContentType.Pkcs12));
 
     services.AddDdCorrespondenceService(options =>
     {
@@ -268,11 +271,11 @@ void AddAltinn3Messaging(IServiceCollection services)
         {
             ClientId = Settings.MaskinportenClientId,
             Environment = Settings.MaskinportenUrl.Contains("test") ? "test" : "prod",
-            EnableDebugLogging = Settings.MaskinportenUrl.Contains("test") ? true : false,
+            EnableDebugLogging = Settings.MaskinportenUrl.Contains("test"),
             EncodedX509 = encodedCert
         };
         options.ResourceId = "digdir-data-altinn-no-melding";        
-        options.Environment = Settings.MaskinportenUrl.Contains("test") ? ApiEnvironment.Staging : ApiEnvironment.Production;
+        options.Environment = Settings.MaskinportenUrl.Contains("test") ? ApiEnvironment.Staging : ApiEnvironment.Production;       
     });
 }
 
