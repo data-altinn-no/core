@@ -42,7 +42,7 @@ public class CoreKeyVault
         var base64Certificate = await Get(key);
         var certBytes = Convert.FromBase64String(base64Certificate);
         
-        var cert = X509CertificateLoader.LoadPkcs12(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable);
+        var cert = X509CertificateLoader.LoadPkcs12(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet);
 
         if (X509CertificateHelper.GetValidOrgNumberFromCertificate(cert) == null)
         {
