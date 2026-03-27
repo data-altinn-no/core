@@ -41,8 +41,8 @@ public class CoreKeyVault
     {
         var base64Certificate = await Get(key);
         var certBytes = Convert.FromBase64String(base64Certificate);
-        
-        var cert = X509CertificateLoader.LoadPkcs12(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable);
+
+        var cert = new X509Certificate2(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet);
 
         if (X509CertificateHelper.GetValidOrgNumberFromCertificate(cert) == null)
         {
@@ -57,10 +57,18 @@ public class CoreKeyVault
     /// </summary>
     /// <param name="key">Certificate name</param>
     /// <returns>The certificate</returns>
-    public async Task<string> GetCertificateBase64(string key)
+    public async Task<X509Certificate2> GetCertificateOedMessaging(string key)
     {
-        var base64Certificate = await Get(key);       
+        var base64Certificate = await Get(key);
+        var certBytes = Convert.FromBase64String(base64Certificate);
 
-        return await Task.FromResult(base64Certificate);
+        var cert = X509CertificateLoader.LoadPkcs12(certBytes, string.Empty, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable);
+
+        if (X509CertificateHelper.GetValidOrgNumberFromCertificate(cert) == null)
+        {
+            throw new Exceptions.InvalidCertificateException("Unable to validate chain or not an enterprise certificate");
+        }
+
+        return await Task.FromResult(cert);
     }
 }
