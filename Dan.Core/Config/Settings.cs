@@ -106,7 +106,7 @@ public static class Settings
     /// <summary>
     /// Altinn EC Certificate in base64
     /// </summary>
-    public static string AltinnCertificateb64 => KeyVault.GetCertificateBase64(KeyVaultSslCertificate).Result;
+    public static X509Certificate2 OedMessagingCert => KeyVault.GetCertificateOedMessaging(KeyVaultSslCertificate).Result;
 
     /// <summary>
     /// API-key for consent request / token

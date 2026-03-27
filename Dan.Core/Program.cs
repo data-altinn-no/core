@@ -262,7 +262,7 @@ void AddAltinn3Messaging(IServiceCollection services)
 {    
     // Load cert via our working code path and re-export as passwordless PKCS#12
     // to avoid CryptographicException in Maskinporten library on Azure
-    var cert = Settings.AltinnCertificate;
+    var cert = Settings.OedMessagingCert;
     var encodedCert = Convert.ToBase64String(cert.Export(X509ContentType.Pkcs12));
 
     services.AddDdCorrespondenceService(options =>
