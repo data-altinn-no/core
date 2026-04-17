@@ -2,6 +2,7 @@ name: Build and test a PR
 
 permissions:
   actions: read
+  contents: read
 
 on:
   pull_request:

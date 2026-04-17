@@ -3,6 +3,7 @@ name: Dan.Common Release Nuget
   
 permissions:
   actions: read
+  contents: read
 
 on:
   workflow_dispatch:
