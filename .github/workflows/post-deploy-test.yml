@@ -1,4 +1,6 @@
 name: Post deploy test
+permissions:
+  actions: read
 on:
  workflow_dispatch:
 jobs:

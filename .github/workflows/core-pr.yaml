@@ -1,5 +1,8 @@
 name: Build and test a PR
 
+permissions:
+  actions: read
+
 on:
   pull_request:
     branches:
