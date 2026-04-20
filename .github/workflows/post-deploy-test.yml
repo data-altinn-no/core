@@ -3,6 +3,7 @@ permissions:
   actions: read
   contents: read
   id-token: write
+  checks: write
 on:
  workflow_dispatch:
 jobs:
