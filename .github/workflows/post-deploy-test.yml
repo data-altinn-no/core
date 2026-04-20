@@ -1,9 +1,15 @@
 name: Post deploy test
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+  checks: write
+  pull-requests: write
 on:
  workflow_dispatch:
 jobs:
  run:
-   uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@077be64090710476cb8103764dd85154af8214eb
+   uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@28817d886fe657244d267c56480d9d0694b71f9b
    with:
      environment: 'dev'
    secrets:

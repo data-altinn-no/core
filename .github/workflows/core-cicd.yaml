@@ -1,8 +1,11 @@
 name: Dan.Core CI/CD
 
 permissions:
+  actions: read
   contents: read
-
+  id-token: write
+  checks: write
+  pull-requests: write
 on:
  push:
    branches: [ master ]
