@@ -3,7 +3,7 @@ on:
  workflow_dispatch:
 jobs:
  run:
-   uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@009dae7d9c3f0ddab3c1be13fe0c76177e174d74
+   uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@077be64090710476cb8103764dd85154af8214eb
    with:
      environment: 'dev'
    secrets:
