@@ -1,4 +1,8 @@
 name: Dan.Core CI/CD
+
+permissions:
+  contents: read
+
 on:
  push:
    branches: [ master ]
