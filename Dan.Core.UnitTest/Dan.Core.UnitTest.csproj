@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <!-- FluentAssertions v8.0 requires a subscription... -->
-    <PackageReference Include="AwesomeAssertions" Version="9.3.0" />
+    <PackageReference Include="AwesomeAssertions" Version="9.4.0" />
     <PackageReference Include="FakeItEasy" Version="9.0.1" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
