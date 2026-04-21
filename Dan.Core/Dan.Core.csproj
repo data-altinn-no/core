@@ -58,7 +58,7 @@
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.16.0" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.16.0" />
     <PackageReference Include="Parquet.Net" Version="5.5.0" />
-    <PackageReference Include="Polly" Version="8.6.5" />
+    <PackageReference Include="Polly" Version="8.6.6" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
     
     <!-- WCF related things --> 
