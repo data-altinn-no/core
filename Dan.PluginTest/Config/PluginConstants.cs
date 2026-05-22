@@ -14,4 +14,5 @@ public static class PluginConstants
     public const string PluginForward = "PluginForward";
     public const string PluginSettingsTest = "PluginSettingsTest";
     public const string PluginGenericTest = "PluginGenericTest";
+    public const string PluginCustomSubjectTest = "PluginCustomSubjectTest";
 }

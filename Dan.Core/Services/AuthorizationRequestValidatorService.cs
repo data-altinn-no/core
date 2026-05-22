@@ -1,5 +1,7 @@
-﻿using Dan.Common;
+﻿using System.Text.RegularExpressions;
+using Dan.Common;
 using Dan.Common.Enums;
+using Dan.Common.Exceptions;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Config;
@@ -57,9 +59,34 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         _authRequest = authorizationRequest ?? throw new InvalidAuthorizationRequestException();
         _registeredEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
         _evidenceCodesFromRequest = _registeredEvidenceCodes.Where(r => _authRequest.EvidenceRequests.Any(x => x.EvidenceCodeName == r.EvidenceCodeName)).ToList();
+        
+        var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
+        if (authorizationRequest.FromEvidenceHarvester)
+        {
+            foreach (var requirement in requirements.Values)
+            {
+                requirement.RemoveAll(x => x.RequiredOnEvidenceHarvester == false);
+            }
+        }
 
+        var customSubject = false;
+        var customSubjectRegex = string.Empty;
+        var skipRegularSubjectValidation = false;
+        if (requirements.Values.SelectMany(x => x).Any(req =>
+                req.RequirementType is not null &&
+                req.RequirementType.Equals("CustomSubjectRequirement", StringComparison.InvariantCultureIgnoreCase)))
+        {
+            Console.WriteLine("Found custom subject req");
+            var requirement = requirements.Values.SelectMany(x => x).First(r => r.RequirementType is not null &&
+                                                                      r.RequirementType.Equals("CustomSubjectRequirement", StringComparison.InvariantCultureIgnoreCase));
+            var customSubjectRequirement = ((CustomSubjectRequirement)requirement);
+            customSubject = true;
+            customSubjectRegex = customSubjectRequirement.SubjectRegex;
+            skipRegularSubjectValidation = customSubjectRequirement.SkipRegularSubjectValidation;
+        }
+        
         ValidateAndPopulateRequestor();
-        ValidateAndPopulateSubject();
+        ValidateAndPopulateSubject(customSubject, skipRegularSubjectValidation, customSubjectRegex);
         ValidateLegalBasisWellFormed();
         ValidateEvidenceRequestWellFormed();
         ValidateEvidenceCodesAreAvailableForServiceContext();
@@ -77,15 +104,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         }
 
         ValidateLanguageCodes();
-
-        var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
-        if (authorizationRequest.FromEvidenceHarvester)
-        {
-            foreach (var requirement in requirements.Values)
-            {
-                requirement.RemoveAll(x => x.RequiredOnEvidenceHarvester == false);
-            }
-        }
 
         var authorizationErrors = await _requirementValidationService.ValidateRequirements(requirements, _authRequest);
         if (authorizationErrors.Count > 0)
@@ -185,7 +203,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     /// Uses PartyParser on the supplied subject, and populates SubjectParty with it. Overwrites Requestor with norwegian identifier if applicable, else set to null
     /// </summary>
     /// <exception cref="InvalidSubjectException"></exception>
-    private void ValidateAndPopulateSubject()
+    private void ValidateAndPopulateSubject(bool customSubject, bool skipRegularSubject, string? customSubjectRegex = null)
     {
 
         if (_authRequest.Subject == null)
@@ -193,14 +211,43 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
             return;
         }
 
-        Party? party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out string? error);
-        if (party == null)
+        // Even if using a custom subject format, it might still allow for regular SSNs or Organisation Numbers
+        // If not set to skip over that, then will first attempt to check for those as normal.
+        if (!skipRegularSubject)
         {
-            throw new InvalidSubjectException($"Invalid subject supplied: {error}");
+            var party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out var error);
+            if (party == null && !customSubject)
+            {
+                throw new InvalidSubjectException($"Invalid subject supplied: {error}");
+            }
+            if (party != null)
+            {
+                _authRequest.Subject = party.NorwegianOrganizationNumber ?? party.NorwegianSocialSecurityNumber;
+                _authRequest.SubjectParty = party;
+                return;
+            }
         }
 
-        _authRequest.Subject = party.NorwegianOrganizationNumber ?? party.NorwegianSocialSecurityNumber;
-        _authRequest.SubjectParty = party;
+        // No SSN or Organisation Number found, or default validation is skipped.
+        // Moving on to custom subject format regex validation
+        if (string.IsNullOrEmpty(customSubjectRegex))
+        {
+            throw new EvidenceSourcePermanentServerException(5002, "Invalid custom subject regex for dataset");
+        }
+        
+        var regexMatch = Regex.Match(_authRequest.Subject, customSubjectRegex);
+        if (!regexMatch.Success)
+        {
+            throw new InvalidSubjectException("Invalid subject supplied: subject does not match custom subject format");
+        }
+
+        var subject = regexMatch.Groups[0].Value;
+        var customParty = new Party
+        {
+            Id = subject
+        };
+        _authRequest.Subject = subject;
+        _authRequest.SubjectParty = customParty;
     }
 
     private void ValidateLegalBasisWellFormed()
