@@ -128,7 +128,7 @@ public class Metadata : IEvidenceSourceMetadata
                     new CustomSubjectRequirement
                     {
                         SubjectRegex = @"^\d{1,8}$",
-                        SkipRegularSubjectValidation = false
+                        SubjectRegexDescription = "A number 1-8 characters long"
                     }
                 ]
             },

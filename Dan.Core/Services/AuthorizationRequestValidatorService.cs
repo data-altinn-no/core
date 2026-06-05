@@ -69,24 +69,12 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
             }
         }
 
-        var customSubject = false;
-        var customSubjectRegex = string.Empty;
-        var skipRegularSubjectValidation = false;
-        if (requirements.Values.SelectMany(x => x).Any(req =>
-                req.RequirementType is not null &&
-                req.RequirementType.Equals("CustomSubjectRequirement", StringComparison.InvariantCultureIgnoreCase)))
-        {
-            Console.WriteLine("Found custom subject req");
-            var requirement = requirements.Values.SelectMany(x => x).First(r => r.RequirementType is not null &&
-                                                                      r.RequirementType.Equals("CustomSubjectRequirement", StringComparison.InvariantCultureIgnoreCase));
-            var customSubjectRequirement = ((CustomSubjectRequirement)requirement);
-            customSubject = true;
-            customSubjectRegex = customSubjectRequirement.SubjectRegex;
-            skipRegularSubjectValidation = customSubjectRequirement.SkipRegularSubjectValidation;
-        }
+        var customSubject = requirements.Values.SelectMany(x => x).Any(req =>
+            req.RequirementType is not null &&
+            req.RequirementType.Equals("CustomSubjectRequirement", StringComparison.InvariantCultureIgnoreCase));
         
         ValidateAndPopulateRequestor();
-        ValidateAndPopulateSubject(customSubject, skipRegularSubjectValidation, customSubjectRegex);
+        ValidateAndPopulateSubject(customSubject);
         ValidateLegalBasisWellFormed();
         ValidateEvidenceRequestWellFormed();
         ValidateEvidenceCodesAreAvailableForServiceContext();
@@ -203,50 +191,33 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     /// Uses PartyParser on the supplied subject, and populates SubjectParty with it. Overwrites Requestor with norwegian identifier if applicable, else set to null
     /// </summary>
     /// <exception cref="InvalidSubjectException"></exception>
-    private void ValidateAndPopulateSubject(bool customSubject, bool skipRegularSubject, string? customSubjectRegex = null)
+    private void ValidateAndPopulateSubject(bool customSubject)
     {
 
         if (_authRequest.Subject == null)
         {
             return;
         }
-
-        // Even if using a custom subject format, it might still allow for regular SSNs or Organisation Numbers
-        // If not set to skip over that, then will first attempt to check for those as normal.
-        if (!skipRegularSubject)
-        {
-            var party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out var error);
-            if (party == null && !customSubject)
-            {
-                throw new InvalidSubjectException($"Invalid subject supplied: {error}");
-            }
-            if (party != null)
-            {
-                _authRequest.Subject = party.NorwegianOrganizationNumber ?? party.NorwegianSocialSecurityNumber;
-                _authRequest.SubjectParty = party;
-                return;
-            }
-        }
-
-        // No SSN or Organisation Number found, or default validation is skipped.
-        // Moving on to custom subject format regex validation
-        if (string.IsNullOrEmpty(customSubjectRegex))
-        {
-            throw new EvidenceSourcePermanentServerException(5002, "Invalid custom subject regex for dataset");
-        }
         
-        var regexMatch = Regex.Match(_authRequest.Subject, customSubjectRegex);
-        if (!regexMatch.Success)
+        var party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out var error);
+        if (party == null && !customSubject)
         {
-            throw new InvalidSubjectException("Invalid subject supplied: subject does not match custom subject format");
+            throw new InvalidSubjectException($"Invalid subject supplied: {error}");
         }
 
-        var subject = regexMatch.Groups[0].Value;
+        if (party != null)
+        {
+            _authRequest.Subject = party.NorwegianOrganizationNumber ?? party.NorwegianSocialSecurityNumber;
+            _authRequest.SubjectParty = party;
+            return;
+        }
+
+        // Custom Subject Validation will be done later in RequirementValidationService
         var customParty = new Party
         {
-            Id = subject
+            Id = _authRequest.Subject
         };
-        _authRequest.Subject = subject;
+        _authRequest.Subject = _authRequest.Subject;
         _authRequest.SubjectParty = customParty;
     }
 

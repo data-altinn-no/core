@@ -107,6 +107,7 @@ public class RequirementValidationService : IRequirementValidationService
             AccreditationPartyRequirement r => ValidateAccreditationPartyRequirement(r, _authRequest.Subject, _authRequest.Requestor, _owner, evidenceCodeName),
             ReferenceRequirement r => ValidateReferenceRequirement(r, _authRequest, evidenceCodeName),
             ProvideOwnTokenRequirement r => ValidateProvideOwnTokenRequirement(r, evidenceCodeName),
+            CustomSubjectRequirement r => ValidateCustomSubjectRequirement(r, _authRequest, evidenceCodeName),
             _ => false
         };
 
@@ -567,6 +568,38 @@ public class RequirementValidationService : IRequirementValidationService
 
         AddError(req, $"The dataset {evidenceCodeName} requires that the client provides a bearer token or delegates access to Digitaliseringsdirektoratet", evidenceCodeName);
         return false;
+    }
+
+    private bool ValidateCustomSubjectRequirement(CustomSubjectRequirement req, AuthorizationRequest authRequest, string evidenceCodeName)
+    {
+        
+        if (authRequest.SubjectParty.Scheme is PartyParser.SchemeIso6523ActorIdUpis or 
+                                               PartyParser.SchemeNorwegianSsn or 
+                                               PartyParser.NorwegianIcd)
+        {
+            // Subject already parsed as Organisation number or norwegian ssn
+            return true;
+        }
+        if (string.IsNullOrWhiteSpace(authRequest.Subject))
+        {
+            AddError(req, $"Subject is missing", evidenceCodeName);
+            return false;
+        }
+        
+        if (string.IsNullOrEmpty(req.SubjectRegex))
+        {
+            AddError(req, $"Missing custom subject format regex", evidenceCodeName);
+            return false;
+        }
+        
+        var regexMatch = Regex.Match(authRequest.Subject, req.SubjectRegex);
+        if (!regexMatch.Success)
+        {
+            AddError(req, $"Subject does not match custom subject format: {req.SubjectRegexDescription}", evidenceCodeName);
+            return false;
+        }
+
+        return true;
     }
 
     private async Task<PartyTypeConstraint> GetPartyType(string? identifier)

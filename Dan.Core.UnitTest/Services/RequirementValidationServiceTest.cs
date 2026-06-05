@@ -1,4 +1,5 @@
-﻿using Dan.Common.Enums;
+﻿using AwesomeAssertions;
+using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
 using Dan.Core.Helpers;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using ConsentRequirement = Nadobe.Common.Models.ConsentRequirement;
 
-namespace Dan.Core.UnitTest
+namespace Dan.Core.UnitTest.Services
 {
     [TestClass]
     public class RequirementValidationServiceTest
@@ -771,6 +772,140 @@ namespace Dan.Core.UnitTest
             var errorList = await svc.ValidateRequirements(req, authRequest);
             Assert.IsTrue(errorList.Count == 1);
             Assert.IsTrue(errorList[0].Contains("The request requires a valid consent reference but none is provided"));
+        }
+        
+        [TestMethod]
+        [DataRow("12345678", null)] // Custom subject
+        [DataRow("03065001488", PartyParser.NorwegianIcd)] // Already found subject in pre step
+        [DataRow("03065001488", PartyParser.SchemeIso6523ActorIdUpis)] // Already found subject in pre step
+        [DataRow("03065001488", PartyParser.SchemeNorwegianSsn)] // Already found subject in pre step
+        public async Task CustomSubjectTest_Success(string subject, string scheme)
+        {
+            // Arrange
+            var authRequest = GetAuthRequest(subject, "requestor");
+            authRequest.SubjectParty = new Party
+            {
+                Id = "12345678",
+                Scheme = scheme
+            };
+
+            var req = new Dictionary<string, List<Requirement>>
+            {
+                ["ec1"] =
+                [
+                    new CustomSubjectRequirement()
+                    {
+                        SubjectRegex = @"^\d{1,8}$"
+                    }
+                ]
+            };
+
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
+            
+            // Act
+            var errorList = await svc.ValidateRequirements(req, authRequest);
+
+            // Assert
+            errorList.Should().BeEmpty();
+        }
+        
+        [TestMethod]
+        public async Task CustomSubjectTest_MismatchFormat_ShouldThrow()
+        {
+            // Arrange
+            var authRequest = GetAuthRequest("123456789", "requestor");
+            authRequest.SubjectParty = new Party
+            {
+                Id = "12345678",
+                Scheme = null
+            };
+
+            var req = new Dictionary<string, List<Requirement>>
+            {
+                ["ec1"] =
+                [
+                    new CustomSubjectRequirement()
+                    {
+                        SubjectRegex = @"^\d{1,8}$",
+                        SubjectRegexDescription = "Description"
+                    }
+                ]
+            };
+
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
+            
+            // Act
+            var errorList = await svc.ValidateRequirements(req, authRequest);
+
+            // Assert
+            errorList.Should().HaveCount(1);
+            errorList.Should().Contain("ec1: Subject does not match custom subject format: Description");
+        }
+        
+        [TestMethod]
+        public async Task CustomSubjectTest_MissingSubject_ShouldThrow()
+        {
+            // Arrange
+            var authRequest = GetAuthRequest("", "requestor");
+            authRequest.SubjectParty = new Party
+            {
+                Id = "",
+                Scheme = null
+            };
+
+            var req = new Dictionary<string, List<Requirement>>
+            {
+                ["ec1"] =
+                [
+                    new CustomSubjectRequirement()
+                    {
+                        SubjectRegex = @"^\d{1,8}$",
+                        SubjectRegexDescription = "Description"
+                    }
+                ]
+            };
+
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
+            
+            // Act
+            var errorList = await svc.ValidateRequirements(req, authRequest);
+
+            // Assert
+            errorList.Should().HaveCount(1);
+            errorList.Should().Contain("ec1: Subject is missing");
+        }
+        
+        [TestMethod]
+        public async Task CustomSubjectTest_MissingRegex_ShouldThrow()
+        {
+            // Arrange
+            var authRequest = GetAuthRequest("12345", "requestor");
+            authRequest.SubjectParty = new Party
+            {
+                Id = "12345",
+                Scheme = null
+            };
+
+            var req = new Dictionary<string, List<Requirement>>
+            {
+                ["ec1"] =
+                [
+                    new CustomSubjectRequirement()
+                    {
+                        SubjectRegex = "",
+                        SubjectRegexDescription = "Description"
+                    }
+                ]
+            };
+
+            var svc = new RequirementValidationService(_mockAltinnServiceOwnerApiService, _mockEntityRegistryService, _mockRequestContextService);
+            
+            // Act
+            var errorList = await svc.ValidateRequirements(req, authRequest);
+
+            // Assert
+            errorList.Should().HaveCount(1);
+            errorList.Should().Contain("ec1: Missing custom subject format regex");
         }
 
         private Requirement GetWhiteListRequirement(List<string> owners, List<string> subjects, List<string> requestors)

@@ -11,11 +11,11 @@ public class CustomSubjectRequirement : Requirement
     [DataMember(Name = "subjectRegex")]
     [Required]
     public string SubjectRegex { get; set; } = @"\w+";
-
+    
     /// <summary>
-    /// Flag to set if should skip for checking if subject is SSN or Org number. Default to false
+    /// Describes the regex in clear text
     /// </summary>
-    [DataMember(Name = "skipRegularSubjectValidation")]
+    [DataMember(Name = "subjectRegexDescription")]
     [Required]
-    public bool SkipRegularSubjectValidation { get; set; }
+    public string SubjectRegexDescription { get; set; } = "Any string";
 }
