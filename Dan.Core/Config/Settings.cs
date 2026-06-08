@@ -12,6 +12,7 @@ public static class Settings
 {
     private static CoreKeyVault? _keyVault;
     private static X509Certificate2? _altinnCertificate;
+    private static X509Certificate2? _oedCertificate;
     private static string? _altinnApiKey;
     private static string? _altinnServiceOwnerApiKey;
     private static string? _cosmosDbConnection;
@@ -106,7 +107,7 @@ public static class Settings
     /// <summary>
     /// Altinn EC Certificate in base64
     /// </summary>
-    public static X509Certificate2 OedMessagingCert => KeyVault.GetCertificateOedMessaging(KeyVaultSslCertificate).Result;
+    public static X509Certificate2 OedMessagingCert => _oedCertificate ??= KeyVault.GetCertificateOedMessaging(KeyVaultSslCertificate).Result;
 
     /// <summary>
     /// API-key for consent request / token
