@@ -7,7 +7,6 @@ using Dan.Core.Services.Interfaces;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
-using Dan.Common.Interfaces;
 
 namespace Dan.Core.Services;
 
@@ -592,14 +591,13 @@ public class RequirementValidationService : IRequirementValidationService
             return false;
         }
         
-        var regexMatch = Regex.Match(authRequest.Subject, req.SubjectRegex);
-        if (!regexMatch.Success)
+        var regexMatch = Regex.Match(authRequest.Subject, req.SubjectRegex, RegexOptions.None, TimeSpan.FromSeconds(1));
+        if (regexMatch.Success)
         {
-            AddError(req, $"Subject does not match custom subject format: {req.SubjectRegexDescription}", evidenceCodeName);
-            return false;
+            return true;
         }
-
-        return true;
+        AddError(req, $"Subject does not match custom subject format: {req.SubjectRegexDescription}", evidenceCodeName);
+        return false;
     }
 
     private async Task<PartyTypeConstraint> GetPartyType(string? identifier)

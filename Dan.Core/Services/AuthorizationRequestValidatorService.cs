@@ -1,8 +1,5 @@
-﻿using System.Text.RegularExpressions;
-using Dan.Common;
+﻿using Dan.Common;
 using Dan.Common.Enums;
-using Dan.Common.Exceptions;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
@@ -217,7 +214,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         {
             Id = _authRequest.Subject
         };
-        _authRequest.Subject = _authRequest.Subject;
         _authRequest.SubjectParty = customParty;
     }
 
