@@ -109,6 +109,29 @@ public class Metadata : IEvidenceSourceMetadata
                     }
                 ]
             },
+            new EvidenceCode
+            {
+                EvidenceCodeName = PluginConstants.PluginCustomSubjectTest,
+                EvidenceSource = PluginConstants.Source,
+                BelongsToServiceContexts = _serviceContexts,
+                Values =
+                [
+                    new EvidenceValue
+                    {
+                        EvidenceValueName = "default",
+                        ValueType = EvidenceValueType.JsonSchema,
+                        JsonSchemaDefintion = EvidenceValue.SchemaFromObject<DatasetResponse>()
+                    }
+                ],
+                AuthorizationRequirements = 
+                [
+                    new CustomSubjectRequirement
+                    {
+                        SubjectRegex = @"^\d{1,8}$",
+                        SubjectRegexDescription = "A number 1-8 characters long"
+                    }
+                ]
+            },
         ];
     }
 }

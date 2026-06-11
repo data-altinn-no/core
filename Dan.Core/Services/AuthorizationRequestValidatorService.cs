@@ -1,6 +1,5 @@
 ﻿using Dan.Common;
 using Dan.Common.Enums;
-using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;
@@ -57,9 +56,22 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         _authRequest = authorizationRequest ?? throw new InvalidAuthorizationRequestException();
         _registeredEvidenceCodes = await _availableEvidenceCodesService.GetAvailableEvidenceCodes();
         _evidenceCodesFromRequest = _registeredEvidenceCodes.Where(r => _authRequest.EvidenceRequests.Any(x => x.EvidenceCodeName == r.EvidenceCodeName)).ToList();
+        
+        var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
+        if (authorizationRequest.FromEvidenceHarvester)
+        {
+            foreach (var requirement in requirements.Values)
+            {
+                requirement.RemoveAll(x => x.RequiredOnEvidenceHarvester == false);
+            }
+        }
 
+        var customSubject = requirements.Values.SelectMany(x => x).Any(req =>
+            req.RequirementType is not null &&
+            req.RequirementType.Equals("CustomSubjectRequirement", StringComparison.InvariantCultureIgnoreCase));
+        
         ValidateAndPopulateRequestor();
-        ValidateAndPopulateSubject();
+        ValidateAndPopulateSubject(customSubject);
         ValidateLegalBasisWellFormed();
         ValidateEvidenceRequestWellFormed();
         ValidateEvidenceCodesAreAvailableForServiceContext();
@@ -77,15 +89,6 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         }
 
         ValidateLanguageCodes();
-
-        var requirements = _evidenceCodesFromRequest.ToDictionary(es => es.EvidenceCodeName, es => es.AuthorizationRequirements);
-        if (authorizationRequest.FromEvidenceHarvester)
-        {
-            foreach (var requirement in requirements.Values)
-            {
-                requirement.RemoveAll(x => x.RequiredOnEvidenceHarvester == false);
-            }
-        }
 
         var authorizationErrors = await _requirementValidationService.ValidateRequirements(requirements, _authRequest);
         if (authorizationErrors.Count > 0)
@@ -185,22 +188,33 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
     /// Uses PartyParser on the supplied subject, and populates SubjectParty with it. Overwrites Requestor with norwegian identifier if applicable, else set to null
     /// </summary>
     /// <exception cref="InvalidSubjectException"></exception>
-    private void ValidateAndPopulateSubject()
+    private void ValidateAndPopulateSubject(bool customSubject)
     {
 
         if (_authRequest.Subject == null)
         {
             return;
         }
-
-        Party? party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out string? error);
-        if (party == null)
+        
+        var party = PartyParser.GetPartyFromIdentifier(_authRequest.Subject, out var error);
+        if (party == null && !customSubject)
         {
             throw new InvalidSubjectException($"Invalid subject supplied: {error}");
         }
 
-        _authRequest.Subject = party.NorwegianOrganizationNumber ?? party.NorwegianSocialSecurityNumber;
-        _authRequest.SubjectParty = party;
+        if (party != null)
+        {
+            _authRequest.Subject = party.NorwegianOrganizationNumber ?? party.NorwegianSocialSecurityNumber;
+            _authRequest.SubjectParty = party;
+            return;
+        }
+
+        // Custom Subject Validation will be done later in RequirementValidationService
+        var customParty = new Party
+        {
+            Id = _authRequest.Subject
+        };
+        _authRequest.SubjectParty = customParty;
     }
 
     private void ValidateLegalBasisWellFormed()

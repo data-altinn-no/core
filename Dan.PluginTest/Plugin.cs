@@ -119,6 +119,31 @@ public class Plugin(
             () => EvidenceValuesPluginSettings(evidenceHarvesterRequest));
     }
     
+    [Function(PluginConstants.PluginCustomSubjectTest)]
+    public async Task<HttpResponseData> PluginCustomSubjectTest(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req,
+        FunctionContext context)
+    {
+        EvidenceHarvesterRequest? evidenceHarvesterRequest;
+        try
+        {
+            evidenceHarvesterRequest = await req.ReadFromJsonAsync<EvidenceHarvesterRequest>();
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e,
+                "Exception while attempting to parse request into EvidenceHarvesterRequest: {exceptionType}: {exceptionMessage}",
+                e.GetType().Name, e.Message);
+            throw new EvidenceSourcePermanentClientException(PluginConstants.ErrorInvalidInput,
+                "Unable to parse request", e);
+        }
+
+        var unit = await ccrClientService.IsPublic("923609016", "local");
+        
+        return await EvidenceSourceResponse.CreateResponse(req,
+            () => GetEvidenceValuesDatasetOne(evidenceHarvesterRequest));
+    }
+    
     [Function(PluginConstants.PluginGenericTest)]
     public async Task<HttpResponseData> PluginGenericTest(
         [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req,

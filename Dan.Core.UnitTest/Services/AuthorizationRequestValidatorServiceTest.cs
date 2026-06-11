@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using AwesomeAssertions;
 using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
@@ -9,7 +10,7 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Dan.Core.UnitTest
+namespace Dan.Core.UnitTest.Services
 {
     [TestClass]
     [ExcludeFromCodeCoverage]
@@ -140,7 +141,43 @@ namespace Dan.Core.UnitTest
                 await arvs.Validate(GetAuthorizationRequest(subject: "123456789"));
             });
         }
-           
+        
+        [TestMethod]
+        [DataRow("03065001488")]
+        [DataRow("12345678")]
+        public async Task ValidateTest_CustomSubjectRequirement_ShouldSetParty(string subject)
+        {
+            // Setup
+            var ae = GetAvailableEvidenceCodes().Take(1).ToList();
+            ae.First().AuthorizationRequirements =
+            [
+                new CustomSubjectRequirement
+                {
+                    SubjectRegex = @"^\d{1,8}$", // digits only 1-8 characters long,
+                    SubjectRegexDescription = "Description",
+                    RequirementType = "CustomSubjectRequirement"
+                }
+            ];
+
+            A.CallTo(() => _mockAvailableEvidenceCodesService.GetAvailableEvidenceCodes(A<bool>._))
+                .Returns(Task.FromResult(ae));
+            
+            var arvs = new AuthorizationRequestValidatorService(
+                _loggerFactory,
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
+
+            var request = GetAuthorizationRequest(subject: subject);
+            
+            // Act
+            var action = async () => await arvs.Validate(request);
+            
+            // Assert
+            await action.Should().NotThrowAsync();
+            request.SubjectParty.Id.Should().Be(subject);
+        }
 
         [TestMethod]
         public async Task ValidateTestFailureWithInvalidRequestorOrgNo()
