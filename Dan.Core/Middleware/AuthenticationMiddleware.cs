@@ -141,14 +141,27 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwt = tokenHandler.ReadJwtToken(token);
 
+        // Load both trusted OIDC discovery documents. The authoritative issuer value
+        // each one advertises forms our explicit allow-list of accepted token issuers.
+        var maskinportenConfig = await CmMaskinporten.GetConfigurationAsync();
+        var altinnConfig = await CmAltinnPlatform.GetConfigurationAsync();
+        var validIssuers = new[] { maskinportenConfig.Issuer, altinnConfig.Issuer };
+
+        // Select the signing keys belonging to the token's issuer. Reject any issuer
+        // that is not on the allow-list instead of silently falling back to Altinn,
+        // so a token can only ever be validated against the keys of its own issuer.
         OpenIdConnectConfiguration discoveryDocument;
-        if (jwt.Issuer == Settings.MaskinportenUrl)
+        if (jwt.Issuer == maskinportenConfig.Issuer)
         {
-            discoveryDocument = await CmMaskinporten.GetConfigurationAsync();
+            discoveryDocument = maskinportenConfig;
+        }
+        else if (jwt.Issuer == altinnConfig.Issuer)
+        {
+            discoveryDocument = altinnConfig;
         }
         else
         {
-            discoveryDocument = await CmAltinnPlatform.GetConfigurationAsync();
+            throw new InvalidAccessTokenException($"Untrusted token issuer: '{jwt.Issuer}'");
         }
 
         ICollection<SecurityKey> signingKeys = discoveryDocument.SigningKeys;
@@ -157,8 +170,9 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         {
             IssuerSigningKeys = signingKeys,
             ValidateIssuerSigningKey = true,
-            ValidateAudience = false,
-            ValidateIssuer = false
+            ValidIssuers = validIssuers,
+            ValidateIssuer = true,
+            ValidateAudience = false
         };
 
         try
