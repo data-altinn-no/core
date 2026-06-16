@@ -200,12 +200,12 @@ public class ConsentService : IConsentService
         request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnApiKey);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.SetAllowedErrorCodes(HttpStatusCode.BadRequest, HttpStatusCode.Forbidden);
-        _logger.LogInformation("Getting jwt: " + url);
+        _logger.LogInformation("Getting consent jwt from Altinn");
         try
         {
             var result = await _noCertHttpClient.SendAsync(request);
 
-            _logger.LogInformation($"JWT-get {result.RequestMessage} result: {result.StatusCode} : {result.ReasonPhrase}");
+            _logger.LogInformation("JWT-get result: {statusCode} : {reasonPhrase}", result.StatusCode, result.ReasonPhrase);
 
             // Altinn returns JWTs as bare JSON strings (with leading and trailing double quotes) 
             var jwt = await result.Content.ReadAsStringAsync();

@@ -355,8 +355,8 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
 
             if (!registeredEvidenceCode.IsValidServiceContext(_requestContextService.ServiceContext))
             {
-                _log.LogWarning("Request for '{evidenceCode}' from '{authenticatedOrg}' with subscription key '{subscriptionKey}' for product '{productid}', expected one of: {availableForProducts}",
-                    registeredEvidenceCode.EvidenceCodeName, _requestContextService.AuthenticatedOrgNumber, _requestContextService.SubscriptionKey, _requestContextService.ServiceContext.Name, string.Join(", ", registeredEvidenceCode.GetBelongsToServiceContexts()));
+                _log.LogWarning("Request for '{evidenceCode}' from '{authenticatedOrg}' for product '{productid}', expected one of: {availableForProducts}",
+                    registeredEvidenceCode.EvidenceCodeName, _requestContextService.AuthenticatedOrgNumber, _requestContextService.ServiceContext.Name, string.Join(", ", registeredEvidenceCode.GetBelongsToServiceContexts()));
 
                 throw new InvalidEvidenceRequestException(
                     $"The evidence code: {evidenceRequest.EvidenceCodeName} is not available for the supplied subscription key product '{_requestContextService.ServiceContext.Name}', expected one of: {string.Join(", ", registeredEvidenceCode.GetBelongsToServiceContexts())}.");

@@ -42,7 +42,10 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         var evidenceCode = accreditation.GetValidEvidenceCode(evidenceCodeName);
 
         _log.LogInformation("Start get evidence status | aid={accreditationId}, evidenceCode={evidenceCodeName}", accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
-        var evidenceStatus = await _evidenceStatusService.GetEvidenceStatusAsync(accreditation, evidenceCode, onlyLocalChecks:true);
+        // Use a live (non-local) consent/status check here: this is the actual data-release gate,
+        // so we must not rely on locally cached consent state that may have been revoked or expired
+        // upstream since it was stored. This matches HarvestStream below.
+        var evidenceStatus = await _evidenceStatusService.GetEvidenceStatusAsync(accreditation, evidenceCode, onlyLocalChecks:false);
 
         ThrowIfNotAvailableForHarvest(evidenceStatus);
 
@@ -273,8 +276,8 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 
             var token = await _tokenRequesterService.GetMaskinportenToken(evidenceCode.RequiredScopes, GetConsumerOrg(accreditation, evidenceHarvesterOptions));
 
-            _log.LogInformation("Completed getting mp-token | aid={accreditationId}, token={token}",
-                accreditation.AccreditationId, token);
+            _log.LogInformation("Completed getting mp-token | aid={accreditationId}",
+                accreditation.AccreditationId);
 
             if (string.IsNullOrEmpty(token))
             {
@@ -303,15 +306,14 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         using (var _ = _log.Timer("jwt-fetch"))
         {
             _log.LogInformation(
-                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}",
-                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode);            
+                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
 
             string jwt = await _a3ConsentService.GetJwt(accreditation, evidenceCode);
             var response = JsonConvert.DeserializeObject<Dictionary<string, string>>(jwt);
             _log.LogInformation(
-                "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, jwt={jwt}",
-                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode,
-                jwt);
+                "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
 
             return jwt;
         }
@@ -322,16 +324,16 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
         using (var _ = _log.Timer("jwt-fetch"))
         {
             _log.LogInformation(
-                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, a3consentid={a3consentid}",
-                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode, accreditation.Altinn3ConsentId);
+                "Getting JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, a3consentid={a3consentid}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.Altinn3ConsentId);
 
             string response = await _a3ConsentService.GetJwt(accreditation, evidenceCode);
             var jwt = JsonConvert.DeserializeObject<Dictionary<string, string>>(response);
 
             if (jwt?["access_token"] == null)
                 _log.LogInformation(
-                "Completed JWT | aid={accreditationId}, evidenceCode={evidenceCodeName}, authCode={authorizationCode}, jwt={jwt}",
-                accreditation.AccreditationId, evidenceCode.EvidenceCodeName, accreditation.AuthorizationCode, jwt);
+                "Completed JWT, but no access_token in response | aid={accreditationId}, evidenceCode={evidenceCodeName}",
+                accreditation.AccreditationId, evidenceCode.EvidenceCodeName);
 
             return jwt["access_token"];
         }
