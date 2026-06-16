@@ -146,9 +146,35 @@ public class AvailableEvidenceCodesService(
                 var serviceContextRequirements = serviceContext.AuthorizationRequirements.DeepCopy();
                 serviceContextRequirements.ForEach(x => x.AppliesToServiceContext = new List<string> { serviceContext.Name });
 
-                evidenceCode.AuthorizationRequirements.AddRange(serviceContextRequirements);
+                var existingRequirements = evidenceCode.AuthorizationRequirements
+                    .Select(GetRequirementFingerprint)
+                    .ToHashSet();
+
+                var nonDuplicateRequirements = serviceContextRequirements
+                    .Where(r => !existingRequirements.Contains(GetRequirementFingerprint(r)))
+                    .ToList();
+
+                evidenceCode.AuthorizationRequirements.AddRange(nonDuplicateRequirements);
             }
         }
+    }
+
+    private static string GetRequirementFingerprint(Requirement req)
+    {
+        var savedAppliesToServiceContext = req.AppliesToServiceContext;
+        var savedRequirementType = req.RequirementType;
+        req.AppliesToServiceContext = new List<string>();
+        req.RequirementType = null;
+
+        var json = JsonConvert.SerializeObject(req, req.GetType(), new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore
+        });
+
+        req.AppliesToServiceContext = savedAppliesToServiceContext;
+        req.RequirementType = savedRequirementType;
+
+        return $"{req.GetType().Name}:{json}";
     }
 
     private async Task<List<EvidenceCode>> GetEvidenceCodesFromSource(EvidenceSource source, List<ServiceContext> serviceContexts)
