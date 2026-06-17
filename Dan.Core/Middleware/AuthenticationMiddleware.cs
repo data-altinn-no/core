@@ -9,6 +9,7 @@ using Dan.Core.Extensions;
 using Dan.Core.Helpers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -26,6 +27,13 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
     private static readonly object CmLockAltinnPlatform = new();
     private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmMaskinporten;
     private static volatile ConfigurationManager<OpenIdConnectConfiguration>? _cmAltinnPlatform;
+
+    private readonly ILogger<AuthenticationMiddleware> _logger;
+
+    public AuthenticationMiddleware(ILogger<AuthenticationMiddleware> logger)
+    {
+        _logger = logger;
+    }
 
     /// <summary>
     /// Gets or sets maskinporten ConfigManager
@@ -141,36 +149,33 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwt = tokenHandler.ReadJwtToken(token);
 
-        // Load both trusted OIDC discovery documents. The authoritative issuer value
-        // each one advertises forms our explicit allow-list of accepted token issuers.
-        var maskinportenConfig = await CmMaskinporten.GetConfigurationAsync();
-        var altinnConfig = await CmAltinnPlatform.GetConfigurationAsync();
-        var validIssuers = new[] { maskinportenConfig.Issuer, altinnConfig.Issuer };
+        // Resolve the token against the trusted OIDC providers. Each discovery document is loaded
+        // independently and only the document advertising the token's own issuer is used, so the token
+        // can only ever be validated against the signing keys of its own issuer (no cross-issuer fallback).
+        var (discoveryDocument, discoveryUnavailable) = await ResolveIssuerConfiguration(jwt.Issuer);
 
-        // Select the signing keys belonging to the token's issuer. Reject any issuer
-        // that is not on the allow-list instead of silently falling back to Altinn,
-        // so a token can only ever be validated against the keys of its own issuer.
-        OpenIdConnectConfiguration discoveryDocument;
-        if (jwt.Issuer == maskinportenConfig.Issuer)
+        if (discoveryDocument == null)
         {
-            discoveryDocument = maskinportenConfig;
-        }
-        else if (jwt.Issuer == altinnConfig.Issuer)
-        {
-            discoveryDocument = altinnConfig;
-        }
-        else
-        {
-            throw new InvalidAccessTokenException($"Untrusted token issuer: '{jwt.Issuer}'");
-        }
+            if (discoveryUnavailable)
+            {
+                // The token's issuer did not match any provider we could reach, and at least one trusted
+                // discovery endpoint was unavailable - so we cannot determine whether the issuer is trusted.
+                // Surface this as a transient upstream failure (503) rather than rejecting a possibly-valid token.
+                throw new ServiceNotAvailableException(
+                    "Unable to verify the token issuer: a trusted identity provider's discovery endpoint is unavailable");
+            }
 
-        ICollection<SecurityKey> signingKeys = discoveryDocument.SigningKeys;
+            // All trusted discovery endpoints were reachable and none advertised this issuer. Do not echo the
+            // untrusted issuer value back to the caller; record it server-side for diagnostics instead.
+            _logger.LogWarning("Rejected access token from untrusted issuer '{issuer}'", jwt.Issuer);
+            throw new InvalidAccessTokenException("Untrusted token issuer");
+        }
 
         var validationParameters = new TokenValidationParameters
         {
-            IssuerSigningKeys = signingKeys,
+            IssuerSigningKeys = discoveryDocument.SigningKeys,
             ValidateIssuerSigningKey = true,
-            ValidIssuers = validIssuers,
+            ValidIssuers = new[] { discoveryDocument.Issuer },
             ValidateIssuer = true,
             ValidateAudience = false
         };
@@ -183,6 +188,53 @@ public class AuthenticationMiddleware : IFunctionsWorkerMiddleware
         {
             throw new InvalidAccessTokenException(e.GetType().Name + ": " + e.Message);
         }
+    }
+
+    /// <summary>
+    /// Resolves the trusted OIDC discovery document whose advertised issuer matches the token's issuer.
+    /// Each provider's discovery document is fetched independently so that an outage of one provider does
+    /// not prevent validation of tokens issued by the other.
+    /// </summary>
+    /// <param name="issuer">The (untrusted) issuer claimed by the token.</param>
+    /// <returns>
+    /// The matching discovery document, or <c>null</c> if no reachable provider advertised the issuer.
+    /// The boolean is <c>true</c> when at least one provider's discovery endpoint could not be reached,
+    /// meaning the allow-list could not be fully evaluated.
+    /// </returns>
+    private async Task<(OpenIdConnectConfiguration? Config, bool DiscoveryUnavailable)> ResolveIssuerConfiguration(string issuer)
+    {
+        var discoveryUnavailable = false;
+
+        var providers = new[]
+        {
+            ("Maskinporten", CmMaskinporten),
+            ("AltinnPlatform", CmAltinnPlatform)
+        };
+
+        foreach (var (providerName, configurationManager) in providers)
+        {
+            OpenIdConnectConfiguration config;
+            try
+            {
+                config = await configurationManager.GetConfigurationAsync();
+            }
+            catch (Exception ex)
+            {
+                // This provider's discovery endpoint is currently unreachable. Remember that the allow-list
+                // could not be fully evaluated, but keep checking other providers so a token from a reachable
+                // issuer still validates.
+                _logger.LogWarning(ex, "Failed to load OIDC discovery document for {provider}", providerName);
+                discoveryUnavailable = true;
+                continue;
+            }
+
+            if (config.Issuer == issuer)
+            {
+                return (config, false);
+            }
+        }
+
+        return (null, discoveryUnavailable);
     }
 
     private bool ValidateScopes(ClaimsPrincipal claimsPrincipal)
