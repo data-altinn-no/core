@@ -69,12 +69,7 @@ namespace Dan.Core.Services
             if (evidenceCodesRequiringConsent.Count == 0)
             {
                 _logger.LogError("Expected at least one evidencecode in the accreditation requiring consent in accredition {accreditationId}", accreditation.AccreditationId);
-            }
-
-            if (accreditation.Altinn3ConsentStatus == null)
-            {
-                return ConsentStatus.Pending;
-            }
+            }          
 
             if (accreditation.Altinn3ConsentStatus == ConsentDenied)
             {
@@ -87,11 +82,30 @@ namespace Dan.Core.Services
             }
 
             if (!onlyLocalCheck)
-            {               
-                var claims = await GetClaims(accreditation);
+            {
+                // Verify the consent live against Altinn/Maskinporten. This is also the recovery path for consents
+                // that were granted in Altinn but whose receipt callback never reached us (so Altinn3ConsentStatus is
+                // still null locally) - if a valid consent token can be retrieved, the consent is active regardless of
+                // our stored status.
+                ClaimsIdentity? claims;
+                try
+                {
+                    claims = await GetClaims(accreditation);
+                }
+                catch (ServiceNotAvailableException) when (accreditation.Altinn3ConsentStatus == null)
+                {
+                    // No grant recorded locally and Altinn has no active consent token to hand out, so the request is
+                    // still awaiting the user. (A not-yet-answered consent makes the token endpoint reject the request.)
+                    return ConsentStatus.Pending;
+                }
 
                 if (claims == null)
                 {
+                    if (accreditation.Altinn3ConsentStatus == null)
+                    {
+                        return ConsentStatus.Pending;
+                    }
+
                     return accreditation.ValidTo < DateTime.Now ? ConsentStatus.Expired : ConsentStatus.Revoked;
                 }
 
@@ -102,6 +116,15 @@ namespace Dan.Core.Services
                 {
                     return ConsentStatus.Expired;
                 }
+
+                // A valid consent token was retrieved - the consent is active in Altinn even if our local status is null.
+                return ConsentStatus.Granted;
+            }
+
+            // Local-only check: trust the locally recorded status (written synchronously by the consent receipt callback).
+            if (accreditation.Altinn3ConsentStatus == null)
+            {
+                return ConsentStatus.Pending;
             }
 
             return ConsentStatus.Granted;
