@@ -406,7 +406,10 @@ namespace Dan.Core.Services
             request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token["access_token"]}");
             request.JsonContent(consentRequest);
 
-            _logger.LogInformation(JsonConvert.SerializeObject(consentRequest));
+            // Do not log the serialized consent request: its From/To fields contain the
+            // subject's full national identity number (urn:altinn:person:identifier-no:<fnr>).
+            _logger.LogInformation("Created Altinn3 consent request consentRequestId={consentRequestId} aid={accreditationId}",
+                consentRequest.Id, accreditation.AccreditationId);
 
             try
             {
@@ -425,8 +428,9 @@ namespace Dan.Core.Services
                         }
                     }
 
-                    _logger.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}, RequestJson={requestJson}",
-                        accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString, request.Content == null ? string.Empty : await request.Content.ReadAsStringAsync());
+                    // RequestJson is intentionally omitted: the request body contains the subject's full national identity number.
+                    _logger.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}",
+                        accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString);
                     throw new ServiceNotAvailableException("Altinn denied the consent request. This is an internal error, please contact support");
                 }
 

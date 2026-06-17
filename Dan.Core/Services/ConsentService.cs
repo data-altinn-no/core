@@ -277,7 +277,9 @@ public class ConsentService : IConsentService
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Failed to  log consent used (Altinn) for AccreditationId={accreditation.AccreditationId}, Subject={accreditation.Subject}:\n{ex}");
+            // Use the masked SubjectParty, not the raw accreditation.Subject (which is the subject's full national identity number for persons).
+            _logger.LogError(ex, "Failed to log consent used (Altinn) for AccreditationId={accreditationId}, Subject={subject}",
+                accreditation.AccreditationId, accreditation.SubjectParty);
             return false;
         }
     }
@@ -382,8 +384,9 @@ public class ConsentService : IConsentService
                     }
                 }
 
-                _logger.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}, RequestJson={requestJson}",
-                    accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString, request.Content == null ? string.Empty : await request.Content.ReadAsStringAsync());
+                // RequestJson is intentionally omitted: the request body's OfferedBy is the subject's full national identity number.
+                _logger.LogError("Failed to create consent request for AccreditationId={accreditationId}, Subject={subject}, StatusCode={statusCode}, ReasonPhrase={reasonPhrase}, ConsentErrors={consentErrors}",
+                    accreditation.AccreditationId, accreditation.SubjectParty, response.StatusCode, response.ReasonPhrase, errorString);
                 throw new ServiceNotAvailableException("Altinn denied the consent request. This is an internal error, please contact support");
             }
 
