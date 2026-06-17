@@ -176,6 +176,132 @@ namespace Dan.Core.UnitTest
         }
 
         [TestMethod]
+        public async Task DuplicateServiceContextRequirementIsNotAddedToEvidenceCode()
+        {
+            // Arrange
+            var evidenceCodesWithDuplicate = new List<EvidenceCode>
+            {
+                new EvidenceCode
+                {
+                    EvidenceCodeName = "ec1",
+                    BelongsToServiceContexts = new List<string> { "sc1" },
+                    AuthorizationRequirements = new List<Requirement>
+                    {
+                        // ec1 has ec1_req already
+                        new TestAuthorizationRequirement {
+                            RequirementType = "MaskinportenReq",
+                            Name = "sc1_req1" }, // same as sc1's requirement
+                    }
+                }
+            };
+
+            A.CallTo(() => _mockHttpClientFactory.CreateClient(A<string>._))
+                .Returns(TestHelpers.GetHttpClientMock(
+                    JsonConvert.SerializeObject(
+                        evidenceCodesWithDuplicate,
+                        new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto })));
+
+            var mockCache = new MockCache();
+            var acs = new AvailableEvidenceCodesService(
+                _loggerFactory, _mockHttpClientFactory, _policyRegistry,
+                mockCache, _mockServiceContextService, _mockFunctionContextAccessor);
+
+            // Act
+            var result = await acs.GetAvailableEvidenceCodes();
+
+            // Assert: sc1 has sc1_req1 and sc1_req2, but sc1_req1 already exists on ec1 — only sc1_req2 should be added
+            Assert.HasCount(1, result);
+            Assert.HasCount(2, result[0].AuthorizationRequirements);
+            Assert.AreEqual(1, result[0].AuthorizationRequirements.Count(x => ((TestAuthorizationRequirement)x).Name == "sc1_req1"),
+                "sc1_req1 should appear exactly once");
+            Assert.IsTrue(result[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req2"));
+        }
+
+        [TestMethod]
+        public async Task RequirementScopedToOtherServiceContextDoesNotSuppressCurrentServiceContextRequirement()
+        {
+            // Arrange: ec1 has a requirement scoped to sc2 with same content as sc1's requirement
+            // Without the AppliesToServiceContext filter, this would incorrectly suppress sc1's requirement
+            var evidenceCodes = new List<EvidenceCode>
+            {
+                new EvidenceCode
+                {
+                    EvidenceCodeName = "ec1",
+                    BelongsToServiceContexts = new List<string> { "sc1", "sc2" },
+                    AuthorizationRequirements = new List<Requirement>
+                    {
+                        new TestAuthorizationRequirement
+                        {
+                            Name = "sc1_req1",
+                            AppliesToServiceContext = new List<string> { "sc2" } // scoped to sc2 only
+                        }
+                    }
+                }
+            };
+
+            A.CallTo(() => _mockHttpClientFactory.CreateClient(A<string>._))
+                .Returns(TestHelpers.GetHttpClientMock(
+                    JsonConvert.SerializeObject(evidenceCodes,
+                        new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto })));
+
+            var mockCache = new MockCache();
+            var acs = new AvailableEvidenceCodesService(
+                _loggerFactory, _mockHttpClientFactory, _policyRegistry,
+                mockCache, _mockServiceContextService, _mockFunctionContextAccessor);
+
+            // Act
+            var result = await acs.GetAvailableEvidenceCodes();
+
+            // Assert: sc1's requirements (sc1_req1 and sc1_req2) must both be added,
+            // since the existing sc1_req1 on the ec is scoped to sc2 and should not count as a duplicate for sc1
+            Assert.HasCount(1, result);
+            var sc1Reqs = result[0].AuthorizationRequirements
+                .Where(r => r.AppliesToServiceContext.Count == 0 || r.AppliesToServiceContext.Contains("sc1"))
+                .ToList();
+            Assert.IsTrue(sc1Reqs.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req1"),
+                "sc1_req1 from service context should be added even though ec has a sc2-scoped requirement with same content");
+            Assert.IsTrue(sc1Reqs.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req2"));
+        }
+
+        [TestMethod]
+        public async Task SameTypeButDifferentContentIsNotFilteredOut()
+        {
+            // Arrange - ec1 has a requirement with a different name than sc1's requirements
+            var evidenceCodes = new List<EvidenceCode>
+            {
+                new EvidenceCode
+                {
+                    EvidenceCodeName = "ec1",
+                    BelongsToServiceContexts = new List<string> { "sc1" },
+                    AuthorizationRequirements = new List<Requirement>
+                    {
+                        new TestAuthorizationRequirement { Name = "ec1_own_req" } // different content
+                    }
+                }
+            };
+
+            A.CallTo(() => _mockHttpClientFactory.CreateClient(A<string>._))
+                .Returns(TestHelpers.GetHttpClientMock(
+                    JsonConvert.SerializeObject(evidenceCodes,
+                        new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto })));
+
+            var mockCache = new MockCache();
+            var acs = new AvailableEvidenceCodesService(
+                _loggerFactory, _mockHttpClientFactory, _policyRegistry,
+                mockCache, _mockServiceContextService, _mockFunctionContextAccessor);
+
+            // Act
+            var result = await acs.GetAvailableEvidenceCodes();
+
+            // Assert
+            Assert.HasCount(1, result);
+            Assert.HasCount(3, result[0].AuthorizationRequirements);
+            Assert.IsTrue(result[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "ec1_own_req"));
+            Assert.IsTrue(result[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req1"));
+            Assert.IsTrue(result[0].AuthorizationRequirements.Any(x => ((TestAuthorizationRequirement)x).Name == "sc1_req2"));
+        }
+
+        [TestMethod]
         public async Task GetAliases()
         {
             var mockCache = new MockCache();
