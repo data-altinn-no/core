@@ -147,11 +147,14 @@ public class AvailableEvidenceCodesService(
                 serviceContextRequirements.ForEach(x => x.AppliesToServiceContext = new List<string> { serviceContext.Name });
 
                 var existingRequirements = evidenceCode.AuthorizationRequirements
+                    .Where(r =>
+                        r.AppliesToServiceContext.Count == 0 ||
+                        r.AppliesToServiceContext.Contains(serviceContext.Name))
                     .Select(GetRequirementFingerprint)
                     .ToHashSet();
 
                 var nonDuplicateRequirements = serviceContextRequirements
-                    .Where(r => !existingRequirements.Contains(GetRequirementFingerprint(r)))
+                    .Where(r => existingRequirements.Add(GetRequirementFingerprint(r)))
                     .ToList();
 
                 evidenceCode.AuthorizationRequirements.AddRange(nonDuplicateRequirements);
