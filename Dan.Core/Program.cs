@@ -158,6 +158,7 @@ var host = new HostBuilder()
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
         services.AddScoped<IConsentService, ConsentService>();
         services.AddScoped<IAltinn3ConsentService, Altinn3ConsentService>();
+        services.AddScoped<IAltinn3NotificationsService, Altinn3NotificationsService>();
         services.AddScoped<IRequirementValidationService, RequirementValidationService>();
         services.AddScoped<IAuthorizationRequestValidatorService, AuthorizationRequestValidatorService>();
         services.AddScoped<IRequestContextService, RequestContextService>();
@@ -253,6 +254,14 @@ var host = new HostBuilder()
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 client.Timeout = TimeSpan.FromSeconds(5);
             })
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>();
+
+        // Client used for the Altinn 3 Notifications API
+        services.AddHttpClient(Constants.Altinn3NotificationsHttpClient, client =>
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+            })
+            .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
             .AddHttpMessageHandler<ExceptionDelegatingHandler>();
 
     })

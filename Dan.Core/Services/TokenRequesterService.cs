@@ -4,6 +4,7 @@ using Dan.Core.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Registry;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -11,6 +12,7 @@ using System.Text;
 using Dan.Core.Exceptions;
 using Microsoft.IdentityModel.Tokens;
 using Dan.Common.Models;
+using Newtonsoft.Json;
 
 namespace Dan.Core.Services;
 
@@ -40,6 +42,54 @@ public class TokenRequesterService : ITokenRequesterService
         var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
         return await cachePolicy.ExecuteAsync(async _ => await GetMaskinportenTokenInternal(scopes, consumerOrgNo),
             new Context(GetCacheKey(scopes, consumerOrgNo, null, null)));
+    }
+
+    public async Task<string> GetAltinnExchangedToken(string scopes, string? consumerOrgNo = null)
+    {
+        var cachePolicy = _policyRegistry.Get<AsyncPolicy<string>>(CachingPolicy);
+        return await cachePolicy.ExecuteAsync(async _ => await GetAltinnExchangedTokenInternal(scopes, consumerOrgNo),
+            new Context("altexch_" + GetCacheKey(scopes, consumerOrgNo, null, null)));
+    }
+
+    private async Task<string> GetAltinnExchangedTokenInternal(string scopes, string? consumerOrgNo)
+    {
+        // The cached Maskinporten token (reused as-is) is the input to the exchange.
+        var maskinportenJson = await GetMaskinportenToken(scopes, consumerOrgNo);
+        var maskinportenToken = JsonConvert.DeserializeObject<Dictionary<string, string>>(maskinportenJson);
+        if (maskinportenToken == null
+            || !maskinportenToken.TryGetValue("access_token", out var maskinportenAccessToken)
+            || string.IsNullOrEmpty(maskinportenAccessToken))
+        {
+            throw new ServiceNotAvailableException("Failed getting Maskinporten token to exchange for an Altinn token");
+        }
+
+        // Exchange the Maskinporten token for an Altinn token (GET with the Maskinporten token as bearer).
+        var request = new HttpRequestMessage(HttpMethod.Get, Settings.AltinnTokenExchangeUrl);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", maskinportenAccessToken);
+
+        var response = await _client.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("Failed exchanging Maskinporten token for an Altinn token - response status={statusCode}",
+                response.StatusCode);
+            throw new ServiceNotAvailableException("Failed exchanging Maskinporten token for an Altinn token");
+        }
+
+        // The exchange endpoint returns the Altinn token as a JSON-quoted string.
+        var altinnToken = JsonConvert.DeserializeObject<string>(await response.Content.ReadAsStringAsync());
+        if (string.IsNullOrEmpty(altinnToken))
+        {
+            throw new ServiceNotAvailableException("Altinn token exchange returned an empty token");
+        }
+
+        // Wrap in the same shape as the Maskinporten token response and reuse its lifetime, so the
+        // existing Oauth2AccessTokenCachingStrategy can cache the exchanged token alongside it.
+        maskinportenToken.TryGetValue("expires_in", out var expiresIn);
+        return JsonConvert.SerializeObject(new Dictionary<string, string>
+        {
+            ["access_token"] = altinnToken,
+            ["expires_in"] = string.IsNullOrEmpty(expiresIn) ? "0" : expiresIn
+        });
     }
 
     public async Task<string> GetMaskinportenConsentToken(string consentId, string offeredBy, EvidenceCode evidenceCode)

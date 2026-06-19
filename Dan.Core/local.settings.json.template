@@ -86,6 +86,9 @@
 
     "MaskinportenUrl": "https://ver2.maskinporten.no/",
     "MaskinportenWellknownUrl": "https://ver2.maskinporten.no/.well-known/oauth-authorization-server",
-    "AltinnWellknownUrl": "https://platform.tt02.altinn.no/authentication/api/v1/openid/.well-known/openid-configuration"
+    "AltinnWellknownUrl": "https://platform.tt02.altinn.no/authentication/api/v1/openid/.well-known/openid-configuration",
+
+    "NotificationsApiBaseUrl": "https://platform.tt02.altinn.no/notifications/api/v1",
+    "AltinnTokenExchangeUrl": "https://platform.tt02.altinn.no/authentication/api/v1/exchange/maskinporten"
   }
 }
