@@ -245,6 +245,15 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
         }
 
         var content = await response.Content.ReadAsStringAsync();
-        return JsonConvert.DeserializeObject<T>(content)!;
+        var result = JsonConvert.DeserializeObject<T>(content);
+        if (result == null)
+        {
+            _logger.LogError(
+                "Notifications API returned success but the response could not be deserialized method={method} path={path}",
+                method, relativePath);
+            throw new ServiceNotAvailableException("Unexpected response from the Altinn Notifications API");
+        }
+
+        return result;
     }
 }
