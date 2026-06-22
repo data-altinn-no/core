@@ -390,6 +390,22 @@ public static class Settings
 
     public static string Altinn3ConsentUrl => GetSetting("Altinn3ConsentUrl");
 
+    /// <summary>
+    /// Base URL of the Altinn 3 Notifications API, e.g. https://platform.tt02.altinn.no/notifications/api/v1
+    /// </summary>
+    public static string NotificationsApiBaseUrl => GetSetting("NotificationsApiBaseUrl");
+
+    /// <summary>
+    /// Maskinporten scope used when creating notification orders, e.g. altinn:serviceowner/notifications.create
+    /// </summary>
+    public static string NotificationsCreateScope => "altinn:serviceowner/notifications.create";
+
+    /// <summary>
+    /// Altinn endpoint for exchanging a Maskinporten token for an Altinn token,
+    /// e.g. https://platform.tt02.altinn.no/authentication/api/v1/exchange/maskinporten
+    /// </summary>
+    public static string AltinnTokenExchangeUrl => GetSetting("AltinnTokenExchangeUrl");
+
     private static string GetSetting(string settingKey)
     {
         var value = ConfigurationHelper.ConfigurationRoot[settingKey];

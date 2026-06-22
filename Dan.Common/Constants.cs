@@ -17,6 +17,8 @@ public static class Constants
     
     public const string PluginHttpClient = "PluginHttpClient";
 
+    public const string Altinn3NotificationsHttpClient = "Altinn3NotificationsHttpClient";
+
     public const string LANGUAGE_CODE_NORWEGIAN_NB = "no-nb";
 
     public const string LANGUAGE_CODE_NORWEGIAN_NN = "no-nn";

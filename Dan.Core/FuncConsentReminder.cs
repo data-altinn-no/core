@@ -15,22 +15,22 @@ namespace Dan.Core
     /// </summary>
     public class FuncConsentReminder
     {
-        private readonly IAltinnCorrespondenceService _altinnCorrespondenceService;
-        private readonly IConsentService _consentService;
+        private readonly IAltinn3NotificationsService _altinn3NotificationsService;
+        private readonly IAltinn3ConsentService _consentService;
         private readonly IEvidenceStatusService _evidenceStatusService;
         private readonly IRequestContextService _requestContextService;
         private readonly IAccreditationRepository _applicationRepository;
         private readonly ILogger<FuncConsentReminder> _logger;
 
         public FuncConsentReminder(
-            IAltinnCorrespondenceService altinnCorrespondenceService,
-            IConsentService consentService,
+            IAltinn3NotificationsService altinn3NotificationsService,
+            IAltinn3ConsentService consentService,
             IEvidenceStatusService evidenceStatusService,
             IRequestContextService requestContextService,
             IAccreditationRepository applicationRepository,
             ILoggerFactory loggerFactory)
-        {            
-            _altinnCorrespondenceService = altinnCorrespondenceService;
+        {
+            _altinn3NotificationsService = altinn3NotificationsService;
             _consentService = consentService;
             _evidenceStatusService = evidenceStatusService;
             _requestContextService = requestContextService;
@@ -68,7 +68,7 @@ namespace Dan.Core
 
             await ValidateAccreditationForReminder(accreditationId, accreditation);
 
-            var response = await _altinnCorrespondenceService.SendNotification(accreditation, _requestContextService.ServiceContext);
+            var response = await _altinn3NotificationsService.SendReminder(accreditation, _requestContextService.ServiceContext);
             accreditation.Reminders.AddRange(response);
 
             await _applicationRepository.UpdateAccreditationAsync(accreditation);
@@ -92,7 +92,7 @@ namespace Dan.Core
             if (accr.ValidTo < DateTime.Now)
                 throw new ExpiredConsentException("The consent for this accreditation is expired");
 
-            var lastReminderSent = accr.Reminders.MaxBy(x => x.Date);
+            var lastReminderSent = accr.Reminders.Where(x => x.Success).MaxBy(x => x.Date);
             if (lastReminderSent != null && lastReminderSent.Date > DateTime.Now.AddDays(-7))
                 throw new AuthorizationFailedException("Reminders have already been sent the the last week");
 
