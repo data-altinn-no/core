@@ -294,6 +294,75 @@ namespace Dan.Core.UnitTest
             }
 
             [TestMethod]
+            public async Task TestCheck_ReturnsPending_WhenAltinn3ConsentStatusIsNull_AndLiveCheckFindsNoConsent()
+            {
+                // Arrange
+                var httpClient = TestHelpers.GetHttpClientMock("{}");
+                var noCertHttpClient = TestHelpers.GetHttpClientMock("[{}]");
+
+                // A not-yet-answered consent makes the Maskinporten token endpoint reject the request.
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<EvidenceCode>._))
+                    .Throws(new ServiceNotAvailableException("Failed getting consent token from Maskinporten"));
+
+                var consentService = new Altinn3ConsentService(
+                    httpClient,
+                    noCertHttpClient,
+                    _mockLogger,
+                    _mockDdCorrespondenceService,
+                    _mockEntityRegistryService,
+                    _mockAltinnServiceOwnerApiService,
+                    _mockRequestContextService,
+                    _mockTokenRequesterService);
+
+                var testAccreditation = GetAccreditation();
+                testAccreditation.Altinn3ConsentStatus = null;
+
+                // Act - live check cannot retrieve a consent token and nothing is recorded locally => still pending.
+                var result = await consentService.Check(testAccreditation, onlyLocalCheck: false);
+
+                // Assert
+                Assert.AreEqual(ConsentStatus.Pending, result);
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<EvidenceCode>._))
+                    .MustHaveHappened();
+            }
+
+            [TestMethod]
+            public async Task TestCheck_ReturnsGranted_WhenAltinn3ConsentStatusIsNull_ButLiveCheckFindsValidConsent()
+            {
+                // Arrange - recovery case: consent was granted in Altinn but our receipt callback never ran,
+                // so Altinn3ConsentStatus is still null. A live check must recover this as Granted.
+                var httpClient = TestHelpers.GetHttpClientMock("{}");
+                var noCertHttpClient = TestHelpers.GetHttpClientMock("[{}]");
+
+                // Consent token whose payload carries a far-future "exp" claim (the key Check reads).
+                var payloadJson = "{\"exp\":\"9999999999\"}";
+                var payloadB64Url = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(payloadJson))
+                    .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+                var validToken = $"header.{payloadB64Url}.signature";
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<EvidenceCode>._))
+                    .Returns(Task.FromResult(validToken));
+
+                var consentService = new Altinn3ConsentService(
+                    httpClient,
+                    noCertHttpClient,
+                    _mockLogger,
+                    _mockDdCorrespondenceService,
+                    _mockEntityRegistryService,
+                    _mockAltinnServiceOwnerApiService,
+                    _mockRequestContextService,
+                    _mockTokenRequesterService);
+
+                var testAccreditation = GetAccreditation();
+                testAccreditation.Altinn3ConsentStatus = null;
+
+                // Act
+                var result = await consentService.Check(testAccreditation, onlyLocalCheck: false);
+
+                // Assert
+                Assert.AreEqual(ConsentStatus.Granted, result);
+            }
+
+            [TestMethod]
             public async Task TestCheck_ReturnsDenied_WhenAltinn3ConsentStatusIsDenied()
             {
                 // Arrange
