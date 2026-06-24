@@ -80,6 +80,8 @@ namespace Dan.Core.UnitTest
             Assert.IsFalse(string.IsNullOrWhiteSpace(order.Recipient.RecipientOrganization.EmailSettings!.Subject));
             Assert.IsFalse(string.IsNullOrWhiteSpace(order.Recipient.RecipientOrganization.EmailSettings.Body));
             Assert.IsFalse(string.IsNullOrWhiteSpace(order.Recipient.RecipientOrganization.SmsSettings!.Body));
+            Assert.AreEqual("urn:altinn:resource:digdir-data-altinn-no-melding", order.Recipient.RecipientOrganization.ResourceId);
+            Assert.AreEqual("read", order.Recipient.RecipientOrganization.ResourceAction);
         }
 
         [TestMethod]
@@ -111,6 +113,8 @@ namespace Dan.Core.UnitTest
             Assert.IsNull(order.Recipient.RecipientOrganization);
             Assert.AreEqual("08075412345", order.Recipient.RecipientPerson!.NationalIdentityNumber);
             Assert.AreEqual(NotificationChannel.EmailAndSms, order.Recipient.RecipientPerson.ChannelSchema);
+            Assert.AreEqual("urn:altinn:resource:digdir-data-altinn-no-melding", order.Recipient.RecipientPerson.ResourceId);
+            Assert.AreEqual("read", order.Recipient.RecipientPerson.ResourceAction);
         }
 
         [TestMethod]
@@ -219,7 +223,17 @@ namespace Dan.Core.UnitTest
                 ConsentReference = "2019-2312",
                 ExternalReference = "externalreference",
                 LanguageCode = Constants.LANGUAGE_CODE_NORWEGIAN_NB,
-                EvidenceCodes = new List<EvidenceCode>()
+                EvidenceCodes = new List<EvidenceCode>
+                {
+                    new EvidenceCode
+                    {
+                        EvidenceCodeName = "TestEvidenceCode",
+                        AuthorizationRequirements = new List<Requirement>
+                        {
+                            new ConsentRequirement { AltinnResource = "test-consent-resource" }
+                        }
+                    }
+                }
             };
         }
     }

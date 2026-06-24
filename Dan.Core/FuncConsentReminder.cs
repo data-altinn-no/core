@@ -89,7 +89,7 @@ namespace Dan.Core
             if (!string.IsNullOrEmpty(accr.AuthorizationCode))
                 throw new ConsentAlreadyHandledException($"Consent has already been given or rejected for {accreditationId}");
 
-            if (!string.IsNullOrEmpty(accr.Altinn3ConsentId) && !string.IsNullOrEmpty(accr.Altinn3ConsentStatus))
+            if (!string.IsNullOrEmpty(accr.Altinn3ConsentStatus))
                 throw new ConsentAlreadyHandledException($"Consent has already been given or rejected for {accreditationId}");
 
             if (accr.ValidTo < DateTime.Now)

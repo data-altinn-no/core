@@ -92,6 +92,19 @@ public class RecipientPerson
 
     [JsonProperty("ignoreReservation")]
     public bool IgnoreReservation { get; set; }
+
+    /// <summary>
+    /// The resource the notification relates to, as a "urn:altinn:resource:{id}" URN.
+    /// Required for the notification to be delivered to the correct recipients.
+    /// </summary>
+    [JsonProperty("resourceId", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ResourceId { get; set; }
+
+    /// <summary>
+    /// The action on the resource the notification relates to (e.g. "read").
+    /// </summary>
+    [JsonProperty("resourceAction", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ResourceAction { get; set; }
 }
 
 /// <summary>
@@ -110,6 +123,19 @@ public class RecipientOrganization
 
     [JsonProperty("smsSettings", NullValueHandling = NullValueHandling.Ignore)]
     public SmsSendingOptions? SmsSettings { get; set; }
+
+    /// <summary>
+    /// The resource the notification relates to, as a "urn:altinn:resource:{id}" URN.
+    /// Required for the notification to be delivered to the correct recipients.
+    /// </summary>
+    [JsonProperty("resourceId", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ResourceId { get; set; }
+
+    /// <summary>
+    /// The action on the resource the notification relates to (e.g. "read").
+    /// </summary>
+    [JsonProperty("resourceAction", NullValueHandling = NullValueHandling.Ignore)]
+    public string? ResourceAction { get; set; }
 }
 
 /// <summary>
