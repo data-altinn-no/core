@@ -181,24 +181,11 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
     }
 
     /// <summary>
-    /// Resolves the Altinn 3 consent resource URN ("urn:altinn:resource:{id}") from the consent
-    /// requirement on the accreditation's evidence codes. The Notifications API uses this to target
-    /// the correct recipients, so it must be present (the A3 consent request enforces the same).
+    /// Resource urn used in altinn 3. The Notifications API uses this to target
+    /// the correct recipients when be present (the A3 consent request enforces the same).
     /// </summary>
     private static string GetNotificationResourceUrn(Accreditation accreditation)
     {
-        /* var resourceIdentifier = accreditation.EvidenceCodes
-             .SelectMany(ec => ec.AuthorizationRequirements.OfType<ConsentRequirement>())
-             .Select(cr => cr.AltinnResource)
-             .FirstOrDefault(r => !string.IsNullOrEmpty(r)); 
-
-
-         if (string.IsNullOrEmpty(resourceIdentifier))
-         {
-             throw new InternalServerErrorException(
-                 "Cannot send reminder: no Altinn resource is defined on the consent requirement for the accreditation");
-         } */
-
         return ResourceUrnPrefix + Settings.AltinnMessageResource;
     }
 
