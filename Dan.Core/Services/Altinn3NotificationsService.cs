@@ -9,6 +9,7 @@ using Dan.Core.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Dan.Core.Services;
 
@@ -20,6 +21,8 @@ namespace Dan.Core.Services;
 public class Altinn3NotificationsService : IAltinn3NotificationsService
 {
     private const string FromAddress = "no-reply@altinn.no";
+    private const string ResourceUrnPrefix = "urn:altinn:resource:";
+    private const string ResourceAction = "read";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ITokenRequesterService _tokenRequesterService;
@@ -48,7 +51,7 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
             var response = await CreateOrder(order);
             _logger.LogInformation(
                 "Sent consent reminder notification order aid={accreditationId} notificationOrderId={notificationOrderId}",
-                accreditation.AccreditationId, response.OrderChainId);
+                accreditation.AccreditationId, response.OrderChainId);         
 
             return new List<NotificationReminder>
             {
@@ -113,7 +116,8 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
 
         var emailSettings = new EmailSendingOptions
         {
-            SenderEmailAddress = FromAddress,
+            //defaults to noreply@altinn.no
+            //SenderEmailAddress = FromAddress,
             Subject = renderedTexts.EmailNotificationSubject,
             Body = renderedTexts.EmailNotificationContent,
             ContentType = EmailContentType.Plain
@@ -124,19 +128,21 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
             Body = renderedTexts.SMSNotificationContent
         };
 
-        var recipient = BuildRecipient(accreditation.SubjectParty, emailSettings, smsSettings);
+        var resourceId = GetNotificationResourceUrn(accreditation);
+
+        var recipient = BuildRecipient(accreditation.SubjectParty, emailSettings, smsSettings, resourceId);
 
         return new NotificationOrderChainRequest
         {
             // Idempotency id must be unique per send; reminders may be sent repeatedly (>7 days apart).
             IdempotencyId = $"dan-reminder-{accreditation.AccreditationId}-{Guid.NewGuid():N}",
             SendersReference = accreditation.AccreditationId,
-            RequestedSendTime = DateTime.UtcNow.AddMinutes(1),
+            //RequestedSendTime = DateTime.UtcNow.AddMinutes(1),
             Recipient = recipient
         };
     }
 
-    private static NotificationRecipient BuildRecipient(Party subjectParty, EmailSendingOptions emailSettings, SmsSendingOptions smsSettings)
+    private static NotificationRecipient BuildRecipient(Party subjectParty, EmailSendingOptions emailSettings, SmsSendingOptions smsSettings, string resourceId)
     {
         if (!string.IsNullOrWhiteSpace(subjectParty.NorwegianOrganizationNumber))
         {
@@ -147,7 +153,9 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
                     OrgNumber = subjectParty.NorwegianOrganizationNumber,
                     ChannelSchema = NotificationChannel.EmailAndSms,
                     EmailSettings = emailSettings,
-                    SmsSettings = smsSettings
+                    SmsSettings = smsSettings,
+                    ResourceId = resourceId,
+                    ResourceAction = ResourceAction
                 }
             };
         }
@@ -161,13 +169,24 @@ public class Altinn3NotificationsService : IAltinn3NotificationsService
                     NationalIdentityNumber = subjectParty.NorwegianSocialSecurityNumber,
                     ChannelSchema = NotificationChannel.EmailAndSms,
                     EmailSettings = emailSettings,
-                    SmsSettings = smsSettings
+                    SmsSettings = smsSettings,
+                    ResourceId = resourceId,
+                    ResourceAction = ResourceAction
                 }
             };
         }
 
         throw new InvalidSubjectException(
             "Cannot send reminder: subject party has neither a Norwegian organization number nor a national identity number");
+    }
+
+    /// <summary>
+    /// Resource urn used in altinn 3. The Notifications API uses this to target
+    /// the correct recipients when be present (the A3 consent request enforces the same).
+    /// </summary>
+    private static string GetNotificationResourceUrn(Accreditation accreditation)
+    {
+        return ResourceUrnPrefix + Settings.AltinnMessageResource;
     }
 
     private async Task<string> GetPartyDisplayName(Party party)

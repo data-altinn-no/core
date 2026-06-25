@@ -89,6 +89,9 @@ namespace Dan.Core
             if (!string.IsNullOrEmpty(accr.AuthorizationCode))
                 throw new ConsentAlreadyHandledException($"Consent has already been given or rejected for {accreditationId}");
 
+            if (!string.IsNullOrEmpty(accr.Altinn3ConsentStatus))
+                throw new ConsentAlreadyHandledException($"Consent has already been given or rejected for {accreditationId}");
+
             if (accr.ValidTo < DateTime.Now)
                 throw new ExpiredConsentException("The consent for this accreditation is expired");
 

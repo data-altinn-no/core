@@ -283,7 +283,7 @@ void AddAltinn3Messaging(IServiceCollection services)
             EnableDebugLogging = Settings.MaskinportenUrl.Contains("test"),
             EncodedX509 = encodedCert
         };
-        options.ResourceId = "digdir-data-altinn-no-melding";        
+        options.ResourceId = Settings.AltinnMessageResource;        
         options.Environment = Settings.MaskinportenUrl.Contains("test") ? ApiEnvironment.Staging : ApiEnvironment.Production;       
     });
 }

@@ -395,6 +395,8 @@ public static class Settings
     /// </summary>
     public static string NotificationsApiBaseUrl => GetSetting("NotificationsApiBaseUrl");
 
+    public static string AltinnMessageResource => "digdir-data-altinn-no-melding";
+
     /// <summary>
     /// Maskinporten scope used when creating notification orders, e.g. altinn:serviceowner/notifications.create
     /// </summary>
