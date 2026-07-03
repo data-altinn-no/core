@@ -134,8 +134,8 @@ namespace Dan.Core
                 return CreateRedirectResponse(req, accreditation, req.GetQueryParam("status")!);
             }
 
-            accreditation.AuthorizationCode = ConsentService.ConsentDenied;
-            accreditation.Altinn3ConsentStatus = ConsentService.ConsentDenied;
+            accreditation.AuthorizationCode = Altinn3ConsentService.ConsentDenied;
+            accreditation.Altinn3ConsentStatus = Altinn3ConsentService.ConsentDenied;
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
             _logger.DanLog(accreditation, LogAction.ConsentDenied);

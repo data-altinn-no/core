@@ -18,7 +18,6 @@ namespace Dan.Core.UnitTest
     {
         private readonly ILoggerFactory _loggerFactory = new NullLoggerFactory();
         private readonly IHttpClientFactory _mockHttpClientFactory = A.Fake<IHttpClientFactory>();
-        private readonly IConsentService _mockConsentService = A.Fake<IConsentService>();
         private readonly IEvidenceStatusService _mockEvidenceStatusService = A.Fake<IEvidenceStatusService>();
         private readonly ITokenRequesterService _mockTokenRequesterService = A.Fake<ITokenRequesterService>();
         private readonly IRequestContextService _mockRequestContextService = A.Fake<IRequestContextService>();
@@ -61,11 +60,10 @@ namespace Dan.Core.UnitTest
 
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -88,15 +86,14 @@ namespace Dan.Core.UnitTest
                     }
                 )
             );
-            A.CallTo(() => _mockConsentService.GetJwt(A<Accreditation>._, A<EvidenceCode>._)).Returns(Task.FromResult("somejwt"));
+            A.CallTo(() => _mockA3ConsentService.GetJwt(A<Accreditation>._, A<EvidenceCode>._)).Returns(Task.FromResult("somejwt"));
 
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -122,11 +119,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, null);
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -150,11 +146,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, null, CONSENT_DENIED);
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -178,11 +173,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1));
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -207,11 +201,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -239,11 +232,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -272,11 +264,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1));
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -301,11 +292,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1));
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
@@ -331,11 +321,10 @@ namespace Dan.Core.UnitTest
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG, DateTime.Now.AddDays(-1));
 
             var evidenceHarvesterService = new EvidenceHarvesterService(
-                _loggerFactory, 
-                _mockHttpClientFactory, 
-                _mockConsentService, 
-                _mockEvidenceStatusService, 
-                _mockTokenRequesterService, 
+                _loggerFactory,
+                _mockHttpClientFactory,
+                _mockEvidenceStatusService,
+                _mockTokenRequesterService,
                 _mockRequestContextService,
                 _mockAvailableEvidenceCodesService,
                 _mockA3ConsentService);
