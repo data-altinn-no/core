@@ -23,7 +23,7 @@ namespace Dan.Core.Services
 
         private readonly HttpClient _httpClient;
         private readonly HttpClient _noCertHttpClient;
-        private readonly ILogger<ConsentService> _logger;
+        private readonly ILogger<Altinn3ConsentService> _logger;
         private readonly IDdCorrespondenceService _correspondenceService;
         private readonly Interfaces.IEntityRegistryService _entityRegistryService;
         private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
@@ -43,7 +43,7 @@ namespace Dan.Core.Services
         public Altinn3ConsentService(
             HttpClient httpClient,
             HttpClient noCertHttpClient,
-            ILogger<ConsentService> logger,
+            ILogger<Altinn3ConsentService> logger,
             IDdCorrespondenceService correspondenceService,
             Interfaces.IEntityRegistryService entityRegistryService,
             IAltinnServiceOwnerApiService altinnServiceOwnerApiService,

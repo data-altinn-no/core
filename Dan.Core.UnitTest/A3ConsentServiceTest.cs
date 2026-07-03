@@ -47,8 +47,8 @@ namespace Dan.Core.UnitTest
             private readonly IAltinnServiceOwnerApiService _mockAltinnServiceOwnerApiService =
                 A.Fake<IAltinnServiceOwnerApiService>();
 
-            private readonly ILogger<ConsentService> _mockLogger =
-                A.Fake<ILogger<ConsentService>>();
+            private readonly ILogger<Altinn3ConsentService> _mockLogger =
+                A.Fake<ILogger<Altinn3ConsentService>>();
 
             private Accreditation accreditation;
 
