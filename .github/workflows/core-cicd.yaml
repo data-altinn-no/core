@@ -51,7 +51,7 @@ jobs:
           name: 'dan-core'
           path: './downloaded-app'
       - name: 'Deploy artifact to dev'
-        uses: azure/functions-action@02a16c5f3a5707fa97fca56c202cc2ef6cc7dccb # v1.5.4
+        uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1.5.6
         with:
           app-name: ${{secrets.FUNCTIONAPP_NAME}}
           package: './downloaded-app'
@@ -78,7 +78,7 @@ jobs:
           name: 'dan-core'
           path: './downloaded-app'
       - name: 'Deploy artifact to staging'
-        uses: azure/functions-action@02a16c5f3a5707fa97fca56c202cc2ef6cc7dccb # v1.5.4
+        uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1.5.6
         with:
           app-name: ${{secrets.FUNCTIONAPP_NAME}}
           package: './downloaded-app'
@@ -121,7 +121,7 @@ jobs:
           name: 'dan-core'
           path: './downloaded-app'
       - name: 'Redeploy artifact to staging'
-        uses: azure/functions-action@02a16c5f3a5707fa97fca56c202cc2ef6cc7dccb # v1.5.4
+        uses: azure/functions-action@bc63708cc6539760eea18d8a7de4ce8ef5fdf593 # v1.5.6
         with:
           app-name: ${{secrets.FUNCTIONAPP_NAME}}
           package: './downloaded-app'
