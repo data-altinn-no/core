@@ -22,7 +22,7 @@
     </PackageReference>
     <PackageReference Include="Polly.Caching.Memory" Version="3.0.2" />
     <!-- Pin transitive (via Dan.Core WCF stack) to patched version, see GHSA-37gx-xxp4-5rgx / GHSA-w3x6-4m5h-cxqf -->
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>
