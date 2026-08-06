@@ -43,7 +43,9 @@
     </PackageReference>
     <PackageReference Include="JmesPath.Net" Version="1.1.0" />
     <PackageReference Include="jose-jwt" Version="5.3.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="3.1.2" />
+    <!-- Keep on 2.x: AI 3.x (OpenTelemetry rewrite) drops ITelemetryInitializer and breaks
+         Microsoft.Azure.Functions.Worker.ApplicationInsights at host startup -->
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.23.0" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.62.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.52.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.51.0" />
