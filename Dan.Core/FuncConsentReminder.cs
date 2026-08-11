@@ -48,7 +48,7 @@ namespace Dan.Core
             // TODO! Should we allow GET on expired accreditations? (FuncEvidenceStatus does not)
             var accreditation = await _applicationRepository.GetAccreditationAsync(accreditationId, _requestContextService.AuthenticatedOrgNumber);
 
-            return accreditation != null 
+            return accreditation != null
                 ? req.CreateExternalResponse(HttpStatusCode.OK, accreditation.Reminders)
                 : req.CreateResponse(HttpStatusCode.Forbidden);
         }
@@ -66,16 +66,16 @@ namespace Dan.Core
                 return req.CreateResponse(HttpStatusCode.Forbidden);
             }
 
-            await ValidateAccreditationForReminder(accreditationId, accreditation);
+                await ValidateAccreditationForReminder(accreditationId, accreditation);
 
-            var response = await _altinn3NotificationsService.SendReminder(accreditation, _requestContextService.ServiceContext);
-            accreditation.Reminders.AddRange(response);
+                var response = await _altinn3NotificationsService.SendReminder(accreditation, _requestContextService.ServiceContext);
+                accreditation.Reminders.AddRange(response);
 
-            await _applicationRepository.UpdateAccreditationAsync(accreditation);
-            _logger.DanLog(accreditation, LogAction.ConsentReminderSent);         
-            
-            return req.CreateExternalResponse(HttpStatusCode.OK, response);
-        }
+                await _applicationRepository.UpdateAccreditationAsync(accreditation);
+                _logger.DanLog(accreditation, LogAction.ConsentReminderSent);
+
+                return req.CreateExternalResponse(HttpStatusCode.OK, response);
+            }
 
         private async Task ValidateAccreditationForReminder(string accreditationId, Accreditation accr)
         {
@@ -95,9 +95,13 @@ namespace Dan.Core
             if (accr.ValidTo < DateTime.Now)
                 throw new ExpiredConsentException("The consent for this accreditation is expired");
 
-            var lastReminderSent = accr.Reminders.Where(x => x.Success).MaxBy(x => x.Date);
-            if (lastReminderSent != null && lastReminderSent.Date > DateTime.Now.AddDays(-7))
+            var lastSuccessfulReminder = accr.Reminders.Where(x => x.Success).MaxBy(x => x.Date);
+            if (lastSuccessfulReminder != null && lastSuccessfulReminder.Date > DateTime.Now.AddDays(-7))
                 throw new AuthorizationFailedException("Reminders have already been sent the the last week");
+
+            var lastFailedReminder = accr.Reminders.Where(x => !x.Success).MaxBy(x => x.Date);
+            if (lastFailedReminder != null && lastFailedReminder.Date > DateTime.Now.AddDays(-1))
+                throw new AuthorizationFailedException("A reminder attempt failed within the last day, please try again later");
 
             if (accr.Subject == null)
                 throw new InvalidSubjectException(
