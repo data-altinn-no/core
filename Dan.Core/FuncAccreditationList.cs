@@ -52,7 +52,8 @@ public class FuncAccreditationList
 
         var accreditationsQuery = new AccreditationsQuery
         {
-            Requestor = req.GetQueryParam("requestor")
+            Requestor = req.GetQueryParam("requestor"),
+            ServiceContext = _requestContextService.ServiceContext.Name
         };
 
         if (DateTime.TryParse(req.GetQueryParam("changedafter"), out DateTime changedAfter))
