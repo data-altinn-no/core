@@ -104,11 +104,10 @@ namespace Dan.Core
 
             if (IsStatusAccepted(req.GetQueryParam("status")))
             {
-                accreditation.AuthorizationCode = req.GetQueryParam("authorizationcode"); //remove after switch to altinn3
                 accreditation.Altinn3ConsentStatus = req.GetQueryParam("status");
-                if (string.IsNullOrEmpty(accreditation.AuthorizationCode) && string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
+                if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
                 {
-                    var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Missing authorization code or invalid consentid", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
+                    var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Invalid consentid", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
                     response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");
                     return response;
                 }
@@ -134,8 +133,7 @@ namespace Dan.Core
                 return CreateRedirectResponse(req, accreditation, req.GetQueryParam("status")!);
             }
 
-            accreditation.AuthorizationCode = ConsentService.ConsentDenied;
-            accreditation.Altinn3ConsentStatus = ConsentService.ConsentDenied;
+            accreditation.Altinn3ConsentStatus = Altinn3ConsentService.ConsentDenied;
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
             _logger.DanLog(accreditation, LogAction.ConsentDenied);

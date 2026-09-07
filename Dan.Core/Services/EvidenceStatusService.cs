@@ -11,22 +11,19 @@ namespace Dan.Core.Services;
 public class EvidenceStatusService : IEvidenceStatusService
 {
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
-    private readonly IConsentService _consentService;
     private readonly IAltinn3ConsentService _consentServiceA3;
     private readonly IRequestContextService _requestContextService;
     private readonly ILogger<EvidenceStatusService> _logger;
     private readonly IHttpClientFactory _clientFactory;
 
     public EvidenceStatusService(
-        IAvailableEvidenceCodesService availableEvidenceCodesService, 
-        IConsentService consentService,
+        IAvailableEvidenceCodesService availableEvidenceCodesService,
         IAltinn3ConsentService consentServiceA3,
         IRequestContextService requestContextService,
-        IHttpClientFactory clientFactory, 
+        IHttpClientFactory clientFactory,
         ILoggerFactory loggerFactory)
     {
         _availableEvidenceCodesService = availableEvidenceCodesService;
-        _consentService = consentService;
         _consentServiceA3 = consentServiceA3;
         _requestContextService = requestContextService;
         _logger = loggerFactory.CreateLogger<EvidenceStatusService>();
@@ -45,20 +42,11 @@ public class EvidenceStatusService : IEvidenceStatusService
         {
             status = EvidenceStatusCode.Unavailable;
         }
-        else if (_consentService.EvidenceCodeRequiresConsent(evidenceCode))
+        else if (_consentServiceA3.EvidenceCodeRequiresConsent(evidenceCode))
         {
-            if (accreditation.Altinn3ConsentId != null)
-            {
-                var consentStatus = await _consentServiceA3.Check(accreditation, onlyLocalChecks);
-                status = MapConsentStatusToEvidenceStatusCode(consentStatus);
-                isConsentRequest = true;
-
-            } else
-            {
-                var consentStatus = await _consentService.Check(accreditation, onlyLocalChecks);
-                status = MapConsentStatusToEvidenceStatusCode(consentStatus);
-                isConsentRequest = true;
-            }
+            var consentStatus = await _consentServiceA3.Check(accreditation, onlyLocalChecks);
+            status = MapConsentStatusToEvidenceStatusCode(consentStatus);
+            isConsentRequest = true;
         }
         else
         {

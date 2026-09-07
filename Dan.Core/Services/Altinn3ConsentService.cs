@@ -23,7 +23,7 @@ namespace Dan.Core.Services
 
         private readonly HttpClient _httpClient;
         private readonly HttpClient _noCertHttpClient;
-        private readonly ILogger<ConsentService> _logger;
+        private readonly ILogger<Altinn3ConsentService> _logger;
         private readonly IDdCorrespondenceService _correspondenceService;
         private readonly Interfaces.IEntityRegistryService _entityRegistryService;
         private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
@@ -43,7 +43,7 @@ namespace Dan.Core.Services
         public Altinn3ConsentService(
             HttpClient httpClient,
             HttpClient noCertHttpClient,
-            ILogger<ConsentService> logger,
+            ILogger<Altinn3ConsentService> logger,
             IDdCorrespondenceService correspondenceService,
             Interfaces.IEntityRegistryService entityRegistryService,
             IAltinnServiceOwnerApiService altinnServiceOwnerApiService,
@@ -187,15 +187,15 @@ namespace Dan.Core.Services
         /// </summary>
         public async Task<string> GetJwt(Accreditation accreditation, EvidenceCode evidenceCode)
         {
-            if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId) && string.IsNullOrEmpty(accreditation.AuthorizationCode))
+            if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
             {
                 throw new RequiresConsentException("The accreditation is missing a valid Altinn consent id.");
             }
     
             try
             {
-                // The consentId can be either the Altinn3ConsentId or the old AuthorizationCode which is migrated over to Altinn 3 for retrieval
-                var consentId = !string.IsNullOrEmpty(accreditation.Altinn3ConsentId) ? accreditation.Altinn3ConsentId : accreditation.AuthorizationCode;
+                // The consent id is always an Altinn 3 consent request id; the Altinn 2 authorization-code path is gone.
+                var consentId = accreditation.Altinn3ConsentId;
 
                 var token = await _tokenRequesterService.GetMaskinportenConsentToken(consentId, accreditation.SubjectParty.GetAsString(false), evidenceCode);
                 
