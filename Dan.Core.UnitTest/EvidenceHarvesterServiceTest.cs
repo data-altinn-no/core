@@ -86,7 +86,11 @@ namespace Dan.Core.UnitTest
                     }
                 )
             );
-            A.CallTo(() => _mockA3ConsentService.GetJwt(A<Accreditation>._, A<EvidenceCode>._)).Returns(Task.FromResult("somejwt"));
+            A.CallTo(() => _mockA3ConsentService.EvidenceCodeRequiresConsent(
+                    A<EvidenceCode>.That.Matches(x => x.EvidenceCodeName == EVIDENCECODE_CONSENT)))
+                .Returns(true);
+            A.CallTo(() => _mockA3ConsentService.GetJwt(A<Accreditation>._, A<EvidenceCode>._))
+                .Returns(Task.FromResult("{\"access_token\":\"somejwt\"}"));
 
             Accreditation accreditation = MakeAccreditation("aid", Certificates.DEFAULT_ORG);
             var evidenceHarvesterService = new EvidenceHarvesterService(
@@ -102,6 +106,12 @@ namespace Dan.Core.UnitTest
 
             Assert.AreEqual((int)StatusCodeId.Available, response.EvidenceStatus.Status.Code);
             Assert.IsNotNull(response.EvidenceValues);
+
+            // Guards against the consent branch silently going untested: without the
+            // EvidenceCodeRequiresConsent stub above, Harvest takes the open-data path instead.
+            A.CallTo(() => _mockA3ConsentService.GetJwt(accreditation,
+                    A<EvidenceCode>.That.Matches(x => x.EvidenceCodeName == EVIDENCECODE_CONSENT)))
+                .MustHaveHappenedOnceExactly();
         }
 
         [TestMethod]
