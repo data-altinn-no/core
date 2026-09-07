@@ -49,7 +49,7 @@ public interface IAltinn3ConsentService
     Task<bool> LogUse(Accreditation accreditation, EvidenceCode evidence, DateTime? dateTime = null);
 
     /// <summary>
-    /// Whether the suplied evidenceCode requires consent in active service context
+    /// Whether the supplied evidenceCode requires consent in active service context
     /// </summary>
     /// <param name="evidenceCode"></param>
     /// <returns></returns>
