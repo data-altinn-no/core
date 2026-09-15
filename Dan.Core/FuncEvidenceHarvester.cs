@@ -16,21 +16,18 @@ namespace Dan.Core
     /// </summary>
     public class FuncEvidenceHarvester
     {
-        private readonly IConsentService _consentService;
         private readonly IEvidenceHarvesterService _evidenceHarvesterService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly IRequestContextService _requestContextService;
         private readonly IAuthorizationRequestValidatorService _authorizationRequestValidatorService;
         private readonly ILogger<FuncEvidenceHarvester> _logger;
 
-        public FuncEvidenceHarvester(IConsentService consentService,
-                                     IRequestContextService requestContextService,
+        public FuncEvidenceHarvester(IRequestContextService requestContextService,
                                      IAuthorizationRequestValidatorService authorizationRequestValidatorService,
                                      IEvidenceHarvesterService evidenceHarvesterService,
                                      IAccreditationRepository accreditationRepository,
                                      ILoggerFactory loggerFactory)
         {
-            _consentService = consentService;
             _authorizationRequestValidatorService = authorizationRequestValidatorService;
             _evidenceHarvesterService = evidenceHarvesterService;
             _accreditationRepository = accreditationRepository;
@@ -102,21 +99,6 @@ namespace Dan.Core
                 }
             }
 
-            //Altinn 3 has not implemented logging of consent use
-            if (_consentService.EvidenceCodeRequiresConsent(evidenceCodeForHarvest) && accreditation.Altinn3ConsentId == null)
-            {
-                using (var t = _logger.Timer("consent-log-usage"))
-                {
-                    _logger.LogInformation(
-                        "Start logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode}",
-                        accreditation.AccreditationId, evidenceCodeForHarvest.EvidenceCodeName);
-                    await LogConsentBasedHarvest(evidenceCodeForHarvest, accreditation);
-                    _logger.LogInformation(
-                        "Completed logging consent based harvest aid={accreditationId} evidenceCode={evidenceCode} elapsedMs={elapsedMs}",
-                        accreditation.AccreditationId, evidenceCodeForHarvest.EvidenceCodeName, t.ElapsedMilliseconds);
-                }
-            }
-
             // Save timestamp and evidencecode name for statistics
             accreditation.DataRetrievals.Add(new DataRetrieval()
                 { EvidenceCodeName = evidenceCodeName, TimeStamp = DateTime.Now });
@@ -126,11 +108,6 @@ namespace Dan.Core
             _logger.DanLog(accreditation, LogAction.DatasetRetrieved, evidenceCodeName);
 
             return response;
-        }
-
-        private Task<bool> LogConsentBasedHarvest(EvidenceCode evidence, Accreditation accreditation)
-        {
-            return _consentService.LogUse(accreditation, evidence, DateTime.Now);
         }
 
         private static AuthorizationRequest GetAuthorizationRequest(Accreditation accreditation)

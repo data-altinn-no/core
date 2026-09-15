@@ -16,20 +16,18 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
 {
     private readonly ILogger<EvidenceHarvesterService> _log;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConsentService _consentService;
     private readonly IEvidenceStatusService _evidenceStatusService;
     private readonly ITokenRequesterService _tokenRequesterService;
     private readonly IRequestContextService _requestContextService;
     private readonly IAvailableEvidenceCodesService _availableEvidenceCodesService;
     private readonly IAltinn3ConsentService _a3ConsentService;
 
-    public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory, IConsentService consentService, 
-        IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService, 
+    public EvidenceHarvesterService(ILoggerFactory loggerFactory, IHttpClientFactory httpClientFactory,
+        IEvidenceStatusService evidenceStatusService, ITokenRequesterService tokenRequesterService, IRequestContextService requestContextService,
         IAvailableEvidenceCodesService availableEvidenceCodesService, IAltinn3ConsentService a3ConsentService)
     {
         _log = loggerFactory.CreateLogger<EvidenceHarvesterService>();
         _httpClientFactory = httpClientFactory;
-        _consentService = consentService;
         _evidenceStatusService = evidenceStatusService;
         _tokenRequesterService = tokenRequesterService;
         _requestContextService = requestContextService;
@@ -216,12 +214,12 @@ public class EvidenceHarvesterService : IEvidenceHarvesterService
             AccreditationId = accreditation.AccreditationId,
         };
         //for altinn3 consenttokens and access tokens are combined
-        if (!string.IsNullOrEmpty(evidenceCode.RequiredScopes) && !_consentService.EvidenceCodeRequiresConsent(evidenceCode))
+        if (!string.IsNullOrEmpty(evidenceCode.RequiredScopes) && !_a3ConsentService.EvidenceCodeRequiresConsent(evidenceCode))
         {
             evidenceHarvesterRequest.MPToken = await GetAccessToken(evidenceCode, accreditation, evidenceHarvesterOptions ?? new EvidenceHarvesterOptions());
         }
 
-        if (_consentService.EvidenceCodeRequiresConsent(evidenceCode))
+        if (_a3ConsentService.EvidenceCodeRequiresConsent(evidenceCode))
         {
             evidenceHarvesterRequest.JWT = await GetMaskinportenConsentToken(evidenceCode, accreditation);
         }

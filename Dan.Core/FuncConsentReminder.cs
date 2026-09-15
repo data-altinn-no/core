@@ -86,9 +86,6 @@ namespace Dan.Core
             if (evidenceCodesRequiringConsent.Count < 1)
                 throw new RequiresConsentException($"There are no evidence codes requiring subject action");
 
-            if (!string.IsNullOrEmpty(accr.AuthorizationCode))
-                throw new ConsentAlreadyHandledException($"Consent has already been given or rejected for {accreditationId}");
-
             if (!string.IsNullOrEmpty(accr.Altinn3ConsentStatus))
                 throw new ConsentAlreadyHandledException($"Consent has already been given or rejected for {accreditationId}");
 

@@ -141,8 +141,6 @@ var host = new HostBuilder()
             
         }
         
-        services.AddSingleton<IChannelManagerService, ChannelManagerService>();
-        services.AddSingleton<IAltinnCorrespondenceService, AltinnCorrespondenceService>();
         services.AddSingleton<IAvailableEvidenceCodesService, AvailableEvidenceCodesService>();
         services.AddSingleton<IAltinnServiceOwnerApiService, AltinnServiceOwnerApiService>();
         services.AddSingleton<ITokenRequesterService, TokenRequesterService>();
@@ -156,7 +154,6 @@ var host = new HostBuilder()
 
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
-        services.AddScoped<IConsentService, ConsentService>();
         services.AddScoped<IAltinn3ConsentService, Altinn3ConsentService>();
         services.AddScoped<IAltinn3NotificationsService, Altinn3NotificationsService>();
         services.AddScoped<IRequirementValidationService, RequirementValidationService>();
