@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using Dan.Common;
 using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
@@ -26,7 +27,8 @@ namespace Dan.Core
         private readonly IServiceContextService _serviceContextService;
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly ILogger<FuncConsentReceipt> _logger;
-        private const string AboutUrl = "https:/docs.data.altinn.no/";
+        private const string AboutUrl = "https://docs.data.altinn.no/";
+        private static readonly string AboutInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href=\"{AboutUrl}\">docs.data.altinn.no</a>";
 
         /// <summary>
         /// Creates an instance of <see cref="FuncConsentReceipt"/> 
@@ -76,14 +78,14 @@ namespace Dan.Core
             //status will be available on altinn 3 soon
             if (!req.HasQueryParam("hmac") || (!req.HasQueryParam("status") && accreditation.Altinn3ConsentId == null))
             {
-                var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Missing hmac/status", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
+                var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Missing hmac/status", ebevisInfo = AboutInfo });
                 response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");
                 return response;
             }
 
             if (!ValidateHMac(accreditation, req.GetQueryParam("hmac")))
             {
-                var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Invalid hmac", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
+                var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Invalid hmac", ebevisInfo = AboutInfo });
                 response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");
                 return response;
             }
@@ -107,7 +109,7 @@ namespace Dan.Core
                 accreditation.Altinn3ConsentStatus = req.GetQueryParam("status");
                 if (string.IsNullOrEmpty(accreditation.Altinn3ConsentId))
                 {
-                    var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Invalid consentid", ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href={AboutUrl}</a>" });
+                    var response = req.CreateHtmlResponse(HttpStatusCode.BadRequest, "Error.html", new { title = "Invalid request", message = "Invalid consentid", ebevisInfo = AboutInfo });
                     response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");
                     return response;
                 }
@@ -121,7 +123,8 @@ namespace Dan.Core
                     {
                         title = renderedTexts.ConsentTitleText,
                         message = renderedTexts.ConsentGivenReceiptText,
-                        ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href=\"{AboutUrl}\"</a>",
+                        lang = GetHtmlLanguageCode(accreditation.LanguageCode),
+                        ebevisInfo = AboutInfo,
                         altinnurl = Settings.AltinnPortalAddress + "ui/messagebox",
                         altinnmessage = "Tilbake til meldingsboksen",
                         servicecontext = serviceContextName
@@ -144,7 +147,8 @@ namespace Dan.Core
                 {
                     title = renderedTexts.ConsentTitleText,
                     message = renderedTexts.ConsentDeniedReceiptText,
-                    @ebevisInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href=\"{AboutUrl}\"</a>",
+                    lang = GetHtmlLanguageCode(accreditation.LanguageCode),
+                    @ebevisInfo = AboutInfo,
                     @altinnurl = Settings.AltinnPortalAddress + "ui/messagebox",
                     @altinnmessage = "G&aring; tilbake til Altinn",
                     @servicecontext = serviceContextName
@@ -191,6 +195,16 @@ namespace Dan.Core
 
             return false;
         }
+
+        /// <summary>
+        /// Maps the internal accreditation language code to a BCP 47 tag for the html lang attribute.
+        /// </summary>
+        private static string GetHtmlLanguageCode(string? languageCode) => languageCode switch
+        {
+            Constants.LANGUAGE_CODE_ENGLISH => "en",
+            Constants.LANGUAGE_CODE_NORWEGIAN_NN => "nn",
+            _ => "nb"
+        };
 
         private static bool IsStatusAccepted(string? statusResponse)
         {
