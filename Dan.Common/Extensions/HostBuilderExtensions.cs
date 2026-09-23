@@ -66,6 +66,13 @@ public static class HostBuilderExtensions
                 // UseAzureMonitorExporter() throws at startup if no connection string is configured,
                 // so it's gated here to keep plugins working locally without one.
                 var appInsightsConnectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+                var instrumentationKey = context.Configuration["APPINSIGHTS_INSTRUMENTATIONKEY"];
+
+                if(string.IsNullOrWhiteSpace(appInsightsConnectionString) && !string.IsNullOrWhiteSpace(instrumentationKey))
+                {
+                    appInsightsConnectionString = $"InstrumentationKey={instrumentationKey}";
+                }
+
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     services.AddOpenTelemetry()
