@@ -1,14 +1,17 @@
 using System.Reflection;
 using Azure.Core.Serialization;
 using Azure.Identity;
+using Azure.Monitor.OpenTelemetry.Exporter;
 using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
 using Dan.Common.Services;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Trace;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Registry;
@@ -47,30 +50,30 @@ public static class HostBuilderExtensions
                 config.AddJsonFile("host.json", optional: true);
                 config.AddJsonFile("worker.json", optional: true);
             })
+            .ConfigureLogging(logging =>
+            {
+                logging.AddOpenTelemetry(options =>
+                {
+                    options.IncludeFormattedMessage = true;
+                    options.IncludeScopes = true;
+                });
+            })
             .ConfigureServices((context, services) =>
             {
                 services.AddLogging();
                 services.AddHttpClient();
-                services.AddApplicationInsightsTelemetryWorkerService();
-                services.ConfigureFunctionsApplicationInsights();
-                
-                // You will need extra configuration because AI will only log per default Warning (default AI configuration). As this is a provider-specific
-                // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
-                // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
-                // https://github.com/microsoft/ApplicationInsights-dotnet/issues/2610#issuecomment-1316672650
-                // https://github.com/Azure/azure-functions-dotnet-worker/issues/1182#issuecomment-1319035412
-                // So remove the default logger rule (warning and above). This will result that the default will be Information.
-                services.Configure<LoggerFilterOptions>(options =>
-                {
-                    var toRemove = options.Rules.FirstOrDefault(rule => rule.ProviderName
-                        == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
 
-                    if (toRemove is not null)
-                    {
-                        options.Rules.Remove(toRemove);
-                    }
-                });
-                
+                // UseAzureMonitorExporter() throws at startup if no connection string is configured,
+                // so it's gated here to keep plugins working locally without one.
+                var appInsightsConnectionString = context.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+                if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
+                {
+                    services.AddOpenTelemetry()
+                        .WithTracing(tracing => tracing.AddHttpClientInstrumentation())
+                        .UseAzureMonitorExporter(options => options.ConnectionString = appInsightsConnectionString)
+                        .UseFunctionsWorkerDefaults();
+                }
+
                 var openCircuitTimeSeconds =
                     int.TryParse(context.Configuration["DefaultCircuitBreakerOpenCircuitTimeSeconds"], out var result)
                         ? result

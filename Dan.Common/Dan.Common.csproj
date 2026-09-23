@@ -32,6 +32,7 @@
   <ItemGroup>
     <PackageReference Include="AsyncKeyedLock" Version="8.0.2" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.9.0" />
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.0" />
     <!-- Keep on 2.x: AI 3.x (OpenTelemetry rewrite) drops ITelemetryInitializer and breaks
          Microsoft.Azure.Functions.Worker.ApplicationInsights at host startup -->
@@ -39,12 +40,14 @@
     <PackageReference Include="Microsoft.Azure.Core.NewtonsoftJson" Version="2.0.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.52.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.51.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.OpenTelemetry" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.10" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NJsonSchema" Version="11.6.1" />
     <PackageReference Include="NJsonSchema.NewtonsoftJson" Version="11.6.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
 
     <PackageReference Include="Polly.Caching.Distributed" Version="3.0.1" />
     <PackageReference Include="Polly.Caching.Serialization.Json" Version="3.0.0" />
