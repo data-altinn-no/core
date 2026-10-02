@@ -89,6 +89,15 @@
     "AltinnWellknownUrl": "https://platform.tt02.altinn.no/authentication/api/v1/openid/.well-known/openid-configuration",
 
     "NotificationsApiBaseUrl": "https://platform.tt02.altinn.no/notifications/api/v1",
-    "AltinnTokenExchangeUrl": "https://platform.tt02.altinn.no/authentication/api/v1/exchange/maskinporten"
+    "AltinnTokenExchangeUrl": "https://platform.tt02.altinn.no/authentication/api/v1/exchange/maskinporten",
+
+    // Altinn Events: publishing of consent granted/denied/expired events that clients can subscribe to
+    "ConsentEventsEnabled": false,
+    "EventsApiBaseUrl": "https://platform.tt02.altinn.no/events/api/v1",
+    "EventsPublishScope": "altinn:events.publish altinn:serviceowner",
+    "ConsentEventsResourceId": "digdir-data-altinn-no-consent",
+    "ConsentEventsSource": "https://test-api.data.altinn.no/v1/consent",
+    "ConsentEventsMaxAttempts": 60,
+    "ConsentEventsLookbackDays": 7
   }
 }

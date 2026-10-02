@@ -133,6 +133,14 @@ public class Accreditation
     [Hidden]
     public List<NotificationReminder> Reminders { get; set; } = new();
 
+    /// <summary>
+    /// Outbox of consent events to be published to Altinn Events (granted/denied/expired). Internal; never returned to API clients.
+    /// </summary>
+    [DataMember(Name = "consentEvents")]
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    [Hidden]
+    public List<ConsentEventRecord> ConsentEvents { get; set; } = new();
+
 
     /// <summary>
     /// A list of timestampss and data set names

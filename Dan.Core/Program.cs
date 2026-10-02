@@ -151,6 +151,8 @@ var host = new HostBuilder()
         services.AddSingleton<Dan.Core.Services.Interfaces.IEntityRegistryApiClientService, CachingEntityRegistryApiClientService>();
         services.AddSingleton<IFunctionContextAccessor, FunctionContextAccessor>();
         services.AddSingleton<IPluginCredentialService, PluginCredentialService>();
+        services.AddSingleton<IAltinnEventsService, AltinnEventsService>();
+        services.AddSingleton<IConsentEventPublisher, ConsentEventPublisher>();
 
         services.AddScoped<IEvidenceStatusService, EvidenceStatusService>();
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
@@ -257,6 +259,16 @@ var host = new HostBuilder()
         services.AddHttpClient(Constants.Altinn3NotificationsHttpClient, client =>
             {
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
+            })
+            .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
+            .AddHttpMessageHandler<ExceptionDelegatingHandler>();
+
+        // Client used for publishing consent events to the Altinn 3 Events API. Short timeout because it is
+        // also called inline from the consent receipt page; the retry timer handles anything that fails.
+        services.AddHttpClient(Constants.AltinnEventsHttpClient, client =>
+            {
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(10);
             })
             .AddPolicyHandlerFromRegistry("DefaultCircuitBreaker")
             .AddHttpMessageHandler<ExceptionDelegatingHandler>();
