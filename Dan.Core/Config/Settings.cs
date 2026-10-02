@@ -408,6 +408,48 @@ public static class Settings
     /// </summary>
     public static string AltinnTokenExchangeUrl => GetSetting("AltinnTokenExchangeUrl");
 
+    /// <summary>
+    /// Feature flag: publish consent events (granted/denied/expired) to Altinn Events. Defaults to false when absent.
+    /// </summary>
+    public static bool ConsentEventsEnabled => bool.TryParse(ConfigurationHelper.ConfigurationRoot["ConsentEventsEnabled"], out var enabled) && enabled;
+
+    /// <summary>
+    /// Base URL of the Altinn Events API, e.g. https://platform.tt02.altinn.no/events/api/v1
+    /// </summary>
+    public static string EventsApiBaseUrl => GetSetting("EventsApiBaseUrl");
+
+    /// <summary>
+    /// Maskinporten scopes requested when publishing events (exchanged to an Altinn token),
+    /// e.g. "altinn:events.publish altinn:serviceowner"
+    /// </summary>
+    public static string EventsPublishScope => GetSetting("EventsPublishScope");
+
+    /// <summary>
+    /// Id of the resource in the Altinn Resource Registry that consent events are published on,
+    /// e.g. digdir-data-altinn-no-consent
+    /// </summary>
+    public static string ConsentEventsResourceId => GetSetting("ConsentEventsResourceId");
+
+    /// <summary>
+    /// CloudEvent "source" URI for consent events, e.g. https://api.data.altinn.no/v1/consent
+    /// </summary>
+    public static string ConsentEventsSource => GetSetting("ConsentEventsSource");
+
+    /// <summary>
+    /// Max publish attempts per consent event before the retry job gives up (default 60)
+    /// </summary>
+    public static int ConsentEventsMaxAttempts => GetOptionalIntSetting("ConsentEventsMaxAttempts", 60);
+
+    /// <summary>
+    /// How many days back the consent event retry/expiry job looks for accreditations (default 7)
+    /// </summary>
+    public static int ConsentEventsLookbackDays => GetOptionalIntSetting("ConsentEventsLookbackDays", 7);
+
+    private static int GetOptionalIntSetting(string settingKey, int defaultValue)
+    {
+        return int.TryParse(ConfigurationHelper.ConfigurationRoot[settingKey], out var value) ? value : defaultValue;
+    }
+
     private static string GetSetting(string settingKey)
     {
         var value = ConfigurationHelper.ConfigurationRoot[settingKey];

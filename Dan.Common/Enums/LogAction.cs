@@ -65,4 +65,19 @@ public enum LogAction
     /// Used when an owner requests accreditations for all or one requestor
     /// </summary>
     AccreditationsRetrieved = 12,
+
+    /// <summary>
+    /// Used for each consent event successfully published to Altinn Events
+    /// </summary>
+    ConsentEventPublished = 13,
+
+    /// <summary>
+    /// Used for each failed attempt to publish a consent event to Altinn Events
+    /// </summary>
+    ConsentEventPublishFailed = 14,
+
+    /// <summary>
+    /// Used once per accreditation whose consent request expired unanswered
+    /// </summary>
+    ConsentExpired = 15,
 }
