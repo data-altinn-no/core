@@ -3,22 +3,29 @@ using Altinn.Dd.Correspondence.Extensions;
 using Altinn.Dd.Correspondence.Options;
 using Azure.Core.Serialization;
 using Azure.Identity;
+using Altinn.AspNet.HealthChecks;
+using Altinn.AspNet.HealthChecks.Probes;
 using Dan.Common;
+using Dan.Common.Extensions;
 using Dan.Common.Handlers;
 using Dan.Common.Models;
 using Dan.Common.Services;
 using Dan.Core.Attributes;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
+using Dan.Core.HealthChecks;
 using Dan.Core.Helpers;
 using Dan.Core.Middleware;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
+using HealthChecks.CosmosDb;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -67,7 +74,7 @@ var host = new HostBuilder()
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();
     })
-    .ConfigureServices((_, services) =>
+    .ConfigureServices((hostContext, services) =>
     {
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
@@ -140,6 +147,8 @@ var host = new HostBuilder()
             services.AddSingleton(_ => new CosmosClientBuilder(Settings.CosmosDbConnection, credentials).Build());
             
         }
+
+        AddDanCoreHealthChecks(services, hostContext);
         
         services.AddSingleton<IAvailableEvidenceCodesService, AvailableEvidenceCodesService>();
         services.AddSingleton<IAltinnServiceOwnerApiService, AltinnServiceOwnerApiService>();
@@ -263,6 +272,37 @@ var host = new HostBuilder()
 
     })
     .Build();
+
+// Altinn health check convention; endpoints are served by FuncHealth. Tag policy:
+//  - dependencies: Cosmos/Redis. Shown on /health, /health/startup, /health/deep. Deliberately NOT `critical`:
+//    a shared Redis/Cosmos outage would otherwise de-pool every instance at once, and a restart does not fix it.
+//  - external: third parties, only on /health/deep, soft (Degraded) so they can never flip us to 503.
+void AddDanCoreHealthChecks(IServiceCollection services, HostBuilderContext hostContext)
+{
+    var builder = services.AddDanHealthChecks(hostContext.HostingEnvironment, hostContext.Configuration)
+        .AddAzureCosmosDB(
+            clientFactory: sp => sp.GetRequiredService<CosmosClient>(),
+            optionsFactory: _ => new AzureCosmosDbHealthCheckOptions { DatabaseId = Settings.CosmosDbDatabase },
+            name: "CosmosDb",
+            failureStatus: HealthStatus.Unhealthy,
+            tags: [HealthCheckTags.Dependencies],
+            timeout: TimeSpan.FromSeconds(5))
+        .AddCheck<RedisDistributedCacheHealthCheck>(
+            "Redis",
+            failureStatus: HealthStatus.Unhealthy,
+            tags: [HealthCheckTags.Dependencies])
+        .AddOutboundProbe("Maskinporten", new Uri(Settings.MaskinportenWellknownUrl))
+        .AddOutboundProbe("AltinnPlatform", new Uri(Settings.AltinnWellknownUrl))
+        .AddOutboundProbe("EntityRegistry", new Uri(string.Format(Settings.OrganizationValidationUrl, Settings.AltinnOrgNumber)));
+
+    // Plugins are probed on the /api/alive endpoint they get from Dan.Common's DanHealthFunctionsBase.
+    foreach (var source in Settings.EvidenceSources.Where(s => !string.IsNullOrWhiteSpace(s)))
+    {
+        var evidenceCodesUrl = new Uri(Settings.GetEvidenceSourceUrl(source));
+        var aliveUrl = new Uri(evidenceCodesUrl, "/api/alive");
+        builder.AddOutboundProbe($"Plugin:{source.Trim()}", aliveUrl);
+    }
+}
 
 void AddAltinn3Messaging(IServiceCollection services)
 {    

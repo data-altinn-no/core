@@ -30,6 +30,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Altinn health check convention (tags, detail levels, response format). Brings a transitive
+         FrameworkReference to Microsoft.AspNetCore.App, which is fine on Functions isolated workers. -->
+    <PackageReference Include="Altinn.AspNet.HealthChecks" Version="0.4.0" />
     <PackageReference Include="AsyncKeyedLock" Version="8.0.2" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.11.0" />

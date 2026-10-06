@@ -12,6 +12,22 @@ The repository contains a .NET6 console application utilizing the isolated-proce
 
 DAN Common contains all shared models and utilites used across all DAN projects. A nuget is built in Azure Devops which must be referred to in all plugin implementations. 
 
+## Health endpoints
+
+Core and plugins follow the [Altinn health check convention](https://github.com/Altinn/altinn-aspnet-healthchecks). Functions apps have no endpoint routing, so the routes are HTTP-trigger functions (`FuncHealth` in Core, a `DanHealthFunctionsBase` subclass in plugins) that evaluate the convention's tag filters and render with the library's formatters (`application/vnd.altinn.health.v1+json`, or a single word with `Accept: text/plain`). Healthy/Degraded gives 200, Unhealthy gives 503.
+
+| Path | Tags evaluated | Auth | Purpose |
+|---|---|---|---|
+| `/api/alive` | `live` | anonymous | Liveness: the process answers |
+| `/api/health/readiness` | `critical`, `warmup` | anonymous | Readiness: should this instance get traffic (App Service health check path) |
+| `/api/health/startup` | `dependencies` | anonymous | Startup: Cosmos DB and Redis reachable |
+| `/api/health` | `dependencies` | function key | Dashboard view of the dependencies |
+| `/api/health/deep` | `dependencies`, `external` | function key | Also probes Maskinporten, Altinn platform, Enhetsregisteret and each plugin's `/api/alive` |
+
+Redis and Cosmos DB are tagged `dependencies` only, not `critical`, so a shared outage does not de-pool every instance. External probes are soft (`Degraded`) and can never turn a response into 503. Detail level follows the environment (Development → Full, Production → Summary, otherwise Diagnostic) and can be overridden with the `HealthReportDetailLevel` app setting.
+
+Plugins get the services registered by `ConfigureDanPluginDefaults()` and expose the routes by subclassing `Dan.Common.Health.DanHealthFunctionsBase`; see `Dan.PluginTest/Health.cs`.
+
 # Getting Started
 
 ## Requirements
