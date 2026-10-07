@@ -7,9 +7,11 @@ using Altinn.AspNet.HealthChecks;
 using Altinn.AspNet.HealthChecks.Probes;
 using Dan.Common;
 using Dan.Common.Extensions;
+using Dan.Common.Health;
 using Dan.Common.Handlers;
 using Dan.Common.Models;
 using Dan.Common.Services;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
@@ -273,7 +275,7 @@ var host = new HostBuilder()
     })
     .Build();
 
-// Altinn health check convention; endpoints are served by FuncHealth. Tag policy:
+// Altinn health check convention; endpoints are served by Dan.Common.Health.DanHealthFunctions. Tag policy:
 //  - dependencies: Cosmos/Redis. Shown on /health, /health/startup, /health/deep. Deliberately NOT `critical`:
 //    a shared Redis/Cosmos outage would otherwise de-pool every instance at once, and a restart does not fix it.
 //  - external: third parties, only on /health/deep, soft (Degraded) so they can never flip us to 503.
@@ -295,11 +297,11 @@ void AddDanCoreHealthChecks(IServiceCollection services, HostBuilderContext host
         .AddOutboundProbe("AltinnPlatform", new Uri(Settings.AltinnWellknownUrl))
         .AddOutboundProbe("EntityRegistry", new Uri(string.Format(Settings.OrganizationValidationUrl, Settings.AltinnOrgNumber)));
 
-    // Plugins are probed on the /api/alive endpoint they get from Dan.Common's DanHealthFunctionsBase.
+    // Plugins are probed on the /api/alive endpoint they get from Dan.Common's DanHealthFunctions.
     foreach (var source in Settings.EvidenceSources.Where(s => !string.IsNullOrWhiteSpace(s)))
     {
         var evidenceCodesUrl = new Uri(Settings.GetEvidenceSourceUrl(source));
-        var aliveUrl = new Uri(evidenceCodesUrl, "/api/alive");
+        var aliveUrl = new Uri(evidenceCodesUrl, "/api/" + DanHealthFunctions.AliveRoute);
         builder.AddOutboundProbe($"Plugin:{source.Trim()}", aliveUrl);
     }
 }

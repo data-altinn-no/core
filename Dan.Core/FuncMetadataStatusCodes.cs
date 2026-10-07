@@ -3,6 +3,7 @@ using Dan.Core.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 
 namespace Dan.Core;

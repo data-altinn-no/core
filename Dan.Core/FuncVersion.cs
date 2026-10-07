@@ -1,4 +1,5 @@
 using System.Net;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 using Dan.Core.Helpers;
 using Microsoft.Azure.Functions.Worker;

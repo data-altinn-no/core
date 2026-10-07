@@ -3,6 +3,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 using Dan.Core.Helpers;
 using Dan.Core.Middleware;

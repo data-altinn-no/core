@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 using Dan.Core.Middleware;
 

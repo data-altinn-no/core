@@ -3,6 +3,7 @@ using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
 using Dan.Common.Services;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 using Dan.Core.Exceptions;
 using Dan.Core.Extensions;

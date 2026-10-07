@@ -18,7 +18,12 @@ public static class FunctionContextExtensions
         var assemblyPath = context.FunctionDefinition.PathToAssembly;
         var assembly = Assembly.LoadFrom(assemblyPath);
         var typeName = entryPoint.Substring(0, entryPoint.LastIndexOf('.'));
-        var type = assembly.GetType(typeName);
+        var type = assembly.GetType(typeName)
+                   // Functions declared in referenced assemblies (e.g. the health endpoints in Dan.Common) may be
+                   // indexed with a different PathToAssembly than the declaring one; fall back to loaded assemblies.
+                   ?? AppDomain.CurrentDomain.GetAssemblies()
+                       .Select(a => a.GetType(typeName))
+                       .FirstOrDefault(t => t != null);
         if (type == null)
         {
             throw new InternalServerErrorException($"{nameof(GetTargetFunctionMethod)} failed loading type {typeName}");

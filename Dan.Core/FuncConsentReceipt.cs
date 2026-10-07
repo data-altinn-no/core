@@ -4,6 +4,7 @@ using Dan.Common;
 using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
+using Dan.Common.Attributes;
 using Dan.Core.Attributes;
 using Dan.Core.Config;
 using Dan.Core.Exceptions;

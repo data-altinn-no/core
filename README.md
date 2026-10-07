@@ -14,7 +14,7 @@ DAN Common contains all shared models and utilites used across all DAN projects.
 
 ## Health endpoints
 
-Core and plugins follow the [Altinn health check convention](https://github.com/Altinn/altinn-aspnet-healthchecks). Functions apps have no endpoint routing, so the routes are HTTP-trigger functions (`FuncHealth` in Core, a `DanHealthFunctionsBase` subclass in plugins) that evaluate the convention's tag filters and render with the library's formatters (`application/vnd.altinn.health.v1+json`, or a single word with `Accept: text/plain`). Healthy/Degraded gives 200, Unhealthy gives 503.
+Core and plugins follow the [Altinn health check convention](https://github.com/Altinn/altinn-aspnet-healthchecks). Functions apps have no endpoint routing, so the routes are HTTP-trigger functions (`Dan.Common.Health.DanHealthFunctions`) that evaluate the convention's tag filters and render with the library's formatters (`application/vnd.altinn.health.v1+json`, or a single word with `Accept: text/plain`). Healthy/Degraded gives 200, Unhealthy gives 503.
 
 | Path | Tags evaluated | Auth | Purpose |
 |---|---|---|---|
@@ -26,7 +26,7 @@ Core and plugins follow the [Altinn health check convention](https://github.com/
 
 Redis and Cosmos DB are tagged `dependencies` only, not `critical`, so a shared outage does not de-pool every instance. External probes are soft (`Degraded`) and can never turn a response into 503. Detail level follows the environment (Development → Full, Production → Summary, otherwise Diagnostic) and can be overridden with the `HealthReportDetailLevel` app setting.
 
-Plugins get the services registered by `ConfigureDanPluginDefaults()` and expose the routes by subclassing `Dan.Common.Health.DanHealthFunctionsBase`; see `Dan.PluginTest/Health.cs`.
+The functions are declared in Dan.Common and the Functions worker SDK indexes functions from referenced assemblies, so Core and every plugin serve the routes automatically once they reference a Dan.Common version that includes them. Plugins get the services from `ConfigureDanPluginDefaults()` and need no code; add dependency checks or outbound probes to the builder returned by `AddDanHealthChecks()` if wanted. The function names are prefixed `dan-health`; a plugin that already owns one of the routes above must rename its own, because attribute-declared routes cannot be switched off.
 
 # Getting Started
 

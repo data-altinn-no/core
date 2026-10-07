@@ -115,8 +115,8 @@ public static class HostBuilderExtensions
 
                 services.AddMemoryCache();
 
-                // Altinn health check convention. Registers the services only; plugins expose the routes by
-                // subclassing DanHealthFunctionsBase (functions must be declared in the entry assembly).
+                // Altinn health check convention. The endpoints themselves (DanHealthFunctions) are indexed from this
+                // assembly by the worker SDK, so plugins get the routes without declaring anything.
                 services.AddDanHealthChecks(context.HostingEnvironment, context.Configuration);
 
                 services.AddTransient<PluginAuthorizationMessageHandler>();
