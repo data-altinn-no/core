@@ -180,6 +180,31 @@ namespace Dan.Core.UnitTest.Services
         }
 
         [TestMethod]
+        public async Task ValidateTestFailureWithDeletedSubject()
+        {
+            // Setup
+            const string deletedSubject = "210035702";
+            A.CallTo(() => _mockEntityRegistryService.Get(deletedSubject, A<bool>._, A<bool>._, A<bool>._))
+                .Returns(Task.FromResult(new SimpleEntityRegistryUnit { IsDeleted = true }));
+
+            var arvs = new AuthorizationRequestValidatorService(
+                _loggerFactory,
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
+
+            // Act
+            var exception = await Assert.ThrowsAsync<DeletedSubjectException>(async () =>
+            {
+                await arvs.Validate(GetAuthorizationRequest(subject: deletedSubject));
+            });
+
+            // Verify
+            Assert.AreEqual(ErrorCode.DeletedSubjectException, exception.ExceptionErrorCode);
+        }
+
+        [TestMethod]
         public async Task ValidateTestFailureWithInvalidRequestorOrgNo()
         {
             // Setup

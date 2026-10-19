@@ -319,7 +319,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
 
         if (entity.IsDeleted)
         {
-            throw new InvalidSubjectException("Subject (" + _authRequest.Subject + ") is deleted from the Central Coordinating Register for Legal Entities");
+            throw new DeletedSubjectException("Subject (" + _authRequest.Subject + ") is deleted from the Central Coordinating Register for Legal Entities");
         }
     }
     
