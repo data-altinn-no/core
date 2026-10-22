@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using AwesomeAssertions;
 using Dan.Common.Enums;
 using Dan.Common.Models;
 using Dan.Core.Exceptions;
+using Dan.Core.Extensions;
 using Dan.Core.Services;
 using Dan.Core.Services.Interfaces;
 using Dan.Core.UnitTest.Helpers;
@@ -202,6 +204,7 @@ namespace Dan.Core.UnitTest.Services
 
             // Verify
             Assert.AreEqual(ErrorCode.DeletedSubjectException, exception.ExceptionErrorCode);
+            Assert.AreEqual(HttpStatusCode.NotFound, exception.GetErrorCode());
         }
 
         [TestMethod]
