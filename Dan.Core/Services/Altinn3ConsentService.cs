@@ -441,7 +441,15 @@ namespace Dan.Core.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    var errors = JsonConvert.DeserializeObject<List<Altinn3ConsentRequestError>>(responseContent);
+                    List<Altinn3ConsentRequestError>? errors = null;
+                    try
+                    {
+                        errors = JsonConvert.DeserializeObject<List<Altinn3ConsentRequestError>>(responseContent);
+                    }
+                    catch (JsonException)
+                    {
+                        // Error body was not the expected JSON error model (e.g. plain text); fall through with status code only
+                    }
                     var errorString = string.Empty;
                     if (errors != null)
                     {
