@@ -1,12 +1,15 @@
 {
     "version": "2.0",
+    "telemetryMode": "OpenTelemetry",
     "logging": {
-        "applicationInsights": {
-            "samplingSettings": {
-                "isEnabled": true,
-                "excludedTypes": "Request"
+        "OpenTelemetry": {
+            "logLevel": {
+                "default": "Information",
+                "Microsoft": "Warning"
             },
-            "enableLiveMetricsFilters": true
+            "samplingSettings": {
+                "isEnabled": false
+            }
         }
     }
 }
