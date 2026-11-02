@@ -26,6 +26,7 @@ namespace Dan.Core
         private readonly Services.Interfaces.IEntityRegistryService _entityRegistryService;
         private readonly IServiceContextService _serviceContextService;
         private readonly IAccreditationRepository _accreditationRepository;
+        private readonly IConsentEventPublisher _consentEventPublisher;
         private readonly ILogger<FuncConsentReceipt> _logger;
         private const string AboutUrl = "https://docs.data.altinn.no/";
         private static readonly string AboutInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href=\"{AboutUrl}\">docs.data.altinn.no</a>";
@@ -36,16 +37,19 @@ namespace Dan.Core
         /// <param name="entityRegistryService"></param>
         /// <param name="serviceContextService"></param>
         /// <param name="accreditationRepository"></param>
+        /// <param name="consentEventPublisher"></param>
         /// <param name="loggerFactory"></param>
         public FuncConsentReceipt(
             Services.Interfaces.IEntityRegistryService entityRegistryService,
             IServiceContextService serviceContextService,
             IAccreditationRepository accreditationRepository,
+            IConsentEventPublisher consentEventPublisher,
             ILoggerFactory loggerFactory)
         {
             _entityRegistryService = entityRegistryService;
             _serviceContextService = serviceContextService;
             _accreditationRepository = accreditationRepository;
+            _consentEventPublisher = consentEventPublisher;
             _logger = loggerFactory.CreateLogger<FuncConsentReceipt>();
             
             
@@ -114,8 +118,12 @@ namespace Dan.Core
                     return response;
                 }
                 
+                // The outbox record is persisted together with the status so the retry timer can pick it up if the
+                // inline publish attempt below fails.
+                _consentEventPublisher.Enqueue(accreditation, ConsentEventTypes.Granted);
                 await _accreditationRepository.UpdateAccreditationAsync(accreditation);
                 _logger.DanLog(accreditation, LogAction.ConsentGiven);
+                await TryPublishConsentEvents(accreditation);
 
                 if (string.IsNullOrEmpty(accreditation.ConsentReceiptRedirectUrl))
                 {
@@ -137,9 +145,11 @@ namespace Dan.Core
             }
 
             accreditation.Altinn3ConsentStatus = Altinn3ConsentService.ConsentDenied;
+            _consentEventPublisher.Enqueue(accreditation, ConsentEventTypes.Denied);
             await _accreditationRepository.UpdateAccreditationAsync(accreditation);
 
             _logger.DanLog(accreditation, LogAction.ConsentDenied);
+            await TryPublishConsentEvents(accreditation);
 
             if (string.IsNullOrEmpty(accreditation.ConsentReceiptRedirectUrl))
             {
@@ -158,6 +168,30 @@ namespace Dan.Core
             }
 
             return CreateRedirectResponse(req, accreditation, req.GetQueryParam("status")!);
+        }
+
+        /// <summary>
+        /// Best-effort inline publish of pending consent events. Never throws: the receipt shown to the user must not
+        /// depend on Altinn Events being available, and the retry timer will pick up anything left unpublished.
+        /// </summary>
+        private async Task TryPublishConsentEvents(Accreditation accreditation)
+        {
+            if (!_consentEventPublisher.IsEnabled)
+            {
+                return;
+            }
+
+            try
+            {
+                if (await _consentEventPublisher.TryPublishPending(accreditation))
+                {
+                    await _accreditationRepository.UpdateAccreditationAsync(accreditation);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Inline consent event publish failed, will be retried aid={accreditationId}", accreditation.AccreditationId);
+            }
         }
 
         private HttpResponseData CreateRedirectResponse(HttpRequestData req, Accreditation accreditation, string status)

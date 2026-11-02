@@ -136,6 +136,50 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
         return result.StatusCode == HttpStatusCode.NoContent;
     }
 
+    public async Task<List<Accreditation>> GetAccreditationsWithUnpublishedConsentEventsAsync(DateTime changedAfter, int maxAttempts)
+    {
+        var queryDefinition = new QueryDefinition(
+                "SELECT * FROM c WHERE c.lastChanged > @changedAfter " +
+                "AND EXISTS(SELECT VALUE e FROM e IN c.consentEvents WHERE e.published = false AND e.attempts < @maxAttempts)")
+            .WithParameter("@changedAfter", changedAfter.ToString("O"))
+            .WithParameter("@maxAttempts", maxAttempts);
+
+        return await ExecuteCrossPartitionQueryAsync(queryDefinition);
+    }
+
+    public async Task<List<Accreditation>> GetAccreditationsWithExpiredPendingConsentAsync(DateTime now, DateTime expiredAfter, string expiredEventType)
+    {
+        // Altinn3ConsentStatus is serialized with NullValueHandling.Ignore, so "pending" is usually an undefined property
+        var queryDefinition = new QueryDefinition(
+                "SELECT * FROM c WHERE IS_DEFINED(c.altinn3ConsentId) " +
+                "AND (NOT IS_DEFINED(c.altinn3ConsentStatus) OR IS_NULL(c.altinn3ConsentStatus)) " +
+                "AND c.validTo < @now AND c.validTo > @expiredAfter " +
+                "AND NOT EXISTS(SELECT VALUE e FROM e IN c.consentEvents WHERE e.type = @expiredEventType)")
+            .WithParameter("@now", now.ToString("O"))
+            .WithParameter("@expiredAfter", expiredAfter.ToString("O"))
+            .WithParameter("@expiredEventType", expiredEventType);
+
+        return await ExecuteCrossPartitionQueryAsync(queryDefinition);
+    }
+
+    private async Task<List<Accreditation>> ExecuteCrossPartitionQueryAsync(QueryDefinition queryDefinition)
+    {
+        var accreditations = new List<Accreditation>();
+        using (var feedIterator = _container.GetItemQueryIterator<Accreditation>(queryDefinition))
+        {
+            while (feedIterator.HasMoreResults)
+            {
+                foreach (var accreditation in await feedIterator.ReadNextAsync())
+                {
+                    accreditation.PopulateParties();
+                    accreditations.Add(accreditation);
+                }
+            }
+        }
+
+        return accreditations;
+    }
+
     private Accreditation GetAccredidationWithoutRequirements(Accreditation accreditation)
     {
         var newAccreditation = accreditation.DeepCopy();

@@ -19,6 +19,8 @@ public static class Constants
 
     public const string Altinn3NotificationsHttpClient = "Altinn3NotificationsHttpClient";
 
+    public const string AltinnEventsHttpClient = "AltinnEventsHttpClient";
+
     public const string LANGUAGE_CODE_NORWEGIAN_NB = "no-nb";
 
     public const string LANGUAGE_CODE_NORWEGIAN_NN = "no-nn";
@@ -32,6 +34,28 @@ public static class Constants
     public const string ACCESS_TOKEN = "access_token";
 
     public const string SUBSCRIPTION_KEY_HEADER = "Ocp-Apim-Subscription-Key";
+}
+
+/// <summary>
+/// CloudEvent type names published by data.altinn.no to Altinn Events when a consent request changes state.
+/// Clients use these as the exact-match typeFilter of an Altinn Events subscription.
+/// </summary>
+public static class ConsentEventTypes
+{
+    /// <summary>
+    /// The subject granted the consent request; the data is now available for harvest
+    /// </summary>
+    public const string Granted = "no.digdir.dataaltinnno.consent.granted";
+
+    /// <summary>
+    /// The subject denied the consent request
+    /// </summary>
+    public const string Denied = "no.digdir.dataaltinnno.consent.denied";
+
+    /// <summary>
+    /// The accreditation expired before the consent request was answered
+    /// </summary>
+    public const string Expired = "no.digdir.dataaltinnno.consent.expired";
 }
 
 /// <summary>

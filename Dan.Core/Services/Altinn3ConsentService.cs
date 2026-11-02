@@ -1,6 +1,7 @@
 ﻿using Altinn.Dd.Correspondence.Models;
 using Altinn.Dd.Correspondence.Services;
 using Azure.Core;
+using Dan.Common;
 using Dan.Common.Enums;
 using Dan.Common.Interfaces;
 using Dan.Common.Models;
@@ -29,11 +30,18 @@ namespace Dan.Core.Services
         private readonly IAltinnServiceOwnerApiService _altinnServiceOwnerApiService;
         private readonly IRequestContextService _requestContextService;
         private readonly ITokenRequesterService _tokenRequesterService;
+        private readonly IAccreditationRepository _accreditationRepository;
+        private readonly IConsentEventPublisher _consentEventPublisher;
 
         /// <summary>
         /// Magic string used as authorization code when the user has actively denied a consent request
         /// </summary>
         public const string ConsentDenied = "denied";
+
+        /// <summary>
+        /// Status value recorded when a consent request has been granted (the "status" query value Altinn redirects with)
+        /// </summary>
+        public const string ConsentGranted = "ok";
 
         /// <summary>
         /// Magic string for claim name for validTo
@@ -48,7 +56,9 @@ namespace Dan.Core.Services
             Interfaces.IEntityRegistryService entityRegistryService,
             IAltinnServiceOwnerApiService altinnServiceOwnerApiService,
             IRequestContextService requestContextService,
-            ITokenRequesterService tokenRequesterService)
+            ITokenRequesterService tokenRequesterService,
+            IAccreditationRepository accreditationRepository,
+            IConsentEventPublisher consentEventPublisher)
         {
             _httpClient = httpClient;
             _noCertHttpClient = noCertHttpClient;
@@ -58,6 +68,8 @@ namespace Dan.Core.Services
             _altinnServiceOwnerApiService = altinnServiceOwnerApiService;
             _requestContextService = requestContextService;
             _tokenRequesterService = tokenRequesterService;
+            _accreditationRepository = accreditationRepository;
+            _consentEventPublisher = consentEventPublisher;
         }
 
         /// <summary>
@@ -118,6 +130,11 @@ namespace Dan.Core.Services
                 }
 
                 // A valid consent token was retrieved - the consent is active in Altinn even if our local status is null.
+                if (accreditation.Altinn3ConsentStatus == null)
+                {
+                    await RecordRecoveredGrant(accreditation);
+                }
+
                 return ConsentStatus.Granted;
             }
 
@@ -128,6 +145,33 @@ namespace Dan.Core.Services
             }
 
             return ConsentStatus.Granted;
+        }
+
+        /// <summary>
+        /// Persists a consent grant that was detected by the live check rather than by the receipt callback
+        /// (e.g. the user closed the browser before Altinn redirected back to us), and publishes the consent event.
+        /// Never throws; the harvest that triggered the check must still succeed.
+        /// </summary>
+        private async Task RecordRecoveredGrant(Accreditation accreditation)
+        {
+            accreditation.Altinn3ConsentStatus = ConsentGranted;
+            accreditation.LastChanged = DateTime.Now;
+            _consentEventPublisher.Enqueue(accreditation, ConsentEventTypes.Granted);
+
+            try
+            {
+                await _accreditationRepository.UpdateAccreditationAsync(accreditation);
+                _logger.DanLog(accreditation, LogAction.ConsentGiven);
+
+                if (_consentEventPublisher.IsEnabled && await _consentEventPublisher.TryPublishPending(accreditation))
+                {
+                    await _accreditationRepository.UpdateAccreditationAsync(accreditation);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to persist consent grant recovered by live check aid={accreditationId}", accreditation.AccreditationId);
+            }
         }
 
         private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)

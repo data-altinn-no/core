@@ -50,6 +50,12 @@ namespace Dan.Core.UnitTest
             private readonly ILogger<Altinn3ConsentService> _mockLogger =
                 A.Fake<ILogger<Altinn3ConsentService>>();
 
+            private readonly IAccreditationRepository _mockAccreditationRepository =
+                A.Fake<IAccreditationRepository>();
+
+            private readonly IConsentEventPublisher _mockConsentEventPublisher =
+                A.Fake<IConsentEventPublisher>();
+
             private Accreditation accreditation;
 
             private const string EVIDENCECODE_OPEN = "EvidenceCodeOpen";
@@ -180,7 +186,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
 
@@ -216,7 +224,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
 
@@ -247,7 +257,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.EvidenceCodes = new List<EvidenceCode>
@@ -281,7 +293,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentStatus = null;
@@ -312,7 +326,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentStatus = null;
@@ -350,7 +366,94 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
+
+                var testAccreditation = GetAccreditation();
+                testAccreditation.Altinn3ConsentStatus = null;
+                A.CallTo(() => _mockConsentEventPublisher.IsEnabled).Returns(true);
+                A.CallTo(() => _mockConsentEventPublisher.TryPublishPending(testAccreditation)).Returns(Task.FromResult(true));
+
+                // Act
+                var result = await consentService.Check(testAccreditation, onlyLocalCheck: false);
+
+                // Assert
+                Assert.AreEqual(ConsentStatus.Granted, result);
+
+                // The recovered grant must be persisted locally and a consent event enqueued + published
+                Assert.AreEqual(Altinn3ConsentService.ConsentGranted, testAccreditation.Altinn3ConsentStatus);
+                A.CallTo(() => _mockConsentEventPublisher.Enqueue(testAccreditation, ConsentEventTypes.Granted))
+                    .MustHaveHappenedOnceExactly();
+                A.CallTo(() => _mockAccreditationRepository.UpdateAccreditationAsync(testAccreditation))
+                    .MustHaveHappenedTwiceExactly();
+            }
+
+            [TestMethod]
+            public async Task TestCheck_DoesNotRecordGrant_WhenAlreadyGrantedLocally()
+            {
+                // Arrange
+                var httpClient = TestHelpers.GetHttpClientMock("{}");
+                var noCertHttpClient = TestHelpers.GetHttpClientMock("[{}]");
+
+                var payloadJson = "{\"exp\":\"9999999999\"}";
+                var payloadB64Url = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(payloadJson))
+                    .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+                var validToken = $"header.{payloadB64Url}.signature";
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<EvidenceCode>._))
+                    .Returns(Task.FromResult(validToken));
+
+                var consentService = new Altinn3ConsentService(
+                    httpClient,
+                    noCertHttpClient,
+                    _mockLogger,
+                    _mockDdCorrespondenceService,
+                    _mockEntityRegistryService,
+                    _mockAltinnServiceOwnerApiService,
+                    _mockRequestContextService,
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
+
+                var testAccreditation = GetAccreditation();
+                testAccreditation.Altinn3ConsentStatus = Altinn3ConsentService.ConsentGranted;
+
+                // Act
+                var result = await consentService.Check(testAccreditation, onlyLocalCheck: false);
+
+                // Assert
+                Assert.AreEqual(ConsentStatus.Granted, result);
+                A.CallTo(() => _mockConsentEventPublisher.Enqueue(A<Accreditation>._, A<string>._)).MustNotHaveHappened();
+                A.CallTo(() => _mockAccreditationRepository.UpdateAccreditationAsync(A<Accreditation>._)).MustNotHaveHappened();
+            }
+
+            [TestMethod]
+            public async Task TestCheck_ReturnsGranted_WhenRecoveryPersistFails()
+            {
+                // Arrange - the harvest must not fail just because we could not persist the recovered grant
+                var httpClient = TestHelpers.GetHttpClientMock("{}");
+                var noCertHttpClient = TestHelpers.GetHttpClientMock("[{}]");
+
+                var payloadJson = "{\"exp\":\"9999999999\"}";
+                var payloadB64Url = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(payloadJson))
+                    .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+                var validToken = $"header.{payloadB64Url}.signature";
+                A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<EvidenceCode>._))
+                    .Returns(Task.FromResult(validToken));
+                A.CallTo(() => _mockAccreditationRepository.UpdateAccreditationAsync(A<Accreditation>._))
+                    .Throws(new Exception("cosmos down"));
+
+                var consentService = new Altinn3ConsentService(
+                    httpClient,
+                    noCertHttpClient,
+                    _mockLogger,
+                    _mockDdCorrespondenceService,
+                    _mockEntityRegistryService,
+                    _mockAltinnServiceOwnerApiService,
+                    _mockRequestContextService,
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentStatus = null;
@@ -377,7 +480,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentStatus = "denied";
@@ -404,7 +509,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentStatus = "ok";
@@ -432,7 +539,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentStatus = "ok";
@@ -464,7 +573,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentId = "consent-id-456";
@@ -494,7 +605,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.Altinn3ConsentId = null;
@@ -522,7 +635,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var evidenceCode = new EvidenceCode
                 {
@@ -559,7 +674,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var evidenceCode = new EvidenceCode
                 {
@@ -592,7 +709,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var evidenceCode = new EvidenceCode
                 {
@@ -629,7 +748,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 testAccreditation.EvidenceCodes = new List<EvidenceCode>
@@ -679,7 +800,9 @@ namespace Dan.Core.UnitTest
                     _mockEntityRegistryService,
                     _mockAltinnServiceOwnerApiService,
                     _mockRequestContextService,
-                    _mockTokenRequesterService);
+                    _mockTokenRequesterService,
+                    _mockAccreditationRepository,
+                    _mockConsentEventPublisher);
 
                 var testAccreditation = GetAccreditation();
                 var evidenceCode = new EvidenceCode { EvidenceCodeName = "test" };
