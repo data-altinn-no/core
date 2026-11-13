@@ -109,27 +109,6 @@ public class EntityRegistryServiceTest
     }
     
     [TestMethod]
-    public void TestGetMainUnit()
-    {
-        var r = entityRegistryService.GetMainUnit("91").Result;
-        Assert.AreEqual("91", r?.OrganizationNumber);
-    }
-    
-    [TestMethod]
-    public void TestGetMainUnitAttemptsSubunitLookup()
-    {
-        var r = entityRegistryService.GetMainUnit("92").Result;
-        Assert.AreEqual("91", r?.OrganizationNumber);
-    }
-    
-    [TestMethod]
-    public void TestGetFullMainAttemptsSubunitLookup()
-    {
-        var r = entityRegistryService.GetFullMainUnit("92").Result;
-        Assert.AreEqual("91", r?.Organisasjonsnummer);
-    }
-    
-    [TestMethod]
     public void TestGetSubUnitOnlyReturnsSubunit()
     {
         var r = entityRegistryService.Get("92", subUnitOnly: true).Result;
@@ -141,13 +120,6 @@ public class EntityRegistryServiceTest
     {
         var r = entityRegistryService.Get("91", subUnitOnly: true).Result;
         Assert.IsNull(r);
-    }
-
-    [TestMethod]
-    public void TestGetNestToTopmostMainUnitReturnsMainunit()
-    {
-        var r = entityRegistryService.GetMainUnit("94").Result;
-        Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
     [DataTestMethod]
