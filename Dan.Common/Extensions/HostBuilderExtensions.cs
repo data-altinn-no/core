@@ -77,7 +77,17 @@ public static class HostBuilderExtensions
                 {
                     services.AddOpenTelemetry()
                         .WithTracing(tracing => tracing.AddHttpClientInstrumentation())
-                        .UseAzureMonitorExporter(options => options.ConnectionString = appInsightsConnectionString)
+                        .UseAzureMonitorExporter(options =>
+                        {
+                            options.ConnectionString = appInsightsConnectionString;
+                            // Export logs even when the trace they belong to is not sampled,
+                            // so error logs are never silently dropped.
+                            options.EnableTraceBasedLogsSampler = false;
+                            // Disable sampling (default is rate-limited to 5 traces/sec) so all
+                            // telemetry is exported, matching the previous Application Insights setup.
+                            options.SamplingRatio = 1.0f;
+                            options.TracesPerSecond = null;
+                        })
                         .UseFunctionsWorkerDefaults();
                 }
 
