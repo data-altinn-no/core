@@ -6,9 +6,6 @@
             "logLevel": {
                 "default": "Information",
                 "Microsoft": "Warning"
-            },
-            "samplingSettings": {
-                "isEnabled": false
             }
         }
     }
