@@ -12,12 +12,11 @@ namespace Dan.Core.UnitTest.Services;
 public class EntityRegistryServiceTest
 {
     private readonly IEntityRegistryApiClientService entityRegistryApiClientServiceMock = A.Fake<IEntityRegistryApiClientService>();
-    private readonly ILogger<EntityRegistryService> logger = A.Fake<ILogger<EntityRegistryService>>();
     private readonly EntityRegistryService entityRegistryService;
 
     public EntityRegistryServiceTest()
     {
-        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
+        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock);
     }
 
     [TestInitialize]
@@ -46,29 +45,6 @@ public class EntityRegistryServiceTest
                 {
                     Organisasjonsnummer = "92",
                     OverordnetEnhet = "91",
-                    Organisasjonsform = orgForm
-                });
-        }
-
-        // Only subunits are at the leaf node, any nested parents are MainUnits
-        if (url.AbsolutePath.Contains("/enheter/93"))
-        {
-            return Task.FromResult<EntityRegistryUnit?>(
-                new EntityRegistryUnit
-                {
-                    Organisasjonsnummer = "93",
-                    OverordnetEnhet = "91",
-                    Organisasjonsform = orgForm
-                });
-        }
-
-        if (url.AbsolutePath.Contains("/underenheter/94"))
-        {
-            return Task.FromResult<EntityRegistryUnit?>(
-                new EntityRegistryUnit
-                {
-                    Organisasjonsnummer = "94",
-                    OverordnetEnhet = "93",
                     Organisasjonsform = orgForm
                 });
         }

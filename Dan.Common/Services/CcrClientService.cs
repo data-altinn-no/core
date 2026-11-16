@@ -56,7 +56,7 @@ public interface ICcrClientService
 public class CcrClientService(IHttpClientFactory httpClientFactory, ILogger<CcrClientService> logger) : ICcrClientService
 {
     private readonly HttpClient httpClient = httpClientFactory.CreateClient(Constants.SafeHttpClient);
-    private const string CcrBaseLocal = "http://localhost:7071/api/ccr";
+    private const string CcrBaseLocal = "http://localhost:7076/api/ccr";
     private const string CrrBaseDev = "https://dev-api.data.altinn.no/v1/public/ccr";
     private const string CrrBaseTest = "https://test-api.data.altinn.no/v1/public/ccr";
     private const string CrrBaseProd = "https://api.data.altinn.no/v1/public/ccr";

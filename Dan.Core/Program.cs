@@ -171,12 +171,6 @@ var host = new HostBuilder()
         services.AddPolicyRegistry(new PolicyRegistry()
             {
                 {
-                    CachingEntityRegistryApiClientService.EntityRegistryCachePolicy, Policy.CacheAsync(
-                        distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
-                            new JsonSerializer<EntityRegistryUnit?>(new JsonSerializerSettings())),
-                        TimeSpan.FromHours(12))
-                },
-                {
                     "EvidenceCodesCachePolicy", Policy.CacheAsync(
                         distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
                             new JsonSerializer<List<EvidenceCode>>(new JsonSerializerSettings
@@ -184,12 +178,6 @@ var host = new HostBuilder()
                                 TypeNameHandling = TypeNameHandling.All
                             })
                         ), AvailableEvidenceCodesService.DistributedCacheTtl)
-                },
-                {
-                    CachingEntityRegistryApiClientService.EntityRegistryListCachePolicy, Policy.CacheAsync(
-                        distributedCache.AsAsyncCacheProvider<string>().WithSerializer(
-                            new JsonSerializer<List<EntityRegistryUnit>>(new JsonSerializerSettings())),
-                        TimeSpan.FromHours(12))
                 },
                 {
                     "MaskinportenTokenPolicy", Policy.CacheAsync(

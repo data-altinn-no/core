@@ -60,7 +60,7 @@ namespace Dan.Core.UnitTest.Services
             A.CallTo(() => _mockTokenRequesterService.GetMaskinportenToken(A<string>._, A<string>._))
                 .Returns(Task.FromResult("{\"access_token\":\"\"}"));
 
-            A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
+            A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._))
                 .Returns(Task.FromResult(GetBrEntry()));
 
             A.CallTo(() => _mockAvailableEvidenceCodesService.GetAvailableEvidenceCodes(A<bool>._))
@@ -186,7 +186,7 @@ namespace Dan.Core.UnitTest.Services
         {
             // Setup
             const string deletedSubject = "210035702";
-            A.CallTo(() => _mockEntityRegistryService.Get(deletedSubject, A<bool>._, A<bool>._, A<bool>._))
+            A.CallTo(() => _mockEntityRegistryService.Get(deletedSubject, A<bool>._, A<bool>._))
                 .Returns(Task.FromResult(new SimpleEntityRegistryUnit { IsDeleted = true }));
 
             var arvs = new AuthorizationRequestValidatorService(
