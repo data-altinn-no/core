@@ -5,6 +5,7 @@ using Azure.Monitor.OpenTelemetry.Exporter;
 using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
 using Dan.Common.Services;
+using Dan.Common.Telemetry;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.Configuration;
@@ -57,6 +58,12 @@ public static class HostBuilderExtensions
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
                 });
+
+                // The HttpClient factory logs "Start processing HTTP request GET <url>" at Information level, with the
+                // full URL. Many data sources put the subject's national identity number in the URL, so keep these lines
+                // out of the logs. Outgoing calls are still traced as dependencies (masked by SsnRedactingProcessor).
+                // Note: logLevel in host.json does not apply here, as worker logs are exported directly via OpenTelemetry.
+                logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
             })
             .ConfigureServices((context, services) =>
             {
@@ -76,7 +83,11 @@ public static class HostBuilderExtensions
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
                     services.AddOpenTelemetry()
-                        .WithTracing(tracing => tracing.AddHttpClientInstrumentation())
+                        // SsnRedactingProcessor masks national identity numbers in span URLs and names. It is added
+                        // here, before UseAzureMonitorExporter, so it runs ahead of the export processor.
+                        .WithTracing(tracing => tracing
+                            .AddProcessor<SsnRedactingProcessor>()
+                            .AddHttpClientInstrumentation())
                         .UseAzureMonitorExporter(options =>
                         {
                             options.ConnectionString = appInsightsConnectionString;
