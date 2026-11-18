@@ -64,8 +64,9 @@ public class SsnRedactingLogProcessorTests
     [TestMethod]
     public void OnEnd_ReplacesExceptionContainingIdentityNumber()
     {
+        var exported = new List<(string? Message, string? Body, Dictionary<string, object?> Attributes)>();
         Exception? exportedException = null;
-        using (var loggerFactory = CreateLoggerFactory([], e => exportedException = e))
+        using (var loggerFactory = CreateLoggerFactory(exported, e => exportedException = e))
         {
             var inner = new InvalidOperationException("Upstream said: unknown person 27907898224");
             var exception = new HttpRequestException("GET https://api.example.no/personer/06815298657 failed", inner);
@@ -79,19 +80,65 @@ public class SsnRedactingLogProcessorTests
             .And.NotContain("06815298657").And.NotContain("27907898224");
         redacted.InnerException.Should().BeOfType<RedactedException>()
             .Which.Message.Should().Be("System.InvalidOperationException: Upstream said: unknown person 279078*****");
+
+        exported.Should().ContainSingle();
+        exported[0].Attributes[SsnRedactingLogProcessor.OriginalExceptionAttribute].Should().BeOfType<string>()
+            .Which.Should().StartWith("System.Net.Http.HttpRequestException: GET https://api.example.no/personer/068152***** failed")
+            .And.Contain("System.InvalidOperationException: Upstream said: unknown person 279078*****")
+            .And.NotContain("06815298657").And.NotContain("27907898224");
     }
 
     [TestMethod]
-    public void OnEnd_KeepsExceptionWithoutIdentityNumber()
+    public void OnEnd_ReplacesOuterExceptionWhenOnlyInnerContainsIdentityNumber()
     {
         Exception? exportedException = null;
-        var exception = new HttpRequestException("GET https://api.example.no/organisasjoner/991825827 failed");
+        var cleanInner = new TimeoutException("Timed out");
+        var dirtyInner = new InvalidOperationException("Unknown person 27907898224", cleanInner);
+        var exception = new HttpRequestException("Lookup failed", dirtyInner);
         using (var loggerFactory = CreateLoggerFactory([], e => exportedException = e))
         {
             loggerFactory.CreateLogger("Test").LogError(exception, "Lookup failed");
         }
 
+        // The original's inner exception cannot be swapped, so the outer exception has to be replaced as well.
+        var redacted = exportedException.Should().BeOfType<RedactedException>().Subject;
+        redacted.Message.Should().Be("System.Net.Http.HttpRequestException: Lookup failed");
+        var redactedInner = redacted.InnerException.Should().BeOfType<RedactedException>().Subject;
+        redactedInner.Message.Should().Be("System.InvalidOperationException: Unknown person 279078*****");
+        // Inner exceptions without an identity number are kept as they are.
+        redactedInner.InnerException.Should().BeSameAs(cleanInner);
+    }
+
+    [TestMethod]
+    public void OnEnd_ReplacesAggregateExceptionWhenAnyInnerContainsIdentityNumber()
+    {
+        Exception? exportedException = null;
+        var exception = new AggregateException("Several lookups failed",
+            new TimeoutException("Timed out"), new InvalidOperationException("Unknown person 27907898224"));
+        using (var loggerFactory = CreateLoggerFactory([], e => exportedException = e))
+        {
+            loggerFactory.CreateLogger("Test").LogError(exception, "Lookup failed");
+        }
+
+        exportedException.Should().BeOfType<RedactedException>()
+            .Which.ToString().Should().Contain("279078*****").And.NotContain("27907898224");
+    }
+
+    [TestMethod]
+    public void OnEnd_KeepsExceptionWithoutIdentityNumber()
+    {
+        var exported = new List<(string? Message, string? Body, Dictionary<string, object?> Attributes)>();
+        Exception? exportedException = null;
+        var exception = new HttpRequestException("GET https://api.example.no/organisasjoner/991825827 failed",
+            new InvalidOperationException("Upstream returned 500"));
+        using (var loggerFactory = CreateLoggerFactory(exported, e => exportedException = e))
+        {
+            loggerFactory.CreateLogger("Test").LogError(exception, "Lookup failed");
+        }
+
         exportedException.Should().BeSameAs(exception);
+        exported.Should().ContainSingle();
+        exported[0].Attributes.Should().NotContainKey(SsnRedactingLogProcessor.OriginalExceptionAttribute);
     }
 
     [TestMethod]

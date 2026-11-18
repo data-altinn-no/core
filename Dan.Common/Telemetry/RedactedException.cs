@@ -1,14 +1,21 @@
 namespace Dan.Common.Telemetry;
 
 /// <summary>
-/// Stand-in for an exception whose message or stack trace contains a national identity number. Exporters read
-/// <see cref="Exception.Message"/> and <see cref="Exception.ToString"/> directly from the exception object, which a
+/// Stand-in for an exception whose message contains a national identity number. Exporters read
+/// <see cref="Exception.Message"/> (and that of every inner exception) directly from the exception object, which a
 /// log processor cannot change, so <see cref="SsnRedactingLogProcessor"/> replaces the exception on the log record
 /// with this masked copy. The original exception type is kept at the start of <see cref="Message"/> and in
 /// <see cref="OriginalType"/>, and <see cref="ToString"/> returns the original exception's full text (type, message,
 /// inner exceptions and stack trace), masked.
 /// </summary>
-public sealed class RedactedException : Exception
+/// <remarks>
+/// The Azure Monitor exporter takes the exception type and the parsed stack trace from the exception object itself,
+/// so in Application Insights a replaced exception shows up as <see cref="RedactedException"/> without a parsed stack.
+/// Only exceptions that actually carry an identity number in a message are replaced, and
+/// <see cref="SsnRedactingLogProcessor"/> adds the masked full text as the <c>exception.original</c> log attribute so
+/// the stack trace is still available.
+/// </remarks>
+internal sealed class RedactedException : Exception
 {
     private readonly string _toString;
     private readonly string? _stackTrace;
@@ -33,13 +40,24 @@ public sealed class RedactedException : Exception
     public override string ToString() => _toString;
 
     /// <summary>
-    /// Returns a masked copy of <paramref name="exception"/> if its text contains a national identity number,
-    /// otherwise <paramref name="exception"/> itself (the same instance).
+    /// Returns a masked copy of <paramref name="exception"/> if its message, or the message of any of its inner
+    /// exceptions, contains a national identity number. Otherwise returns <paramref name="exception"/> itself (the
+    /// same instance).
     /// </summary>
+    /// <remarks>
+    /// Stack frames never hold data values, so only messages are checked. An exception whose own message is clean is
+    /// still replaced if one of its inner exceptions needs masking, because the inner exception of the original object
+    /// cannot be swapped out. Inner exceptions without an identity number are kept as they are.
+    /// </remarks>
     /// <param name="exception">The exception to check</param>
     /// <returns>The masked copy, or the original exception if nothing needed masking</returns>
     public static Exception MaskIfNeeded(Exception exception)
     {
+        if (!NeedsMasking(exception))
+        {
+            return exception;
+        }
+
         string fullText;
         try
         {
@@ -51,11 +69,6 @@ public sealed class RedactedException : Exception
             fullText = exception.Message;
         }
 
-        if (ReferenceEquals(SsnRedactingProcessor.Mask(fullText), fullText))
-        {
-            return exception;
-        }
-
         var originalType = exception.GetType().FullName ?? exception.GetType().Name;
         var inner = exception.InnerException == null ? null : MaskIfNeeded(exception.InnerException);
 
@@ -65,5 +78,22 @@ public sealed class RedactedException : Exception
             SsnRedactingProcessor.Mask(exception.StackTrace),
             originalType,
             inner);
+    }
+
+    private static bool NeedsMasking(Exception exception)
+    {
+        var message = exception.Message;
+        if (!ReferenceEquals(SsnRedactingProcessor.Mask(message), message))
+        {
+            return true;
+        }
+
+        // The exporter also exports every inner exception of an AggregateException.
+        if (exception is AggregateException aggregate)
+        {
+            return aggregate.InnerExceptions.Any(NeedsMasking);
+        }
+
+        return exception.InnerException != null && NeedsMasking(exception.InnerException);
     }
 }
