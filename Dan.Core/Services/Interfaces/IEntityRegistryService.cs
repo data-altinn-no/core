@@ -17,48 +17,18 @@ public interface IEntityRegistryService
     /// </summary>
     /// <param name="organizationNumber">The organization number</param>
     /// <param name="attemptSubUnitLookupIfNotFound">Will attempt to lookup a sub unit if main unit is not found</param>
-    /// <param name="nestToAndReturnMainUnit">If subunit, will nest up to uppermost parent and return that instead</param>
     /// <param name="subUnitOnly">Will skip checking for main unit, and only return a subunit if it's found</param>
     /// <returns>A simplified model from ER suitable for most verification purposes</returns>
-    Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false);
+    Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool subUnitOnly = false);
 
     /// <summary>
     /// Gets the organization number from ER.
     /// </summary>
     /// <param name="organizationNumber">The organization number</param>
     /// <param name="attemptSubUnitLookupIfNotFound">Will attempt to lookup a sub unit if main unit is not found</param>
-    /// <param name="nestToAndReturnMainUnit">If subunit, will nest up to uppermost parent and return that instead</param>
     /// <param name="subUnitOnly">Will skip checking for main unit, and only return a subunit if it's found</param>
     /// <returns>A full model from ER containing all the fields from upstream</returns>
-    Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false);
-
-    /// <summary>
-    /// Gets the uppermost parent for the given organization number
-    /// </summary>
-    /// <param name="organizationNumber">The organization number</param>
-    /// <returns>A full model from ER containing all the fields from upstream</returns>
-    Task<EntityRegistryUnit?> GetFullMainUnit(string organizationNumber);
-
-    /// <summary>
-    /// Gets sub units of the given organization number
-    /// </summary>
-    /// <param name="organizationNumber">Organization number to get sub units for</param>
-    /// <returns>List of full models from ER contain all the subunits for the organisation</returns>
-    Task<List<EntityRegistryUnit>> GetSubunits(string organizationNumber);
-
-    /// <summary>
-    /// Get full hierarchy of subunits recursively for the given organization number
-    /// </summary>
-    /// <param name="orgNumber">Organization number to get </param>
-    /// <param name="currentDepth"></param>
-    /// <param name="maxDepth"></param>
-    /// <param name="unit"></param>
-    /// <returns>Nested structure of subunit hierarchy</returns>
-    Task<EntityRegistryUnitHierarchy?> GetSubunitHierarchy(
-        string orgNumber,
-        int currentDepth = 0,
-        int maxDepth = 10,
-        EntityRegistryUnit? unit = null);
+    Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool subUnitOnly = false);
 
     /// <summary>
     /// Returns true if the unit is determined to be a public agency

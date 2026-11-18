@@ -12,12 +12,11 @@ namespace Dan.Core.UnitTest.Services;
 public class EntityRegistryServiceTest
 {
     private readonly IEntityRegistryApiClientService entityRegistryApiClientServiceMock = A.Fake<IEntityRegistryApiClientService>();
-    private readonly ILogger<EntityRegistryService> logger = A.Fake<ILogger<EntityRegistryService>>();
     private readonly EntityRegistryService entityRegistryService;
 
     public EntityRegistryServiceTest()
     {
-        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock, logger);
+        entityRegistryService = new EntityRegistryService(entityRegistryApiClientServiceMock);
     }
 
     [TestInitialize]
@@ -46,29 +45,6 @@ public class EntityRegistryServiceTest
                 {
                     Organisasjonsnummer = "92",
                     OverordnetEnhet = "91",
-                    Organisasjonsform = orgForm
-                });
-        }
-
-        // Only subunits are at the leaf node, any nested parents are MainUnits
-        if (url.AbsolutePath.Contains("/enheter/93"))
-        {
-            return Task.FromResult<EntityRegistryUnit?>(
-                new EntityRegistryUnit
-                {
-                    Organisasjonsnummer = "93",
-                    OverordnetEnhet = "91",
-                    Organisasjonsform = orgForm
-                });
-        }
-
-        if (url.AbsolutePath.Contains("/underenheter/94"))
-        {
-            return Task.FromResult<EntityRegistryUnit?>(
-                new EntityRegistryUnit
-                {
-                    Organisasjonsnummer = "94",
-                    OverordnetEnhet = "93",
                     Organisasjonsform = orgForm
                 });
         }
@@ -109,27 +85,6 @@ public class EntityRegistryServiceTest
     }
     
     [TestMethod]
-    public void TestGetMainUnit()
-    {
-        var r = entityRegistryService.GetMainUnit("91").Result;
-        Assert.AreEqual("91", r?.OrganizationNumber);
-    }
-    
-    [TestMethod]
-    public void TestGetMainUnitAttemptsSubunitLookup()
-    {
-        var r = entityRegistryService.GetMainUnit("92").Result;
-        Assert.AreEqual("91", r?.OrganizationNumber);
-    }
-    
-    [TestMethod]
-    public void TestGetFullMainAttemptsSubunitLookup()
-    {
-        var r = entityRegistryService.GetFullMainUnit("92").Result;
-        Assert.AreEqual("91", r?.Organisasjonsnummer);
-    }
-    
-    [TestMethod]
     public void TestGetSubUnitOnlyReturnsSubunit()
     {
         var r = entityRegistryService.Get("92", subUnitOnly: true).Result;
@@ -141,13 +96,6 @@ public class EntityRegistryServiceTest
     {
         var r = entityRegistryService.Get("91", subUnitOnly: true).Result;
         Assert.IsNull(r);
-    }
-
-    [TestMethod]
-    public void TestGetNestToTopmostMainUnitReturnsMainunit()
-    {
-        var r = entityRegistryService.GetMainUnit("94").Result;
-        Assert.AreEqual("91", r?.OrganizationNumber);
     }
     
     [DataTestMethod]

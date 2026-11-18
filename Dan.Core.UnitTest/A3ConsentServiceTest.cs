@@ -77,7 +77,7 @@ namespace Dan.Core.UnitTest
                 A.CallTo(() => _mockTokenRequesterService.GetMaskinportenConsentToken(A<string>._, A<string>._, A<EvidenceCode>._))
                     .Returns(Task.FromResult("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJWYWxpZFRvRGF0ZSI6IjE3MDAwMDAwMDAiLCJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ."));
 
-                A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
+                A.CallTo(() => _mockEntityRegistryService.Get(A<string>._, A<bool>._, A<bool>._))
                     .Returns(Task.FromResult(GetBrEntry()));
 
                 A.CallTo(() => _mockEntityRegistryService.Get(A<string>._))

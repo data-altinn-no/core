@@ -6,8 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace Dan.Core.Services;
 
 public class EntityRegistryService(
-    Interfaces.IEntityRegistryApiClientService entityRegistryApiClientService, 
-    ILogger<EntityRegistryService> logger) : Interfaces.IEntityRegistryService
+    Interfaces.IEntityRegistryApiClientService entityRegistryApiClientService) : Interfaces.IEntityRegistryService
 {
     /// <summary>
     /// Flag to allow synthetic CCR lookups. Defaults to true outside Production
@@ -26,7 +25,6 @@ public class EntityRegistryService(
     private static readonly string[] PublicSectorOrganizations = ["971032146" /*KS-KOMMUNESEKTORENS ORGANISASJON*/];
 
     private static readonly ConcurrentDictionary<string, (DateTime expiresAt, EntityRegistryUnit? unit)> EntityRegistryUnitsCache = new();
-    private static readonly ConcurrentDictionary<string, (DateTime expiresAt, List<EntityRegistryUnit> list)> SubunitListCache = new();
 
     private readonly TimeSpan cacheEntryTtl = TimeSpan.FromSeconds(600);
 
@@ -39,21 +37,13 @@ public class EntityRegistryService(
     /// <summary>
     /// Gets simple entity registry unit
     /// </summary>
-    public async Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool nestToAndReturnMainUnit = false, bool subUnitOnly = false) 
-        => MapToEntityRegistryUnit(await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound, nestToAndReturnMainUnit, subUnitOnly));
-    
-
-    /// <summary>
-    /// Gets simple entity registry main unit
-    /// </summary>
-    public async Task<SimpleEntityRegistryUnit?> GetMainUnit(string organizationNumber) 
-        => await Get(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
+    public async Task<SimpleEntityRegistryUnit?> Get(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool subUnitOnly = false) 
+        => MapToEntityRegistryUnit(await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound, subUnitOnly));
 
     /// <summary>
     /// Get full entity registry unit
     /// </summary>
-    public async Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true,
-        bool nestToAndReturnMainUnit = false, bool subUnitOnly = false)
+    public async Task<EntityRegistryUnit?> GetFull(string organizationNumber, bool attemptSubUnitLookupIfNotFound = true, bool subUnitOnly = false)
     {
         if (string.IsNullOrWhiteSpace(organizationNumber))
         {
@@ -79,103 +69,13 @@ public class EntityRegistryService(
         }
         
         // Didn't find a main unit, check if we should check if it's a subunit
-        // or nest to topmost parent
-        if (attemptSubUnitLookupIfNotFound || nestToAndReturnMainUnit)
+        if (attemptSubUnitLookupIfNotFound)
         {
             unit = await InternalGet(organizationNumber, UnitType.SubUnit);
         }
-        
-        // If we didn't find any subunit at this point or we're not supposed
-        // to nest, return at this point
-        if (unit == null || !nestToAndReturnMainUnit)
-        {
-            return unit;
-        }
-        
-        // We did find a subunit, and we're instructed to nest to the top mainunit
-        var parentUnit = unit;
-        do
-        {
-            // Only subunits are at the leaf node, any nested parents are MainUnits
-            // Example: https://data.brreg.no/enhetsregisteret/api/underenheter/879587662
-            parentUnit = await InternalGet(parentUnit.OverordnetEnhet!, UnitType.MainUnit);
-        }
-        while (parentUnit?.OverordnetEnhet != null);
-        unit = parentUnit;
 
         return unit;
     }
-    
-    /// <summary>
-    /// Get full entity registry unit
-    /// </summary>
-    public async Task<List<EntityRegistryUnit>> GetSubunits(string organizationNumber)
-    {
-        var cacheKey = "SubunitList_" + organizationNumber;
-        if (SubunitListCache.TryGetValue(cacheKey, out var cacheEntry) && cacheEntry.expiresAt > DateTime.UtcNow)
-        {
-            return cacheEntry.list;
-        }
-
-        var url = GetLookupUrlForSubunitsOfAUnit(organizationNumber);
-        
-        var entry = (DateTime.UtcNow.Add(cacheEntryTtl), await GetListFromClientService(url));
-        SubunitListCache.AddOrUpdate(cacheKey, entry, (_, _) => entry);
-        
-        return entry.Item2;
-    }
-    
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="orgNumber"></param>
-    /// <param name="currentDepth"></param>
-    /// <param name="maxDepth"></param>
-    /// <param name="unit"></param>
-    /// <returns></returns>
-    public async Task<EntityRegistryUnitHierarchy?> GetSubunitHierarchy(
-        string orgNumber,
-        int currentDepth = 0,
-        int maxDepth = 10,
-        EntityRegistryUnit? unit = null)
-    {
-        logger.LogInformation("Getting subunit hierarchy for {orgNumber}, current depth: {currentDepth}, max depth: {maxDepth}", orgNumber, currentDepth, maxDepth);
-        currentDepth++;
-        unit ??= await GetFull(orgNumber, attemptSubUnitLookupIfNotFound: true);
-        if (unit == null)
-        {
-            return null;
-        }
-        
-        
-        var subunits = await GetSubunits(orgNumber);
-        var subunitHierarchies = new List<EntityRegistryUnitHierarchy>();
-        if (currentDepth < maxDepth)
-        {
-            foreach (var subunit in subunits)
-            {
-                var subunitHierarchy = await GetSubunitHierarchy(subunit.Organisasjonsnummer, currentDepth, maxDepth, subunit);
-                if (subunitHierarchy != null)
-                {
-                    subunitHierarchies.Add(subunitHierarchy);
-                }
-            } 
-        }
-            
-        var hierarchy = new EntityRegistryUnitHierarchy
-        {
-            OrgNumber = orgNumber,
-            Unit = unit,
-            Subunits = subunitHierarchies
-        };
-
-        return hierarchy;
-    }
-
-    /// <summary>
-    /// Get full entity registry main unit
-    /// </summary>
-    public async Task<EntityRegistryUnit?> GetFullMainUnit(string organizationNumber) => await GetFull(organizationNumber, attemptSubUnitLookupIfNotFound: false, nestToAndReturnMainUnit: true);
 
     /// <summary>
     /// Checks if an entity registry unit is a public agency
@@ -229,11 +129,6 @@ public class EntityRegistryService(
     {
         return await entityRegistryApiClientService.GetUpstreamEntityRegistryUnitAsync(url);
     }
-    
-    private async Task<List<EntityRegistryUnit>> GetListFromClientService(Uri url)
-    {
-        return await entityRegistryApiClientService.GetUpstreamEntityRegistryUnitsAsync(url);
-    }
 
     private static SimpleEntityRegistryUnit? MapToEntityRegistryUnit(EntityRegistryUnit? upstreamEntityRegistryUnit)
     {
@@ -284,20 +179,5 @@ public class EntityRegistryService(
             SubUnitLookupEndpoint;
 
         return new Uri(string.Format(urlPattern, organizationNumber));
-    }
-    
-    private static Uri GetLookupUrlForSubunitsOfAUnit(string organizationNumber)
-    {
-        var urlPattern = IsSyntheticOrganizationNumber(organizationNumber) ? 
-            PpeSubUnitLookupEndpoint : 
-            SubUnitLookupEndpoint;
-        
-        if(urlPattern.EndsWith("/{0}"))
-        {
-            urlPattern = urlPattern.Replace("/{0}", "{0}");
-        }
-        var query = $"?overordnetEnhet={organizationNumber}";
-
-        return new Uri(string.Format(urlPattern, query));
     }
 }

@@ -26,7 +26,7 @@ namespace Dan.Core.UnitTest.Services
         {
 
             A.CallTo(() => _mockEntityRegistryService
-                    .Get(A<string>._, A<bool>._, A<bool>._, A<bool>._))
+                    .Get(A<string>._, A<bool>._, A<bool>._))
                 .Returns(Task.FromResult(GetBrEntry()));
 
             A.CallTo(() => _mockEntityRegistryService
