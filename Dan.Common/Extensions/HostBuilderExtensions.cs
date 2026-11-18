@@ -62,12 +62,21 @@ public static class HostBuilderExtensions
                 // The HttpClient factory logs "Start processing HTTP request GET <url>" at Information level, with the
                 // full URL. Many data sources put the subject's national identity number in the URL, so keep these lines
                 // out of the logs. Outgoing calls are still traced as dependencies (masked by SsnRedactingProcessor).
+                // The factory's logging handlers are also removed below; this filter additionally covers HttpClients
+                // whose loggers are added back by a plugin.
                 // Note: logLevel in host.json does not apply here, as worker logs are exported directly via OpenTelemetry.
                 logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
             })
             .ConfigureServices((context, services) =>
             {
                 services.AddLogging();
+
+                // Remove the HttpClient factory's logging handlers from all clients. Besides the request/response log
+                // lines (see the filter above), they open a logging scope "HTTP GET <full url>" around the whole request.
+                // With IncludeScopes enabled, every log record written inside the pipeline (e.g. by the Maskinporten
+                // token handler) would carry that URL, including any national identity number in it. Filtering the
+                // category does not prevent the scope, so the handlers are removed entirely.
+                services.ConfigureHttpClientDefaults(httpClient => httpClient.RemoveAllLoggers());
                 services.AddHttpClient();
 
                 // UseAzureMonitorExporter() throws at startup if no connection string is configured,
