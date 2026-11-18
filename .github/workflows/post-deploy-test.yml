@@ -9,7 +9,7 @@ on:
  workflow_dispatch:
 jobs:
  run:
-   uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@28817d886fe657244d267c56480d9d0694b71f9b
+   uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@941efbca42d47e6612c4d9d46b8e0018ca7f0496
    with:
      environment: 'dev'
    secrets:

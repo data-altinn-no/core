@@ -58,7 +58,7 @@ jobs:
           publish-profile: ${{secrets.AZURE_FUNCTION_PUBLISH_CREDS}}
 
   post-deploy-dev:
-    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@077be64090710476cb8103764dd85154af8214eb
+    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@941efbca42d47e6612c4d9d46b8e0018ca7f0496
     needs: [deploy-dev]
     with:
       environment: 'dev'
@@ -85,7 +85,7 @@ jobs:
           publish-profile: ${{secrets.AZURE_FUNCTION_PUBLISH_CREDS}}
   
   post-deploy-staging:
-    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@077be64090710476cb8103764dd85154af8214eb
+    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@941efbca42d47e6612c4d9d46b8e0018ca7f0496
     needs: [deploy-staging]
     with:
       environment: 'staging'
