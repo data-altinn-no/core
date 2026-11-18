@@ -6,12 +6,12 @@ using Dan.Common.Handlers;
 using Dan.Common.Interfaces;
 using Dan.Common.Services;
 using Dan.Common.Telemetry;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Trace;
 using Polly;
 using Polly.Extensions.Http;
@@ -26,7 +26,8 @@ public static class HostBuilderExtensions
 {
     /// <summary>
     ///     Sets up the isolated worker function with default configuration and wiring with ConfigureFunctionsWorkerDefaults(),
-    ///     handling application insights, logging and correct JSON serialization settings. Also adds defaults services;
+    ///     handling telemetry (OpenTelemetry exported to Azure Monitor/Application Insights, with national identity numbers
+    ///     masked), logging and correct JSON serialization settings. Also adds defaults services;
     ///     HttpClientFactory with a circuit-breaker enabled named client (use Constants.SafeHttpClient) which should be
     ///     used for outbound requests to the data source. Also expects to find a service implementing IEvidenceSourceMetadata.
     /// </summary>
@@ -57,6 +58,9 @@ public static class HostBuilderExtensions
                 {
                     options.IncludeFormattedMessage = true;
                     options.IncludeScopes = true;
+                    // Mask national identity numbers in log messages and attributes before export. Added here, before
+                    // UseAzureMonitorExporter registers its export processor, so it runs first.
+                    options.AddProcessor(new SsnRedactingLogProcessor());
                 });
 
                 // The HttpClient factory logs "Start processing HTTP request GET <url>" at Information level, with the
@@ -64,8 +68,11 @@ public static class HostBuilderExtensions
                 // out of the logs. Outgoing calls are still traced as dependencies (masked by SsnRedactingProcessor).
                 // The factory's logging handlers are also removed below; this filter additionally covers HttpClients
                 // whose loggers are added back by a plugin.
-                // Note: logLevel in host.json does not apply here, as worker logs are exported directly via OpenTelemetry.
+                // The rule is bound to the OpenTelemetry provider as well, because a provider-specific rule (e.g. from a
+                // "Logging:OpenTelemetry:LogLevel" section bound by Host.CreateDefaultBuilder) would otherwise win over a
+                // rule without a provider.
                 logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
+                logging.AddFilter<OpenTelemetryLoggerProvider>("System.Net.Http.HttpClient", LogLevel.Warning);
             })
             .ConfigureServices((context, services) =>
             {
@@ -91,20 +98,28 @@ public static class HostBuilderExtensions
 
                 if (!string.IsNullOrWhiteSpace(appInsightsConnectionString))
                 {
+                    // Azure SDK clients (Key Vault, Cosmos, Storage, ...) only emit spans through ActivitySource when this
+                    // switch is on. The classic Application Insights SDK collected these dependencies automatically.
+                    AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
+
                     services.AddOpenTelemetry()
-                        // SsnRedactingProcessor masks national identity numbers in span URLs and names. It is added
+                        // SsnRedactingProcessor masks national identity numbers in span tags and names. It is added
                         // here, before UseAzureMonitorExporter, so it runs ahead of the export processor.
                         .WithTracing(tracing => tracing
                             .AddProcessor<SsnRedactingProcessor>()
-                            .AddHttpClientInstrumentation())
+                            .AddHttpClientInstrumentation()
+                            .AddSource("Azure.*"))
                         .UseAzureMonitorExporter(options =>
                         {
                             options.ConnectionString = appInsightsConnectionString;
                             // Export logs even when the trace they belong to is not sampled,
                             // so error logs are never silently dropped.
                             options.EnableTraceBasedLogsSampler = false;
-                            // Disable sampling (default is rate-limited to 5 traces/sec) so all
-                            // telemetry is exported, matching the previous Application Insights setup.
+                            // Disable sampling (the exporter's default is rate-limited to 5 traces/sec) so all
+                            // telemetry is exported. Note: this is a deliberate change from the classic Application
+                            // Insights SDK, which had adaptive sampling on by default in the worker. Expect higher
+                            // ingestion volume. Sampling in the Functions host is controlled separately by the
+                            // OTEL_TRACES_SAMPLER and OTEL_TRACES_SAMPLER_ARG app settings.
                             options.SamplingRatio = 1.0f;
                             options.TracesPerSecond = null;
                         })
