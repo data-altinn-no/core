@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using Azure.Core.Serialization;
 using Azure.Identity;
@@ -107,7 +108,14 @@ public static class HostBuilderExtensions
                         // here, before UseAzureMonitorExporter, so it runs ahead of the export processor.
                         .WithTracing(tracing => tracing
                             .AddProcessor<SsnRedactingProcessor>()
-                            .AddHttpClientInstrumentation()
+                            .AddHttpClientInstrumentation(httpClient =>
+                            {
+                                // Azure SDK clients create their own HTTP span (source "Azure.Core.Http") around the
+                                // HttpClient call. Skip the generic HttpClient span in that case, so each wire request
+                                // gives one dependency record and keeps the Azure request identifiers.
+                                httpClient.FilterHttpRequestMessage = _ =>
+                                    Activity.Current?.Parent?.Source.Name != "Azure.Core.Http";
+                            })
                             .AddSource("Azure.*"))
                         .UseAzureMonitorExporter(options =>
                         {
