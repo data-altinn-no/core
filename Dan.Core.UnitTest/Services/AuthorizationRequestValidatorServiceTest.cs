@@ -614,6 +614,78 @@ namespace Dan.Core.UnitTest.Services
             // Assert no exception thrown
         }
 
+        [TestMethod]
+        [DataRow("<img src=x onerror=alert(1)>")]
+        [DataRow("a > b")]
+        [DataRow("line one\r\nline two")]
+        [DataRow("tab\there")]
+        public async Task ValidateTestFailureWithMarkupOrControlCharactersInConsentReference(string reference)
+        {
+            // Setup
+            var arvs = new AuthorizationRequestValidatorService(
+                _loggerFactory,
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
+
+            var authorizationRequest = GetAuthorizationRequest();
+            authorizationRequest.ConsentReference = reference;
+
+            // Act & Verify
+            var exception = await Assert.ThrowsAsync<InvalidAuthorizationRequestException>(async () =>
+                await arvs.Validate(authorizationRequest));
+            Assert.Contains("consentReference", exception.Message);
+        }
+
+        [TestMethod]
+        [DataRow("<img src=x onerror=alert(1)>")]
+        [DataRow("line one\nline two")]
+        public async Task ValidateTestFailureWithMarkupOrControlCharactersInExternalReference(string reference)
+        {
+            // Setup
+            var arvs = new AuthorizationRequestValidatorService(
+                _loggerFactory,
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
+
+            var authorizationRequest = GetAuthorizationRequest();
+            authorizationRequest.ExternalReference = reference;
+
+            // Act & Verify
+            var exception = await Assert.ThrowsAsync<InvalidAuthorizationRequestException>(async () =>
+                await arvs.Validate(authorizationRequest));
+            Assert.Contains("externalReference", exception.Message);
+        }
+
+        [TestMethod]
+        [DataRow("2019-123456")]
+        [DataRow("Sak 24/1234 - Rådhuset (del 2), Bygg & anlegg #7")]
+        [DataRow("")]
+        [DataRow(null)]
+        public async Task ValidateTestSuccessWithOrdinaryReferences(string reference)
+        {
+            // Setup
+            var arvs = new AuthorizationRequestValidatorService(
+                _loggerFactory,
+                _mockEntityRegistryService,
+                _mockAvailableEvidenceCodesService,
+                _mockRequirementValidatorService,
+                _mockRequestContextService);
+
+            var authorizationRequest = GetAuthorizationRequest();
+            authorizationRequest.ConsentReference = reference;
+            authorizationRequest.ExternalReference = reference;
+
+            // Act
+            Func<Task> action = async () => await arvs.Validate(authorizationRequest);
+
+            // Verify
+            await action.Should().NotThrowAsync();
+        }
+
         private AuthorizationRequest GetAuthorizationRequest(string requestor = null, string subject = null)
         {
             return new AuthorizationRequest()

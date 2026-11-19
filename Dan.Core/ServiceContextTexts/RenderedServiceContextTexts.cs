@@ -4,7 +4,12 @@ using Dan.Common.Models;
 namespace Dan.Core.ServiceContextTexts;
 
 /// <summary>
-/// Contains the actual texts after language selection has been applied and macros processed
+/// Contains the actual texts after language selection has been applied and macros processed.
+///
+/// The texts have different formats. <see cref="ConsentGivenReceiptText"/>, <see cref="ConsentDeniedReceiptText"/>
+/// and <see cref="CorrespondenceBody"/> are HTML, and <see cref="CorrespondenceBodyA3"/> is Markdown. The values
+/// inserted in these are encoded for that format, so they can be used as markup as they are. All other texts are
+/// plain text with the values as they were supplied, and must be encoded by whoever places them in HTML or Markdown.
 /// </summary>
 public class RenderedServiceContextTexts : IServiceContextTextTemplate<string>
 {
