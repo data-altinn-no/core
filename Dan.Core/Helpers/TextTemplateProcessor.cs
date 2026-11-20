@@ -90,20 +90,56 @@ public static class TextTemplateProcessor
             _ => value
         };
 
-        input = !string.IsNullOrEmpty(acc.Requestor) ? input.Replace(TextMacros.Requestor, Value(acc.Requestor), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(requestorName) ? input.Replace(TextMacros.RequestorName, Value(requestorName), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(acc.Subject) ? input.Replace(TextMacros.Subject, Value(acc.Subject), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(subjectName) ? input.Replace(TextMacros.SubjectName, Value(subjectName), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(serviceContextName) ? input.Replace(TextMacros.ServiceContextName, Value(serviceContextName), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.ConsentReference, Reference(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(acc.ExternalReference) ? input.Replace(TextMacros.ExternalReference, Reference(acc.ExternalReference), StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(buttonText) ? (isAltinn3 ? input.Replace(TextMacros.Button, GetConsentButtonMd(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl))) : input;
-        input = !string.IsNullOrEmpty(acc.ConsentReference) ? (isAltinn3 ? input.Replace(TextMacros.EbevisReference, GetEbevisRefMd(acc.ConsentReference, Reference(acc.ConsentReference)), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference, Reference(acc.ConsentReference)), StringComparison.InvariantCultureIgnoreCase)) : input;
+        // A macro without a value is not added here, and is left as it is in the text
+        var replacements = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
-        input = input.Replace(TextMacros.ConsentOrExternalReference, Reference(acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference));
-        input = input.Replace(TextMacros.ConsentAndExternalReference, acc.ConsentReference + acc.ExternalReference != "" ? ", " + Reference(acc.ExternalReference) : "");
-        return input;
+        if (!string.IsNullOrEmpty(acc.Requestor)) replacements[TextMacros.Requestor] = Value(acc.Requestor);
+        if (!string.IsNullOrEmpty(requestorName)) replacements[TextMacros.RequestorName] = Value(requestorName);
+        if (!string.IsNullOrEmpty(acc.Subject)) replacements[TextMacros.Subject] = Value(acc.Subject);
+        if (!string.IsNullOrEmpty(subjectName)) replacements[TextMacros.SubjectName] = Value(subjectName);
+        if (!string.IsNullOrEmpty(serviceContextName)) replacements[TextMacros.ServiceContextName] = Value(serviceContextName);
+        if (!string.IsNullOrEmpty(acc.ExternalReference)) replacements[TextMacros.ExternalReference] = Reference(acc.ExternalReference);
+
+        if (!string.IsNullOrEmpty(acc.ConsentReference))
+        {
+            var encodedReference = Reference(acc.ConsentReference);
+            replacements[TextMacros.ConsentReference] = encodedReference;
+            replacements[TextMacros.EbevisReference] = isAltinn3
+                ? GetEbevisRefMd(acc.ConsentReference, encodedReference)
+                : GetEbevisRef(acc.ConsentReference, encodedReference);
+        }
+
+        if (!string.IsNullOrEmpty(buttonText))
+        {
+            replacements[TextMacros.Button] = isAltinn3 ? GetConsentButtonMd(buttonText, consentUrl) : GetConsentButton(buttonText, consentUrl);
+        }
+
+        replacements[TextMacros.ConsentOrExternalReference] = Reference(acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);
+        replacements[TextMacros.ConsentAndExternalReference] = acc.ConsentReference + acc.ExternalReference != "" ? ", " + Reference(acc.ExternalReference) : "";
+
+        // The template is scanned once, so text that looks like a macro inside a value is never expanded
+        return MacroPattern.Replace(input, match => replacements.TryGetValue(match.Value, out var replacement) ? replacement ?? string.Empty : match.Value);
     }
+
+    /// <summary>
+    /// Matches the macros that <see cref="ProcessMacros"/> replaces
+    /// </summary>
+    private static readonly Regex MacroPattern = new(
+        string.Join("|", new[]
+        {
+            TextMacros.Requestor,
+            TextMacros.RequestorName,
+            TextMacros.Subject,
+            TextMacros.SubjectName,
+            TextMacros.ServiceContextName,
+            TextMacros.ConsentReference,
+            TextMacros.ExternalReference,
+            TextMacros.Button,
+            TextMacros.EbevisReference,
+            TextMacros.ConsentOrExternalReference,
+            TextMacros.ConsentAndExternalReference
+        }.Select(Regex.Escape)),
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static LocalizedString ProcessConsentRequestMacros(LocalizedString input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "")
     {

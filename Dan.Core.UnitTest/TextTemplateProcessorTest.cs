@@ -77,11 +77,60 @@ public class TextTemplateProcessorTest
         Assert.Contains("Bygg & anlegg", texts.EmailNotificationContent);
     }
 
+    [TestMethod]
+    [DataRow("#ExternalReference#", "24/1234")]
+    [DataRow("#externalreference#", "24/1234")]
+    [DataRow("#Button#", "https://altinn.example/consent")]
+    [DataRow("#ConsentAndExternalReference#", "24/1234")]
+    public void Macros_AreNotExpandedInsideConsentReference(string consentReference, string mustNotAppear)
+    {
+        var texts = Render(new DrosjeloyveServiceContextTextTemplate(), consentReference: consentReference, externalReference: "24/1234");
+
+        Assert.Contains($"med referansenummer i Altinn {consentReference}.", texts.ConsentGivenReceiptText);
+        Assert.DoesNotContain(mustNotAppear, texts.ConsentGivenReceiptText);
+        Assert.Contains($"drosjeløyve: {consentReference}.", texts.EmailNotificationContent);
+        Assert.DoesNotContain(mustNotAppear, texts.EmailNotificationContent);
+    }
+
+    [TestMethod]
+    public void Macros_AreNotExpandedInsideExternalReference()
+    {
+        var accreditation = new Accreditation { Requestor = "958935420", Subject = "910402021", ConsentReference = "Sak 1", ExternalReference = "#EbevisReference#" };
+        var template = new LocalizedString { NoNb = "Referanse: #ExternalReference#" };
+
+        var result = TextTemplateProcessor.ProcessConsentRequestMacros(template, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME");
+
+        Assert.AreEqual("Referanse: #EbevisReference#", result.NoNb);
+    }
+
+    [TestMethod]
+    public void Macros_AreReplacedRegardlessOfCase()
+    {
+        var accreditation = new Accreditation { Requestor = "958935420", Subject = "910402021", ConsentReference = "Sak 1", ExternalReference = "24/1234" };
+        var template = new LocalizedString { NoNb = "#requestorname# (#REQUESTOR#) ber #SubjectName# om fullmakt for #consentreference#, #ConsentType#" };
+
+        var result = TextTemplateProcessor.ProcessConsentRequestMacros(template, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME", "Test");
+
+        Assert.AreEqual("REQUESTOR_NAME (958935420) ber SUBJECT_NAME om fullmakt for Sak 1, #ConsentType#", result.NoNb);
+    }
+
+    [TestMethod]
+    public void Macros_WithoutValueAreLeftInTheText()
+    {
+        var accreditation = new Accreditation { Requestor = "958935420", Subject = "910402021" };
+        var template = new LocalizedString { NoNb = "#RequestorName# ber om fullmakt for #ConsentReference# #ExternalReference#" };
+
+        var result = TextTemplateProcessor.ProcessConsentRequestMacros(template, accreditation, "REQUESTOR_NAME", "SUBJECT_NAME");
+
+        Assert.AreEqual("REQUESTOR_NAME ber om fullmakt for #ConsentReference# #ExternalReference#", result.NoNb);
+    }
+
     private static IServiceContextTextTemplate<string> Render(
         IServiceContextTextTemplate<LocalizedString> template,
         string consentReference = "2019-123456",
         string requestorName = "REQUESTOR_NAME",
-        bool useAltinn3 = true)
+        bool useAltinn3 = true,
+        string externalReference = "externalreference")
     {
         var context = new ServiceContext { Id = "test", Name = "Test", ServiceContextTextTemplate = template };
         var accreditation = new Accreditation
@@ -90,7 +139,7 @@ public class TextTemplateProcessorTest
             Subject = "910402021",
             Requestor = "958935420",
             ConsentReference = consentReference,
-            ExternalReference = "externalreference",
+            ExternalReference = externalReference,
             LanguageCode = Constants.LANGUAGE_CODE_NORWEGIAN_NB
         };
 
