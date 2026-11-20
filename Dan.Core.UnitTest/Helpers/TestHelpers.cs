@@ -4,6 +4,8 @@ using System.Text;
 using Dan.Common.Models;
 using FakeItEasy;
 using FakeItEasy.Core;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Newtonsoft.Json;
 
 namespace Dan.Core.UnitTest.Helpers
@@ -67,6 +69,42 @@ namespace Dan.Core.UnitTest.Helpers
 
             // request.Properties.Add(HttpPropertyKeys.HttpConfigurationKey, new HttpConfiguration());
             return request;
+        }
+
+        /// <summary>
+        /// Creates a fake <see cref="HttpRequestData"/> for calling HTTP triggered functions directly. The response it
+        /// creates has a readable body, see <see cref="ReadBody"/>.
+        /// </summary>
+        /// <param name="url">The request url, including any query string</param>
+        /// <returns>A <see cref="HttpRequestData"/></returns>
+        public static HttpRequestData CreateHttpRequestData(string url = "https://localhost/api/test")
+        {
+            var functionContext = A.Fake<FunctionContext>();
+
+            var request = A.Fake<HttpRequestData>(options =>
+                options.WithArgumentsForConstructor(new object[] { functionContext }));
+            A.CallTo(() => request.Url).Returns(new Uri(url));
+
+            var response = A.Fake<HttpResponseData>(options =>
+                options.WithArgumentsForConstructor(new object[] { functionContext }));
+            response.Headers = new HttpHeadersCollection();
+            response.Body = new MemoryStream();
+
+            A.CallTo(() => request.CreateResponse()).Returns(response);
+
+            return request;
+        }
+
+        /// <summary>
+        /// Reads the body written to a response created by <see cref="CreateHttpRequestData"/>
+        /// </summary>
+        /// <param name="response">The response</param>
+        /// <returns>The body as a string</returns>
+        public static string ReadBody(HttpResponseData response)
+        {
+            response.Body.Position = 0;
+            using var reader = new StreamReader(response.Body, Encoding.UTF8, leaveOpen: true);
+            return reader.ReadToEnd();
         }
 
         /// <summary>

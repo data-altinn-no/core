@@ -365,7 +365,8 @@ namespace Dan.Core.Services
                 SendersReference = accreditation.AccreditationId,
                 Notification = new Altinn.Dd.Correspondence.Models.NotificationDetails()
                 {
-                    EmailBody = renderedTexts.EmailNotificationContent,
+                    // The notification content is plain text, and the email is sent as HTML
+                    EmailBody = OutputEncoder.Html(renderedTexts.EmailNotificationContent),
                     EmailSubject = renderedTexts.EmailNotificationSubject,
                     EmailContentType = EmailContentType.Html,
                     SmsText = renderedTexts.SMSNotificationContent

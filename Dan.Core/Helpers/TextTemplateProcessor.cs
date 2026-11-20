@@ -43,11 +43,12 @@ public static class TextTemplateProcessor
             ConsentButtonText = buttonText,
             ConsentDelegationContexts = ProcessConsentRequestMacros(template.ConsentDelegationContexts, acc, requestorName, subjectName, context.Name),
 
-            ConsentDeniedReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentDeniedReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
-            ConsentGivenReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentGivenReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            // The formats are documented on RenderedServiceContextTexts
+            ConsentDeniedReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentDeniedReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3, TextFormat.Html),
+            ConsentGivenReceiptText = ProcessMacros(GetLocalisedTemplate(template.ConsentGivenReceiptText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3, TextFormat.Html),
             ConsentTitleText = ProcessMacros(GetLocalisedTemplate(template.ConsentTitleText, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
-            CorrespondenceBody = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBody, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
-            CorrespondenceBodyA3 = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBodyA3, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
+            CorrespondenceBody = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBody, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3, TextFormat.Html),
+            CorrespondenceBodyA3 = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceBodyA3, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3, TextFormat.Markdown),
             CorrespondenceSender = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSender, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
             CorrespondenceSummary = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceSummary, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
             CorrespondenceTitle = ProcessMacros(GetLocalisedTemplate(template.CorrespondenceTitle, acc.LanguageCode), acc, requestorName, subjectName, context.Name, consentUrl, buttonText, useAltinn3),
@@ -59,24 +60,86 @@ public static class TextTemplateProcessor
         return result;
     }
 
-    private static string ProcessMacros(string? input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "", string consentUrl = "", string buttonText = "", bool isAltinn3 = false)
+    /// <summary>
+    /// The format of a text template, which decides how the values that replace the macros are encoded
+    /// </summary>
+    private enum TextFormat
+    {
+        /// <summary>Plain text. Values are inserted as they are; whoever places the text in markup must encode it.</summary>
+        Plain,
+
+        /// <summary>The template contains HTML. All values are HTML encoded.</summary>
+        Html,
+
+        /// <summary>The template contains Markdown. The references supplied by the client are escaped.</summary>
+        Markdown
+    }
+
+    private static string ProcessMacros(string? input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "", string consentUrl = "", string buttonText = "", bool isAltinn3 = false, TextFormat format = TextFormat.Plain)
     {
         if (input == null) return string.Empty;
 
-        input = !string.IsNullOrEmpty(acc.Requestor) ? input.Replace(TextMacros.Requestor, acc.Requestor, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(requestorName) ? input.Replace(TextMacros.RequestorName, requestorName, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(acc.Subject) ? input.Replace(TextMacros.Subject, acc.Subject, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(subjectName) ? input.Replace(TextMacros.SubjectName, subjectName, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(serviceContextName) ? input.Replace(TextMacros.ServiceContextName, serviceContextName, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(acc.ConsentReference) ? input.Replace(TextMacros.ConsentReference, acc.ConsentReference, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(acc.ExternalReference) ? input.Replace(TextMacros.ExternalReference, acc.ExternalReference, StringComparison.InvariantCultureIgnoreCase) : input;
-        input = !string.IsNullOrEmpty(buttonText) ? (isAltinn3 ? input.Replace(TextMacros.Button, GetConsentButtonMd(buttonText, consentUrl), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.Button, GetConsentButton(buttonText, consentUrl))) : input;
-        input = !string.IsNullOrEmpty(acc.ConsentReference) ? (isAltinn3 ? input.Replace(TextMacros.EbevisReference, GetEbevisRefMd(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase) : input.Replace(TextMacros.EbevisReference, GetEbevisRef(acc.ConsentReference), StringComparison.InvariantCultureIgnoreCase)) : input;
+        // Party identifiers and names come from the validated request and the entity registry
+        string? Value(string? value) => format == TextFormat.Html ? OutputEncoder.Html(value) : value;
 
-        input = input.Replace(TextMacros.ConsentOrExternalReference, acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);
-        input = input.Replace(TextMacros.ConsentAndExternalReference, acc.ConsentReference + acc.ExternalReference != "" ? ", " + acc.ExternalReference : "");
-        return input;
+        // The references are free text supplied by the client
+        string? Reference(string? value) => format switch
+        {
+            TextFormat.Html => OutputEncoder.Html(value),
+            TextFormat.Markdown => OutputEncoder.Markdown(value),
+            _ => value
+        };
+
+        // A macro without a value is not added here, and is left as it is in the text
+        var replacements = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrEmpty(acc.Requestor)) replacements[TextMacros.Requestor] = Value(acc.Requestor);
+        if (!string.IsNullOrEmpty(requestorName)) replacements[TextMacros.RequestorName] = Value(requestorName);
+        if (!string.IsNullOrEmpty(acc.Subject)) replacements[TextMacros.Subject] = Value(acc.Subject);
+        if (!string.IsNullOrEmpty(subjectName)) replacements[TextMacros.SubjectName] = Value(subjectName);
+        if (!string.IsNullOrEmpty(serviceContextName)) replacements[TextMacros.ServiceContextName] = Value(serviceContextName);
+        if (!string.IsNullOrEmpty(acc.ExternalReference)) replacements[TextMacros.ExternalReference] = Reference(acc.ExternalReference);
+
+        if (!string.IsNullOrEmpty(acc.ConsentReference))
+        {
+            var encodedReference = Reference(acc.ConsentReference);
+            replacements[TextMacros.ConsentReference] = encodedReference;
+            replacements[TextMacros.EbevisReference] = isAltinn3
+                ? GetEbevisRefMd(acc.ConsentReference, encodedReference)
+                : GetEbevisRef(acc.ConsentReference, encodedReference);
+        }
+
+        if (!string.IsNullOrEmpty(buttonText))
+        {
+            replacements[TextMacros.Button] = isAltinn3 ? GetConsentButtonMd(buttonText, consentUrl) : GetConsentButton(buttonText, consentUrl);
+        }
+
+        replacements[TextMacros.ConsentOrExternalReference] = Reference(acc.ConsentReference != "" ? acc.ConsentReference : acc.ExternalReference);
+        replacements[TextMacros.ConsentAndExternalReference] = acc.ConsentReference + acc.ExternalReference != "" ? ", " + Reference(acc.ExternalReference) : "";
+
+        // The template is scanned once, so text that looks like a macro inside a value is never expanded
+        return MacroPattern.Replace(input, match => replacements.TryGetValue(match.Value, out var replacement) ? replacement ?? string.Empty : match.Value);
     }
+
+    /// <summary>
+    /// Matches the macros that <see cref="ProcessMacros"/> replaces
+    /// </summary>
+    private static readonly Regex MacroPattern = new(
+        string.Join("|", new[]
+        {
+            TextMacros.Requestor,
+            TextMacros.RequestorName,
+            TextMacros.Subject,
+            TextMacros.SubjectName,
+            TextMacros.ServiceContextName,
+            TextMacros.ConsentReference,
+            TextMacros.ExternalReference,
+            TextMacros.Button,
+            TextMacros.EbevisReference,
+            TextMacros.ConsentOrExternalReference,
+            TextMacros.ConsentAndExternalReference
+        }.Select(Regex.Escape)),
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     public static LocalizedString ProcessConsentRequestMacros(LocalizedString input, Accreditation acc, string requestorName = "", string subjectName = "", string serviceContextName = "")
     {
@@ -105,9 +168,13 @@ public static class TextTemplateProcessor
         return res;
     }
 
-    private static string GetEbevisRef(string consentReference)
+    /// <summary>
+    /// Gets a link to the notice if the reference is a Doffin or TED reference. Any other reference is free text,
+    /// and is returned as <paramref name="encodedReference"/>, which is the reference encoded for the text it goes into.
+    /// </summary>
+    private static string? GetEbevisRef(string consentReference, string? encodedReference)
     {
-        string caseReferenceBody;
+        string? caseReferenceBody;
 
         if (IsDoffinReference(consentReference))
         {
@@ -119,15 +186,18 @@ public static class TextTemplateProcessor
         }
         else
         {
-            caseReferenceBody = consentReference;
+            caseReferenceBody = encodedReference;
         }
 
         return caseReferenceBody;
     }
 
-    private static string GetEbevisRefMd(string consentReference)
+    /// <summary>
+    /// Markdown variant of <see cref="GetEbevisRef"/>
+    /// </summary>
+    private static string? GetEbevisRefMd(string consentReference, string? encodedReference)
     {
-        string result;        
+        string? result;
 
         if (IsDoffinReference(consentReference))
         {
@@ -141,7 +211,7 @@ public static class TextTemplateProcessor
         }
         else
         {
-            result = consentReference;
+            result = encodedReference;
         }
 
         return result;

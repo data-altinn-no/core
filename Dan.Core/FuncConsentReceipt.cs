@@ -28,7 +28,7 @@ namespace Dan.Core
         private readonly IAccreditationRepository _accreditationRepository;
         private readonly ILogger<FuncConsentReceipt> _logger;
         private const string AboutUrl = "https://docs.data.altinn.no/";
-        private static readonly string AboutInfo = $"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href=\"{AboutUrl}\">docs.data.altinn.no</a>";
+        private static readonly RawHtml AboutInfo = new($"For mer informasjon om l&oslash;sningen data.altinn.no, g&aring; til <a href=\"{AboutUrl}\">docs.data.altinn.no</a>");
 
         /// <summary>
         /// Creates an instance of <see cref="FuncConsentReceipt"/> 
@@ -122,7 +122,7 @@ namespace Dan.Core
                     var response = req.CreateHtmlResponse(HttpStatusCode.OK, "ConsentGiven.html", new
                     {
                         title = renderedTexts.ConsentTitleText,
-                        message = renderedTexts.ConsentGivenReceiptText,
+                        message = new RawHtml(renderedTexts.ConsentGivenReceiptText),
                         lang = GetHtmlLanguageCode(accreditation.LanguageCode),
                         ebevisInfo = AboutInfo,
                         altinnurl = Settings.AltinnPortalAddress + "ui/messagebox",
@@ -146,11 +146,11 @@ namespace Dan.Core
                 var response = req.CreateHtmlResponse(HttpStatusCode.OK, "ConsentGiven.html", new
                 {
                     title = renderedTexts.ConsentTitleText,
-                    message = renderedTexts.ConsentDeniedReceiptText,
+                    message = new RawHtml(renderedTexts.ConsentDeniedReceiptText),
                     lang = GetHtmlLanguageCode(accreditation.LanguageCode),
                     @ebevisInfo = AboutInfo,
                     @altinnurl = Settings.AltinnPortalAddress + "ui/messagebox",
-                    @altinnmessage = "G&aring; tilbake til Altinn",
+                    @altinnmessage = "Gå tilbake til Altinn",
                     @servicecontext = serviceContextName
                 });
                 response.Headers.TryAddWithoutValidation("X-Consent-Success", "false");

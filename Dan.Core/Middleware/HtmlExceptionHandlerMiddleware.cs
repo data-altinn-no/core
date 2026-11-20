@@ -2,6 +2,7 @@
 using Dan.Common.Exceptions;
 using Dan.Core.Config;
 using Dan.Core.Extensions;
+using Dan.Core.Helpers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Middleware;
 using Microsoft.Extensions.Logging;
@@ -46,13 +47,27 @@ public class HtmlExceptionHandlerMiddleware : IFunctionsWorkerMiddleware
                 reason += $" ({(int)danException.ExceptionErrorCode})";
             }
 
-            var trace = WebUtility.HtmlEncode(exception.StackTrace);
             var title = $"{(int)statusCode} {statusCode}";
-            var message = Settings.IsDevEnvironment ? $"{reason}<br /><br/><pre>{trace}</pre>" : $"{reason}";
+            var message = CreateMessage(reason, exception.StackTrace, Settings.IsDevEnvironment);
 
             var request = await context.GetHttpRequestDataAsync();
             var response = request!.CreateHtmlResponse(statusCode, "Error.html", new { title, message });
             context.GetInvocationResult().Value = response;
         }
+    }
+
+    /// <summary>
+    /// Creates the message for the error view. The reason is returned as plain text, which the view HTML encodes.
+    /// With a stack trace the message is markup, where both the reason and the stack trace are HTML encoded.
+    /// </summary>
+    /// <param name="reason">The reason for the error</param>
+    /// <param name="stackTrace">The stack trace of the exception</param>
+    /// <param name="includeStackTrace">Whether the stack trace should be shown</param>
+    /// <returns>The value for the message in the error view</returns>
+    public static object CreateMessage(string reason, string? stackTrace, bool includeStackTrace)
+    {
+        return includeStackTrace
+            ? new RawHtml($"{OutputEncoder.Html(reason)}<br /><br/><pre>{OutputEncoder.Html(stackTrace)}</pre>")
+            : reason;
     }
 }

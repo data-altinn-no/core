@@ -199,6 +199,50 @@ namespace Dan.Core.UnitTest
             }
 
             [TestMethod]
+            public async Task TestInitiateConsentRequest_HtmlEncodesEmailBody()
+            {
+                // Arrange
+                var httpClient = TestHelpers.GetHttpClientMock("{\"id\":\"test-id-123\",\"viewUri\":\"https://altinn.no/consent/test\",\"status\":\"created\"}");
+                var noCertHttpClient = TestHelpers.GetHttpClientMock("[{}]");
+
+                A.CallTo(() => _mockEntityRegistryService.Get(A<string>._))
+                    .Returns(Task.FromResult(new SimpleEntityRegistryUnit { Name = "Test Organization" }));
+
+                // CorrespondenceResult has no public constructors
+                var successResult = (CorrespondenceResult)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(CorrespondenceResult));
+                typeof(CorrespondenceResult)
+                    .GetField("<IsSuccess>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                    .SetValue(successResult, true);
+
+                DdCorrespondenceDetails sentCorrespondence = null;
+                A.CallTo(() => _mockDdCorrespondenceService.SendCorrespondence(A<DdCorrespondenceDetails>._))
+                    .Invokes((DdCorrespondenceDetails details) => sentCorrespondence = details)
+                    .Returns(Task.FromResult(successResult));
+
+                var consentService = new Altinn3ConsentService(
+                    httpClient,
+                    noCertHttpClient,
+                    _mockLogger,
+                    _mockDdCorrespondenceService,
+                    _mockEntityRegistryService,
+                    _mockAltinnServiceOwnerApiService,
+                    _mockRequestContextService,
+                    _mockTokenRequesterService);
+
+                var testAccreditation = GetAccreditation();
+                testAccreditation.ConsentReference = "<a href=\"https://evil.example\">Logg inn</a>";
+
+                // Act
+                await consentService.Initiate(testAccreditation, skipAltinnNotification: false);
+
+                // Assert
+                Assert.IsNotNull(sentCorrespondence);
+                Assert.AreEqual(EmailContentType.Html, sentCorrespondence.Notification.EmailContentType);
+                Assert.DoesNotContain("<a", sentCorrespondence.Notification.EmailBody);
+                Assert.Contains("&lt;a href=&quot;https://evil.example&quot;&gt;Logg inn&lt;/a&gt;", sentCorrespondence.Notification.EmailBody);
+            }
+
+            [TestMethod]
             public async Task TestInitiateConsentRequest_SkipNotification()
             {
                 // Arrange

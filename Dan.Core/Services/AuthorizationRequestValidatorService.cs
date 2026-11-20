@@ -73,6 +73,7 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
         ValidateAndPopulateRequestor();
         ValidateAndPopulateSubject(customSubject);
         ValidateLegalBasisWellFormed();
+        ValidateReferencesWellFormed();
         ValidateEvidenceRequestWellFormed();
         ValidateEvidenceCodesAreAvailableForServiceContext();
         ValidateEvidenceRequestParameters();
@@ -245,6 +246,29 @@ public class AuthorizationRequestValidatorService : IAuthorizationRequestValidat
             {
                 throw new InvalidLegalBasisException($"Unreferenced legal basis: {legalBasis.Id}");
             }
+        }
+    }
+
+    /// <summary>
+    /// The references are shown to the subject in the consent receipt, the Altinn message and the notifications.
+    /// They are encoded where they are used, and markup and control characters are rejected here as an extra barrier.
+    /// </summary>
+    private void ValidateReferencesWellFormed()
+    {
+        ValidateReferenceWellFormed(_authRequest.ConsentReference, "consentReference");
+        ValidateReferenceWellFormed(_authRequest.ExternalReference, "externalReference");
+    }
+
+    private static void ValidateReferenceWellFormed(string? reference, string fieldName)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return;
+        }
+
+        if (reference.Any(c => c is '<' or '>' || char.IsControl(c)))
+        {
+            throw new InvalidAuthorizationRequestException($"Invalid {fieldName}: must not contain '<', '>' or control characters such as line breaks");
         }
     }
 

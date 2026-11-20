@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Dan.Common;
 using Dan.Common.Enums;
 using Dan.Common.Models;
@@ -162,8 +163,14 @@ public static class HttpExtensions
             : headers.First();
     }
 
+    // The views only need their inline styles and the design system stylesheets. Scripts, forms and framing are not
+    // used, and are blocked in case markup should ever find its way into a view.
+    private const string HtmlContentSecurityPolicy =
+        "default-src 'none'; style-src 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; " +
+        "form-action 'none'; base-uri 'none'; frame-ancestors 'none'";
+
     /// <summary>
-    /// Create a html response
+    /// Create a html response. The view data values are HTML encoded, except values of type <see cref="RawHtml"/>.
     /// </summary>
     /// <param name="request">The request</param>
     /// <param name="statusCode">The status code</param>
@@ -188,15 +195,25 @@ public static class HttpExtensions
             }
         }
 
+        // Values are HTML encoded unless they are explicitly marked as markup with RawHtml
         var replacements = viewData.GetType().GetProperties()
-            .ToDictionary(x => x.Name, x => x.GetValue(viewData)?.ToString() ?? string.Empty);
+            .ToDictionary(x => x.Name, x => x.GetValue(viewData) switch
+            {
+                RawHtml rawHtml => rawHtml.Value,
+                var value => OutputEncoder.Html(value?.ToString())
+            });
 
-        foreach (var pair in replacements.OrderByDescending(x => x.Key.Length))
+        if (replacements.Count > 0)
         {
-            textView = textView.Replace($"@{pair.Key}", pair.Value);
+            // Replace all placeholders in a single pass, so that a placeholder name inside a value is left as text.
+            // Longest name first, as one name can be the start of another.
+            var placeholders = string.Join("|", replacements.Keys.OrderByDescending(x => x.Length).Select(Regex.Escape));
+            textView = Regex.Replace(textView, $"@({placeholders})", match => replacements[match.Groups[1].Value]);
         }
 
-        response.Headers.Add("Content-Type", "text/html");
+        response.Headers.Add("Content-Type", "text/html; charset=utf-8");
+        response.Headers.Add("Content-Security-Policy", HtmlContentSecurityPolicy);
+        response.Headers.Add("X-Content-Type-Options", "nosniff");
         response.WriteStringAsync(textView);
 
         return response;
