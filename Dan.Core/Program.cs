@@ -156,6 +156,7 @@ var host = new HostBuilder()
         services.AddScoped<IEvidenceHarvesterService, EvidenceHarvesterService>();
         services.AddScoped<IAltinn3ConsentService, Altinn3ConsentService>();
         services.AddScoped<IAltinn3NotificationsService, Altinn3NotificationsService>();
+        services.AddScoped<IPendingConsentSyncService, PendingConsentSyncService>();
         services.AddScoped<IRequirementValidationService, RequirementValidationService>();
         services.AddScoped<IAuthorizationRequestValidatorService, AuthorizationRequestValidatorService>();
         services.AddScoped<IRequestContextService, RequestContextService>();

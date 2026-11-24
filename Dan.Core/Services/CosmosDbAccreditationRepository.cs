@@ -86,6 +86,25 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
             ? new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKeyValue) }
             : null;
 
+        return await ExecuteQueryAsync(queryDefinition, queryOptions);
+    }
+
+    public async Task<List<Accreditation>> GetAccreditationsPendingConsentAsync()
+    {
+        // "Pending" is not a stored status; it means the consent request has no stored answer. The stored timestamps do
+        // not all carry the same UTC offset, and are compared as strings, hence the margin of a day on validTo.
+        var queryDefinition = new QueryDefinition(
+                "SELECT * FROM c WHERE c.validTo > @validAfter" +
+                " AND IS_STRING(c.altinn3ConsentId) AND c.altinn3ConsentId != ''" +
+                " AND (NOT IS_DEFINED(c.altinn3ConsentStatus) OR IS_NULL(c.altinn3ConsentStatus) OR c.altinn3ConsentStatus = '')")
+            .WithParameter("@validAfter", DateTime.UtcNow.AddDays(-1).ToString("O"));
+
+        // No partition key, as this spans all owners. This will cause a cross partition query.
+        return await ExecuteQueryAsync(queryDefinition, null);
+    }
+
+    private async Task<List<Accreditation>> ExecuteQueryAsync(QueryDefinition queryDefinition, QueryRequestOptions? queryOptions)
+    {
         var accreditations = new List<Accreditation>();
         using (var feedIterator = _container.GetItemQueryIterator<Accreditation>(queryDefinition, null, queryOptions))
         {
