@@ -18,12 +18,17 @@ public class PendingConsentSyncServiceTest
     private readonly IAccreditationRepository _repository = A.Fake<IAccreditationRepository>();
     private readonly IAltinn3ConsentService _consentService = A.Fake<IAltinn3ConsentService>();
     private readonly List<Accreditation> _saved = new();
+    private readonly List<string> _savedWithETag = new();
 
     [TestInitialize]
     public void Initialize()
     {
-        A.CallTo(() => _repository.UpdateAccreditationAsync(A<Accreditation>._))
-            .Invokes((Accreditation accreditation) => _saved.Add(accreditation))
+        A.CallTo(() => _repository.TryUpdateAccreditationAsync(A<Accreditation>._, A<string>._))
+            .Invokes((Accreditation accreditation, string etag) =>
+            {
+                _saved.Add(accreditation);
+                _savedWithETag.Add(etag);
+            })
             .Returns(Task.FromResult(true));
     }
 
@@ -98,6 +103,32 @@ public class PendingConsentSyncServiceTest
     }
 
     [TestMethod]
+    public async Task SavesOnlyIfTheAccreditationIsUnchangedSinceItWasReadAgain()
+    {
+        var pending = GivenPending(Altinn3ConsentRequestStatus.Accepted);
+
+        await CreateService().Sync();
+
+        Assert.HasCount(1, _savedWithETag);
+        Assert.AreEqual(ETagOf(pending.AccreditationId), _savedWithETag[0]);
+        A.CallTo(() => _repository.UpdateAccreditationAsync(A<Accreditation>._)).MustNotHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task DoesNotCountTheAnswerAsStoredOrFailed_WhenTheAccreditationWasChangedBeforeTheSave()
+    {
+        // The repository saves nothing and returns false when the version no longer matches. The accreditation is
+        // then picked up again on the next run, if it is still pending.
+        GivenPending(Altinn3ConsentRequestStatus.Accepted);
+        A.CallTo(() => _repository.TryUpdateAccreditationAsync(A<Accreditation>._, A<string>._))
+            .Returns(Task.FromResult(false));
+
+        var result = await CreateService().Sync();
+
+        Assert.AreEqual(new PendingConsentSyncResult(Checked: 1, Granted: 0, Denied: 0, Failed: 0), result);
+    }
+
+    [TestMethod]
     public async Task DoesNotOverwrite_WhenTheConsentReceiptArrivedDuringTheRun()
     {
         var pending = GivenPending(Altinn3ConsentRequestStatus.Accepted);
@@ -135,6 +166,71 @@ public class PendingConsentSyncServiceTest
         Assert.HasCount(1, _saved);
         Assert.AreEqual(succeeding.AccreditationId, _saved[0].AccreditationId);
         Assert.AreEqual(new PendingConsentSyncResult(Checked: 2, Granted: 1, Denied: 0, Failed: 1), result);
+    }
+
+    [TestMethod]
+    public async Task StopsTheRun_WhenAltinnFailsTenTimesInARow()
+    {
+        // With Altinn down, every remaining lookup would wait for a timeout and log an error
+        for (var i = 0; i < 12; i++)
+        {
+            GivenPendingThatAltinnFailsFor();
+        }
+
+        var result = await CreateService().Sync();
+
+        A.CallTo(() => _consentService.GetConsentRequestStatus(A<string>._)).MustHaveHappened(10, Times.Exactly);
+        Assert.AreEqual(new PendingConsentSyncResult(Checked: 10, Granted: 0, Denied: 0, Failed: 10, NotChecked: 2), result);
+    }
+
+    [TestMethod]
+    public async Task StopsTheRun_WhenStoringFailsTenTimesInARow()
+    {
+        for (var i = 0; i < 12; i++)
+        {
+            GivenPending(Altinn3ConsentRequestStatus.Accepted);
+        }
+
+        A.CallTo(() => _repository.TryUpdateAccreditationAsync(A<Accreditation>._, A<string>._))
+            .Throws(new HttpRequestException("The database is unavailable"));
+
+        var result = await CreateService().Sync();
+
+        Assert.AreEqual(new PendingConsentSyncResult(Checked: 10, Granted: 0, Denied: 0, Failed: 10, NotChecked: 2), result);
+    }
+
+    [TestMethod]
+    public async Task KeepsGoing_WhenAnAnswerFromAltinnBreaksTheRowOfFailures()
+    {
+        for (var i = 0; i < 9; i++)
+        {
+            GivenPendingThatAltinnFailsFor();
+        }
+
+        GivenPending(Altinn3ConsentRequestStatus.Created);
+        for (var i = 0; i < 9; i++)
+        {
+            GivenPendingThatAltinnFailsFor();
+        }
+
+        var result = await CreateService().Sync();
+
+        Assert.AreEqual(new PendingConsentSyncResult(Checked: 19, Granted: 0, Denied: 0, Failed: 18, NotChecked: 0), result);
+    }
+
+    [TestMethod]
+    public async Task CountsAsFailedAndKeepsGoing_WhenAltinnDoesNotKnowTheConsentRequests()
+    {
+        // Says something about the single consent request, not about whether Altinn is available
+        for (var i = 0; i < 12; i++)
+        {
+            GivenPending(Altinn3ConsentRequestStatus.NotFound);
+        }
+
+        var result = await CreateService().Sync();
+
+        Assert.IsEmpty(_saved);
+        Assert.AreEqual(new PendingConsentSyncResult(Checked: 12, Granted: 0, Denied: 0, Failed: 12, NotChecked: 0), result);
     }
 
     [TestMethod]
@@ -215,6 +311,13 @@ public class PendingConsentSyncServiceTest
         return accreditation;
     }
 
+    private void GivenPendingThatAltinnFailsFor()
+    {
+        var accreditation = GivenPending(Altinn3ConsentRequestStatus.Accepted);
+        A.CallTo(() => _consentService.GetConsentRequestStatus(accreditation.Altinn3ConsentId!))
+            .Throws(new ServiceNotAvailableException("Altinn did not return the consent request"));
+    }
+
     private void GivenCurrent(Accreditation current)
     {
         GivenCurrent(current.AccreditationId, current);
@@ -222,7 +325,13 @@ public class PendingConsentSyncServiceTest
 
     private void GivenCurrent(string accreditationId, Accreditation current)
     {
-        A.CallTo(() => _repository.GetAccreditationAsync(accreditationId, Owner)).Returns(Task.FromResult(current));
+        var versioned = current == null ? null : new VersionedAccreditation(current, ETagOf(accreditationId));
+        A.CallTo(() => _repository.GetAccreditationWithVersionAsync(accreditationId, Owner)).Returns(Task.FromResult(versioned));
+    }
+
+    private static string ETagOf(string accreditationId)
+    {
+        return $"etag-of-{accreditationId}";
     }
 
     private static Accreditation Copy(Accreditation accreditation)

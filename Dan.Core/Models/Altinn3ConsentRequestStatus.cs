@@ -9,21 +9,24 @@ namespace Dan.Core.Models
         Unknown = 0,
 
         /// <summary>The request is created, but not yet answered</summary>
-        Created,
+        Created = 1,
 
         /// <summary>The request was rejected by the subject</summary>
-        Rejected,
+        Rejected = 2,
 
         /// <summary>The request was accepted by the subject</summary>
-        Accepted,
+        Accepted = 3,
 
         /// <summary>The consent was given, and later withdrawn</summary>
-        Revoked,
+        Revoked = 4,
 
         /// <summary>The request was deleted</summary>
-        Deleted,
+        Deleted = 5,
 
         /// <summary>The request or consent has expired</summary>
-        Expired
+        Expired = 6,
+
+        /// <summary>Altinn has no consent request with this id. Not a status in Altinn, but its answer to the lookup</summary>
+        NotFound = 7
     }
 }

@@ -155,6 +155,13 @@ namespace Dan.Core.Services
                 // The body is a problem details document without party identifiers, as the request has no body and only the consent id in the url
                 _logger.LogError("Failed to read consent request consentRequestId={consentRequestId}, StatusCode={statusCode}, Response={response}",
                     consentId, response.StatusCode, responseContent);
+
+                // Says something about this consent request only; every other error may mean Altinn is unavailable
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return Altinn3ConsentRequestStatus.NotFound;
+                }
+
                 throw new ServiceNotAvailableException("Altinn did not return the consent request. This is an internal error, please contact support");
             }
 

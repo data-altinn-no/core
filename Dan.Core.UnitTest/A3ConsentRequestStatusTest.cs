@@ -72,9 +72,25 @@ namespace Dan.Core.UnitTest
         }
 
         [TestMethod]
+        public async Task ReturnsNotFound_WhenAltinnDoesNotKnowTheConsentRequest()
+        {
+            var service = CreateService(_ => new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                Content = new StringContent("{\"title\":\"Not Found\",\"status\":404}")
+            });
+
+            var result = await service.GetConsentRequestStatus(ConsentId);
+
+            Assert.AreEqual(Altinn3ConsentRequestStatus.NotFound, result);
+        }
+
+        [TestMethod]
+        [DataRow(HttpStatusCode.BadRequest)]
+        [DataRow(HttpStatusCode.Unauthorized)]
         [DataRow(HttpStatusCode.Forbidden)]
-        [DataRow(HttpStatusCode.NotFound)]
+        [DataRow(HttpStatusCode.TooManyRequests)]
         [DataRow(HttpStatusCode.InternalServerError)]
+        [DataRow(HttpStatusCode.ServiceUnavailable)]
         public async Task Throws_WhenAltinnAnswersWithAnError(HttpStatusCode statusCode)
         {
             var service = CreateService(_ => new HttpResponseMessage(statusCode)

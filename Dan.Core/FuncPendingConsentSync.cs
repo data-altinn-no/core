@@ -17,6 +17,17 @@ namespace Dan.Core;
 /// </summary>
 public class FuncPendingConsentSync
 {
+    /// <summary>
+    /// Monday to Friday at 07, 11, 15 and 19 UTC, which is 08, 12, 16 and 20 in Norway in winter and an hour later in
+    /// summer. Consent requests are answered by people, so the runs follow the day rather than the clock around.
+    /// </summary>
+    public const string WorkdaySchedule = "0 0 7,11,15,19 * * 1-5";
+
+    /// <summary>
+    /// Saturday and Sunday at 11 UTC, which is 12 in Norway in winter and 13 in summer
+    /// </summary>
+    public const string WeekendSchedule = "0 0 11 * * 0,6";
+
     private readonly IPendingConsentSyncService _pendingConsentSyncService;
     private readonly ILogger<FuncPendingConsentSync> _logger;
 
@@ -49,14 +60,25 @@ public class FuncPendingConsentSync
 
 #if !DEBUG
     /// <summary>
-    /// Runs four times a day (00, 06, 12 and 18 UTC). The answer is normally stored when the subject is redirected to
-    /// the consent receipt; this picks up the ones where that never happened, so that the status and list endpoints,
-    /// which only read the stored status, show the consent as given or denied.
+    /// Runs four times a day on workdays, see <see cref="WorkdaySchedule"/>. The answer is normally stored when the
+    /// subject is redirected to the consent receipt; this picks up the ones where that never happened, so that the
+    /// status and list endpoints, which only read the stored status, show the consent as given or denied.
     /// </summary>
     /// <param name="timerInfo"></param>
     /// <returns></returns>
-    [Function("PendingConsentSync")]
-    public async Task Run([TimerTrigger("0 0 */6 * * *")] TimerInfo timerInfo)
+    [Function("PendingConsentSyncWorkdays")]
+    public async Task RunOnWorkdays([TimerTrigger(WorkdaySchedule)] TimerInfo timerInfo)
+    {
+        await RunSync();
+    }
+
+    /// <summary>
+    /// Runs once a day in the weekend, see <see cref="WeekendSchedule"/>. A timer has one schedule, hence two timers.
+    /// </summary>
+    /// <param name="timerInfo"></param>
+    /// <returns></returns>
+    [Function("PendingConsentSyncWeekends")]
+    public async Task RunOnWeekends([TimerTrigger(WeekendSchedule)] TimerInfo timerInfo)
     {
         await RunSync();
     }
@@ -70,8 +92,8 @@ public class FuncPendingConsentSync
             result = await _pendingConsentSyncService.Sync();
         }
 
-        _logger.LogInformation("Completed pending consent sync checked={checked} granted={granted} denied={denied} failed={failed}",
-            result.Checked, result.Granted, result.Denied, result.Failed);
+        _logger.LogInformation("Completed pending consent sync checked={checked} granted={granted} denied={denied} failed={failed} notChecked={notChecked}",
+            result.Checked, result.Granted, result.Denied, result.Failed, result.NotChecked);
 
         return result;
     }
