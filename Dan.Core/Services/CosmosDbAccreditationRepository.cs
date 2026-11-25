@@ -86,6 +86,25 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
             ? new QueryRequestOptions { PartitionKey = new PartitionKey(partitionKeyValue) }
             : null;
 
+        return await ExecuteQueryAsync(queryDefinition, queryOptions);
+    }
+
+    public async Task<List<Accreditation>> GetAccreditationsPendingConsentAsync()
+    {
+        // "Pending" is not a stored status; it means the consent request has no stored answer. The stored timestamps do
+        // not all carry the same UTC offset, and are compared as strings, hence the margin of a day on validTo.
+        var queryDefinition = new QueryDefinition(
+                "SELECT * FROM c WHERE c.validTo > @validAfter" +
+                " AND IS_STRING(c.altinn3ConsentId) AND c.altinn3ConsentId != ''" +
+                " AND (NOT IS_DEFINED(c.altinn3ConsentStatus) OR IS_NULL(c.altinn3ConsentStatus) OR c.altinn3ConsentStatus = '')")
+            .WithParameter("@validAfter", DateTime.UtcNow.AddDays(-1).ToString("O"));
+
+        // No partition key, as this spans all owners. This will cause a cross partition query.
+        return await ExecuteQueryAsync(queryDefinition, null);
+    }
+
+    private async Task<List<Accreditation>> ExecuteQueryAsync(QueryDefinition queryDefinition, QueryRequestOptions? queryOptions)
+    {
         var accreditations = new List<Accreditation>();
         using (var feedIterator = _container.GetItemQueryIterator<Accreditation>(queryDefinition, null, queryOptions))
         {
@@ -128,6 +147,40 @@ public class CosmosDbAccreditationRepository : IAccreditationRepository
 
         var result = await _container.ReplaceItemAsync(accreditationToSave, accreditationToSave.AccreditationId, new PartitionKey(accreditationToSave.Owner));
         return result.StatusCode == HttpStatusCode.OK;
+    }
+
+    public async Task<VersionedAccreditation?> GetAccreditationWithVersionAsync(string accreditationId, string partitionKeyValue)
+    {
+        try
+        {
+            var response = await _container.ReadItemAsync<Accreditation>(accreditationId, new PartitionKey(partitionKeyValue));
+            var accreditation = response.Resource;
+            accreditation.PopulateParties();
+
+            return new VersionedAccreditation(accreditation, response.ETag);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    public async Task<bool> TryUpdateAccreditationAsync(Accreditation accreditation, string etag)
+    {
+        // Remove requirements before saving, these need to be repopulated
+        var accreditationToSave = GetAccredidationWithoutRequirements(accreditation);
+
+        try
+        {
+            await _container.ReplaceItemAsync(accreditationToSave, accreditationToSave.AccreditationId,
+                new PartitionKey(accreditationToSave.Owner), new ItemRequestOptions { IfMatchEtag = etag });
+            return true;
+        }
+        catch (CosmosException ex) when (ex.StatusCode is HttpStatusCode.PreconditionFailed or HttpStatusCode.NotFound)
+        {
+            // Changed (412) or deleted (404) by someone else since it was read
+            return false;
+        }
     }
 
     public async Task<bool> DeleteAccreditationAsync(Accreditation accreditation)

@@ -16,6 +16,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.3.3" />
     <PackageReference Include="MSTest.TestFramework" Version="4.3.3" />
+    <!-- The cron parser the Functions host uses for timer triggers, for testing timer schedules -->
+    <PackageReference Include="NCrontab.Signed" Version="3.4.0" />
     <PackageReference Include="coverlet.collector" Version="10.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

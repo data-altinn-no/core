@@ -36,9 +36,19 @@ namespace Dan.Core.Services
         public const string ConsentDenied = "denied";
 
         /// <summary>
+        /// The consent status stored when the user has accepted a consent request, the same value the consent receipt gets from Altinn
+        /// </summary>
+        public const string ConsentGranted = "ok";
+
+        /// <summary>
         /// Magic string for claim name for validTo
         /// </summary>
         public const string ConsentJwtValidtoKey = "exp";
+
+        /// <summary>
+        /// The Maskinporten scope for creating and reading consent requests in Altinn 3 on behalf of the requestor
+        /// </summary>
+        private const string ConsentRequestScope = "altinn:consentrequests.org";
 
         public Altinn3ConsentService(
             HttpClient httpClient,
@@ -128,6 +138,56 @@ namespace Dan.Core.Services
             }
 
             return ConsentStatus.Granted;
+        }
+
+        /// <inheritdoc />
+        public async Task<Altinn3ConsentRequestStatus> GetConsentRequestStatus(string consentId)
+        {
+            var url = $"{Settings.Altinn3ConsentUrl.TrimEnd('/')}/{Uri.EscapeDataString(consentId)}";
+            var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.TryAddWithoutValidation("Accept", "application/json");
+            request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {await GetConsentRequestAccessToken()}");
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+            {
+                // The body is a problem details document without party identifiers, as the request has no body and only the consent id in the url
+                _logger.LogError("Failed to read consent request consentRequestId={consentRequestId}, StatusCode={statusCode}, Response={response}",
+                    consentId, response.StatusCode, responseContent);
+
+                // Says something about this consent request only; every other error may mean Altinn is unavailable
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return Altinn3ConsentRequestStatus.NotFound;
+                }
+
+                throw new ServiceNotAvailableException("Altinn did not return the consent request. This is an internal error, please contact support");
+            }
+
+            var consentRequest = JsonConvert.DeserializeObject<Altinn3ConsentResponse>(responseContent);
+
+            return consentRequest?.Status?.ToLowerInvariant() switch
+            {
+                "created" => Altinn3ConsentRequestStatus.Created,
+                "rejected" => Altinn3ConsentRequestStatus.Rejected,
+                "accepted" => Altinn3ConsentRequestStatus.Accepted,
+                "revoked" => Altinn3ConsentRequestStatus.Revoked,
+                "deleted" => Altinn3ConsentRequestStatus.Deleted,
+                "expired" => Altinn3ConsentRequestStatus.Expired,
+                _ => Altinn3ConsentRequestStatus.Unknown
+            };
+        }
+
+        private async Task<string> GetConsentRequestAccessToken()
+        {
+            var token = JsonConvert.DeserializeObject<Dictionary<string, string>>(await _tokenRequesterService.GetMaskinportenToken(ConsentRequestScope));
+            if (token == null || !token.TryGetValue("access_token", out var accessToken))
+            {
+                throw new ServiceNotAvailableException("Unable to parse access token from Maskinporten");
+            }
+
+            return accessToken;
         }
 
         private async Task<ClaimsIdentity?> GetClaims(Accreditation accreditation)
@@ -424,7 +484,7 @@ namespace Dan.Core.Services
             }                       
 
             var request = new HttpRequestMessage(HttpMethod.Post, Settings.Altinn3ConsentUrl);
-            var token = JsonConvert.DeserializeObject<Dictionary<string, string>>(await _tokenRequesterService.GetMaskinportenToken("altinn:consentrequests.org"));
+            var token = JsonConvert.DeserializeObject<Dictionary<string, string>>(await _tokenRequesterService.GetMaskinportenToken(ConsentRequestScope));
             //request.Headers.TryAddWithoutValidation("ApiKey", Settings.AltinnApiKey);
             request.Headers.TryAddWithoutValidation("Accept", "application/json");
             request.Headers.TryAddWithoutValidation("Authorization", $"Bearer {token["access_token"]}");
