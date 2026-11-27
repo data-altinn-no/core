@@ -4,6 +4,7 @@ using Altinn.Dd.Correspondence.Options;
 using Azure.Core.Serialization;
 using Azure.Identity;
 using Dan.Common;
+using Dan.Common.Extensions;
 using Dan.Common.Handlers;
 using Dan.Common.Models;
 using Dan.Common.Services;
@@ -53,6 +54,9 @@ var host = new HostBuilder()
     {
         // This is required for the logging-options in worker-logging.json to ble applied
         logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+
+        // Log records go to OpenTelemetry, with the same setup as the plugins
+        logging.AddDanOpenTelemetryLogging();
     })
     .ConfigureFunctionsWorkerDefaults(builder =>
     {
@@ -67,26 +71,13 @@ var host = new HostBuilder()
     {
         options.Serializer = new NewtonsoftJsonObjectSerializer();
     })
-    .ConfigureServices((_, services) =>
+    .ConfigureServices((context, services) =>
     {
-        services.AddCoreApplicationInsights();
-
-        // You will need extra configuration because above will only log per default Warning (default AI configuration). As this is a provider-specific
-        // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
-        // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427
-        // https://github.com/microsoft/ApplicationInsights-dotnet/issues/2610#issuecomment-1316672650
-        // https://github.com/Azure/azure-functions-dotnet-worker/issues/1182#issuecomment-1319035412
-        // So remove the default logger rule (warning and above). This will result that the default will be Information.
-        services.Configure<LoggerFilterOptions>(options =>
-        {
-            var toRemove = options.Rules.FirstOrDefault(rule => rule.ProviderName
-                == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
-
-            if (toRemove is not null)
-            {
-                options.Rules.Remove(toRemove);
-            }
-        });
+        // Traces, metrics and logs are exported to Application Insights through OpenTelemetry, with national identity
+        // numbers masked. Shared with the plugins, see TelemetryExtensions in Dan.Common. Every log line is exported.
+        // Requests and dependencies are limited to this many operations per second in each instance, where an
+        // operation, such as a run of the pending consent sync, is kept or left out as a whole.
+        services.AddDanOpenTelemetry(context.Configuration, maxTracesPerSecond: 5);
 
         DefaultAzureCredentialOptions options = new()
         {
