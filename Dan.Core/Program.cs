@@ -69,9 +69,8 @@ var host = new HostBuilder()
     })
     .ConfigureServices((_, services) =>
     {
-        services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
-        
+        services.AddCoreApplicationInsights();
+
         // You will need extra configuration because above will only log per default Warning (default AI configuration). As this is a provider-specific
         // setting, it will override all non-provider (Logging:LogLevel)-based configurations. 
         // https://github.com/microsoft/ApplicationInsights-dotnet/blob/main/NETCORE/src/Shared/Extensions/ApplicationInsightsExtensions.cs#L427

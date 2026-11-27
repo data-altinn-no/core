@@ -6,11 +6,6 @@
       "Microsoft": "Warning",
       "Function": "Warning",
       "System.Net": "Warning"
-    },
-    "ApplicationInsights": {
-      "SamplingSettings": {
-        "IsEnabled": false
-      }
     }
   }
 }
