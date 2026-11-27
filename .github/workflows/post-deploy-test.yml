@@ -2,14 +2,17 @@ name: Post deploy test
 permissions:
   actions: read
   contents: read
-  id-token: write
-  checks: write
-  pull-requests: write
 on:
  workflow_dispatch:
 jobs:
  run:
    uses: data-altinn-no/deploy-actions/.github/workflows/post-deploy-test.yml@941efbca42d47e6612c4d9d46b8e0018ca7f0496
+   # The reusable workflow publishes the test results as a check and a pull request comment
+   permissions:
+     actions: read
+     contents: read
+     checks: write
+     pull-requests: write
    with:
      environment: 'dev'
    secrets:
